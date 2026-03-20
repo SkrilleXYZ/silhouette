@@ -244,6 +244,21 @@
             </div>
           </div>
           <div id="game-content" class="game-content"></div>
+          <div id="game-messages" class="game-messages" style="display:none;">
+            <div id="messages-list" class="messages-list"></div>
+          </div>
+          <!-- PLAYER LIST PANEL -->
+          <div id="game-player-list" class="game-player-list">
+            <div class="game-player-list-header" id="game-player-list-toggle">
+              <span>PLAYERS</span>
+              <svg id="player-list-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+            <div id="game-player-list-body" class="game-player-list-body" style="display:none;">
+              <div id="game-players-ul" class="game-players-ul"></div>
+            </div>
+          </div>
           <div class="game-status-bar">
             <div class="alive-count">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
@@ -253,43 +268,8 @@
               <span id="alive-count-text">0 alive</span>
             </div>
             <div id="action-status" class="action-status">
-              <span>Room</span>
-              <span id="game-room-code">------</span>
-            </div>
-          </div>
-          <div class="game-bottom-dock">
-            <button class="dock-btn" id="btn-open-players" type="button">
-              <span class="dock-btn-label">Players</span>
-            </button>
-            <button class="dock-btn" id="btn-open-events" type="button">
-              <span class="dock-btn-label">Events</span>
-            </button>
-          </div>
-          <div id="sheet-overlay" class="sheet-overlay"></div>
-          <div id="players-sheet" class="bottom-sheet" aria-hidden="true">
-            <div class="bottom-sheet-handle"></div>
-            <div class="bottom-sheet-header">
-              <div>
-                <span class="bottom-sheet-kicker">Room intel</span>
-                <h3 class="bottom-sheet-title">Players</h3>
-              </div>
-              <button class="bottom-sheet-close" id="btn-close-players" type="button">Close</button>
-            </div>
-            <div class="bottom-sheet-content">
-              <div id="game-players-ul" class="game-players-ul"></div>
-            </div>
-          </div>
-          <div id="events-sheet" class="bottom-sheet" aria-hidden="true">
-            <div class="bottom-sheet-handle"></div>
-            <div class="bottom-sheet-header">
-              <div>
-                <span class="bottom-sheet-kicker">Room intel</span>
-                <h3 class="bottom-sheet-title">Events</h3>
-              </div>
-              <button class="bottom-sheet-close" id="btn-close-events" type="button">Close</button>
-            </div>
-            <div class="bottom-sheet-content">
-              <div id="messages-list" class="messages-list"></div>
+              <div class="status-dot"></div>
+              <span>Awaiting actions...</span>
             </div>
           </div>
         </div>
@@ -304,10 +284,7 @@
           <p id="gameover-reason" class="gameover-reason"></p>
           <div class="gameover-divider"></div>
           <div id="gameover-players" class="gameover-players"></div>
-          <div class="gameover-actions">
-            <button class="btn btn-accent btn-large" id="btn-rejoin-room"><span>REJOIN ROOM</span></button>
-            <button class="btn btn-primary btn-large" id="btn-back-home"><span>BACK TO HOME</span></button>
-          </div>
+          <button class="btn btn-primary btn-large" id="btn-back-home"><span>BACK TO HOME</span></button>
         </div>
       </section>
 

@@ -26,8 +26,6 @@
     gamePhase: null,
     allPlayersWithRoles: [],
     playerListOpen: false,
-    eventsSheetOpen: false,
-    eventLog: [],
   };
 
   function connectSocket() {
@@ -65,12 +63,9 @@
       state.totalAlive = 0;
       state.searchResult = null;
       state.allPlayersWithRoles = [];
-      state.eventLog = [];
-      closeBottomSheets();
       showScreen('game');
       hideNav();
       updateRoleCard();
-      renderEventsLog();
       renderGamePlayerList();
     });
 
@@ -84,11 +79,9 @@
       state.selectedAction = null;
       state.selectedTarget = null;
       if (messages) state.morningMessages = messages;
-      if (phase === 'morning') logMorningEvents(messages || []);
       updatePhaseUI(phase, nightCount);
       renderGameContent(phase);
       updateAliveCount();
-      renderEventsLog();
       renderGamePlayerList();
     });
 
@@ -116,21 +109,13 @@
 
     state.socket.on('vote-result', ({ message, eliminated, room }) => {
       state.roomData = room;
-      if (message) {
-        state.eventLog.push({
-          type: message.type || 'vote',
-          text: message.text,
-        });
-      }
       renderVoteResult(message);
       updateAliveCount();
-      renderEventsLog();
       renderGamePlayerList();
     });
 
     state.socket.on('game-over', ({ winner, players }) => {
       state.allPlayersWithRoles = players;
-      closeBottomSheets();
       clearTimerInterval();
       showGameOver(winner, players);
     });
@@ -149,10 +134,7 @@
       state.gamePhase = null;
       state.allPlayersWithRoles = [];
       state.playerListOpen = false;
-      state.eventsSheetOpen = false;
-      state.eventLog = [];
       clearTimerInterval();
-      closeBottomSheets();
       showScreen('room');
       showNav();
       renderRoom();
@@ -271,8 +253,6 @@
     if (!data) return;
 
     document.getElementById('room-code-text').textContent = data.code;
-    const gameRoomCode = document.getElementById('game-room-code');
-    if (gameRoomCode) gameRoomCode.textContent = data.code;
     document.getElementById('player-count').textContent = `${data.playerCount} / 15`;
 
     const list = document.getElementById('players-list');
@@ -350,167 +330,11 @@
     if (el && state.roomData) el.textContent = `${state.roomData.aliveCount} alive`;
   }
 
-  function logMorningEvents(messages) {
-    if (!messages || messages.length === 0) {
-      state.eventLog.push({ type: 'peaceful', text: 'The night passed peacefully.' });
-      return;
-    }
-
-    messages.forEach((msg) => {
-      state.eventLog.push({
-        type: msg.type || 'event',
-        text: msg.text,
-      });
-    });
-  }
-
-  function renderEventsLog() {
-    const msgList = document.getElementById('messages-list');
-    if (!msgList) return;
-
-    const entries = [...state.eventLog];
-    if (state.searchResult) {
-      entries.push({
-        type: 'search',
-        text: `${state.searchResult.targetName}: ${state.searchResult.role} (${state.searchResult.faction})`,
-      });
-    }
-
-    if (entries.length === 0) {
-      msgList.innerHTML = '<div class="sheet-empty-state">No events yet. Night reports and vote results will appear here.</div>';
-      return;
-    }
-
-    msgList.innerHTML = entries.slice().reverse().map((entry) => {
-      if (entry.type === 'search') {
-        const isAssassin = entry.text.includes('(Assassin)');
-        return `<div class="search-result-card compact"><div class="search-label">Investigation</div><div class="search-target-role ${isAssassin ? 'assassin-role' : 'crew-role'}">${entry.text}</div></div>`;
-      }
-
-      let icon = '';
-      if (entry.type === 'death') icon = '💀';
-      else if (entry.type === 'protected') icon = '🛡️';
-      else if (entry.type === 'peaceful') icon = '🌤️';
-      else if (entry.type === 'eliminated') icon = '⚖️';
-
-      return `<div class="message-card ${entry.type}"><span class="message-icon">${icon}</span><span class="message-text">${entry.text}</span></div>`;
-    }).join('');
-  }
-
-  function syncBottomSheetUI() {
-    const overlay = document.getElementById('sheet-overlay');
-    const playersSheet = document.getElementById('players-sheet');
-    const eventsSheet = document.getElementById('events-sheet');
-    const playersBtn = document.getElementById('btn-open-players');
-    const eventsBtn = document.getElementById('btn-open-events');
-
-    if (!overlay || !playersSheet || !eventsSheet || !playersBtn || !eventsBtn) return;
-
-    const hasOpenSheet = state.playerListOpen || state.eventsSheetOpen;
-    overlay.classList.toggle('open', hasOpenSheet);
-    playersSheet.classList.toggle('open', state.playerListOpen);
-    eventsSheet.classList.toggle('open', state.eventsSheetOpen);
-    playersSheet.setAttribute('aria-hidden', state.playerListOpen ? 'false' : 'true');
-    eventsSheet.setAttribute('aria-hidden', state.eventsSheetOpen ? 'false' : 'true');
-    playersBtn.classList.toggle('active', state.playerListOpen);
-    eventsBtn.classList.toggle('active', state.eventsSheetOpen);
-  }
-
-  function closeBottomSheets() {
-    state.playerListOpen = false;
-    state.eventsSheetOpen = false;
-    syncBottomSheetUI();
-  }
-
-  function toggleBottomSheet(sheet) {
-    if (sheet === 'players') {
-      state.playerListOpen = !state.playerListOpen;
-      state.eventsSheetOpen = false;
-      if (state.playerListOpen) renderGamePlayerList();
-    } else if (sheet === 'events') {
-      state.eventsSheetOpen = !state.eventsSheetOpen;
-      state.playerListOpen = false;
-      if (state.eventsSheetOpen) renderEventsLog();
-    }
-
-    syncBottomSheetUI();
-  }
-
-  function renderActionSurface(container, config) {
-    const abilities = config.abilities || [];
-    const targets = config.targets || [];
-    const showTargets = config.showTargets !== false;
-    const secondaryAction = config.secondaryAction || null;
-
-    container.innerHTML = `
-      <div class="action-surface">
-        <div class="action-surface-header">
-          <span class="action-kicker">${config.kicker || ''}</span>
-          <h3 class="action-heading">${config.title}</h3>
-          <p class="action-copy">${config.description}</p>
-        </div>
-        ${abilities.length ? `
-          <div class="ability-strip">
-            ${abilities.map((ability) => `
-              <button class="ability-chip ${ability.id === config.selectedAbility ? `selected ${ability.tone || ''}` : ''}" data-ability="${ability.id}" type="button">
-                <span class="ability-chip-icon">${ability.icon || ''}</span>
-                <span>${ability.label}</span>
-              </button>
-            `).join('')}
-          </div>
-        ` : ''}
-        ${showTargets ? `
-          <div class="target-panel">
-            <div class="target-panel-head">
-              <span class="target-label">${config.targetLabel || 'Select target'}</span>
-              ${config.helperText ? `<span class="target-helper">${config.helperText}</span>` : ''}
-            </div>
-            <div class="target-grid">
-              ${targets.map((target) => `
-                <button
-                  class="target-chip ${target.id === config.selectedTarget ? `selected ${config.targetTone || ''}` : ''} ${target.disabled ? 'target-restricted' : ''}"
-                  data-target="${target.id}"
-                  ${target.disabled ? 'data-restricted="true"' : ''}
-                  type="button"
-                >
-                  <span class="target-chip-name">${target.name}</span>
-                  ${target.meta ? `<span class="target-chip-meta">${target.meta}</span>` : ''}
-                </button>
-              `).join('')}
-            </div>
-          </div>
-        ` : ''}
-        <div class="action-footer">
-          ${secondaryAction ? `<button class="btn btn-ghost action-secondary-btn" id="action-secondary-btn" type="button">${secondaryAction.label}</button>` : ''}
-          <button class="btn ${config.confirmClass || 'btn-primary'} action-confirm-btn ${config.confirmEnabled ? 'is-ready' : ''}" id="action-confirm-btn" ${config.confirmEnabled ? '' : 'disabled'} type="button">${config.confirmLabel}</button>
-        </div>
-      </div>`;
-
-    container.querySelectorAll('[data-ability]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        if (config.onSelectAbility) config.onSelectAbility(btn.dataset.ability);
-      });
-    });
-
-    container.querySelectorAll('[data-target]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        if (btn.dataset.restricted === 'true') return;
-        if (config.onSelectTarget) config.onSelectTarget(btn.dataset.target);
-      });
-    });
-
-    const confirmBtn = document.getElementById('action-confirm-btn');
-    if (confirmBtn && config.onConfirm) confirmBtn.addEventListener('click', config.onConfirm);
-
-    const secondaryBtn = document.getElementById('action-secondary-btn');
-    if (secondaryBtn && secondaryAction && secondaryAction.onClick) {
-      secondaryBtn.addEventListener('click', secondaryAction.onClick);
-    }
-  }
-
   function renderGameContent(phase) {
     const content = document.getElementById('game-content');
+    const messages = document.getElementById('game-messages');
     content.style.display = 'flex';
+    messages.style.display = 'none';
 
     if (state.playerData && !state.playerData.alive) {
       content.innerHTML = '<div class="dead-overlay"><div class="dead-icon">💀</div><h3 class="dead-title">ELIMINATED</h3><p class="dead-subtitle">You watch from the shadows as the game continues...<br><span style="font-size:0.8rem;opacity:0.6;">Open the player list below to see all roles.</span></p></div>';
@@ -519,7 +343,7 @@
 
     switch (phase) {
       case 'night': renderNightPhase(content); break;
-      case 'morning': renderMorningPhase(content); break;
+      case 'morning': renderMorningPhase(content, messages); break;
       case 'voting': renderVotingPhase(content); break;
     }
   }
@@ -559,16 +383,26 @@
     else if (player.role === 'Medic') actionDesc = 'Choose a player to protect tonight';
     else if (player.role === 'Agent') actionDesc = 'Choose a crew member to eliminate';
 
+    // For medic: find the last protected player name to show restriction
+    let medicNote = '';
+    if (player.role === 'Medic' && player.lastMedicTarget) {
+      const lastTarget = state.roomData?.players?.find(p => p.id === player.lastMedicTarget);
+      if (lastTarget) {
+        medicNote = `<div class="medic-restriction">⚠️ Cannot protect <strong>${lastTarget.name}</strong> again this night</div>`;
+      }
+    }
+
     container.innerHTML = `
       <div class="action-panel">
         <div class="action-title">NIGHT ACTION</div>
         <div class="action-subtitle">${actionDesc}</div>
         ${actionsHTML}
+        ${medicNote}
         <div class="target-label">SELECT TARGET</div>
         <div class="target-list" id="target-list">
           ${targets.map(t => {
             const isRestricted = player.role === 'Medic' && t.id === player.lastMedicTarget;
-            return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}><div class="target-dot"></div><span class="target-name">${t.name}</span></div>`;
+            return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}><div class="target-dot"></div><span class="target-name">${t.name}${isRestricted ? ' <span class="restricted-label">(protected last night)</span>' : ''}</span></div>`;
           }).join('')}
         </div>
         <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || !state.selectedTarget ? 'disabled' : ''}>CONFIRM</button>
@@ -737,219 +571,6 @@
     if (message.type === 'eliminated') icon = '⚖️';
 
     content.innerHTML = `<div class="vote-result-panel"><div style="font-size:2rem; margin-bottom:12px;">${icon}</div><div class="vote-result-text">${message.text}</div><div class="vote-result-detail">Transitioning to next phase...</div></div>`;
-
-    state.socket.emit('request-player-data', (response) => {
-      if (response.success) {
-        state.playerData = response.player;
-        state.roomData = response.room;
-        updateRoleCard();
-        updateAliveCount();
-        renderGamePlayerList();
-      }
-    });
-  }
-
-  function renderGameContent(phase) {
-    const content = document.getElementById('game-content');
-    content.style.display = 'flex';
-
-    if (state.playerData && !state.playerData.alive) {
-      content.innerHTML = '<div class="dead-overlay"><div class="dead-icon">💀</div><h3 class="dead-title">ELIMINATED</h3><p class="dead-subtitle">You are out of the round. Use the bottom buttons to review players and events while the game continues.</p></div>';
-      return;
-    }
-
-    switch (phase) {
-      case 'night': renderNightPhase(content); break;
-      case 'morning': renderMorningPhase(content); break;
-      case 'voting': renderVotingPhase(content); break;
-    }
-  }
-
-  function renderNightPhase(container) {
-    const player = state.playerData;
-    if (!player) return;
-
-    if (player.role === 'Villager') {
-      container.innerHTML = '<div class="phase-focus-card"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">You have no active ability tonight. Keep watch and review players or events from the bottom dock.</p></div>';
-      return;
-    }
-
-    if (state.hasActed) {
-      container.innerHTML = '<div class="phase-focus-card"><div class="confirmed-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><p class="confirmed-text">ACTION SUBMITTED</p><p class="confirmed-detail">Your move is locked in. You can still open the player and event sheets below.</p></div>';
-      return;
-    }
-
-    const targets = getTargetPlayers();
-    const isAssassin = player.faction === 'Assassin';
-    const abilitiesByRole = {
-      Sheriff: [
-        { id: 'shoot', label: 'Shoot', icon: '🔫' },
-        { id: 'search', label: 'Search', icon: '🔎' },
-      ],
-      Medic: [
-        { id: 'protect', label: 'Protect', icon: '🛡️' },
-      ],
-      Agent: [
-        { id: 'kill', label: 'Kill', icon: '🗡️', tone: 'assassin-action' },
-      ],
-    };
-    const descriptions = {
-      shoot: 'Choose a player to eliminate immediately.',
-      search: 'Investigate one player to learn their role.',
-      protect: 'Choose one player to shield through the night.',
-      kill: 'Select a crew member to eliminate before dawn.',
-    };
-
-    if (!state.selectedAction) state.selectedAction = abilitiesByRole[player.role][0].id;
-
-    renderActionSurface(container, {
-      kicker: 'Night action',
-      title: player.role,
-      description: descriptions[state.selectedAction] || 'Choose your move.',
-      abilities: abilitiesByRole[player.role],
-      selectedAbility: state.selectedAction,
-      targets: targets.map((t) => ({
-        id: t.id,
-        name: t.name,
-        meta: t.id === state.playerId ? 'You' : '',
-        disabled: player.role === 'Medic' && t.id === player.lastMedicTarget,
-      })),
-      selectedTarget: state.selectedTarget,
-      targetLabel: state.selectedAction === 'search' ? 'Investigation target' : 'Choose target',
-      helperText: player.role === 'Medic' ? 'Previous target is dimmed and unavailable.' : '',
-      targetTone: isAssassin ? 'assassin-target' : '',
-      confirmClass: isAssassin ? 'btn-assassin' : 'btn-crew',
-      confirmLabel: state.selectedAction === 'search' ? 'Confirm Search' : 'Confirm Action',
-      confirmEnabled: !!(state.selectedAction && state.selectedTarget),
-      onSelectAbility: (ability) => {
-        state.selectedAction = ability;
-        state.selectedTarget = null;
-        renderNightPhase(container);
-      },
-      onSelectTarget: (targetId) => {
-        state.selectedTarget = targetId;
-        renderNightPhase(container);
-      },
-      onConfirm: () => {
-        if (!state.selectedAction || !state.selectedTarget) return;
-        state.socket.emit('night-action', { action: state.selectedAction, targetId: state.selectedTarget }, (response) => {
-          if (response.success) {
-            state.hasActed = true;
-            renderNightPhase(container);
-            showToast('Action submitted', 'success');
-          } else {
-            showToast(response.error || 'Action failed', 'error');
-          }
-        });
-      },
-      secondaryAction: {
-        label: 'Skip',
-        onClick: () => {
-          state.socket.emit('skip-night', (response) => {
-            if (response.success) {
-              state.hasActed = true;
-              renderNightPhase(container);
-              showToast('Skipped night action', 'info');
-            }
-          });
-        },
-      },
-    });
-  }
-
-  function renderMorningPhase(container) {
-    if (state.searchResult) {
-      state.eventLog.push({
-        type: 'search',
-        text: `${state.searchResult.targetName}: ${state.searchResult.role} (${state.searchResult.faction})`,
-      });
-      state.searchResult = null;
-      renderEventsLog();
-    }
-
-    const latestMessage = state.morningMessages[state.morningMessages.length - 1];
-    const summary = latestMessage ? latestMessage.text : 'The town wakes to a quiet dawn.';
-
-    container.innerHTML = `
-      <div class="phase-focus-card">
-        <div class="phase-focus-pill">Morning report</div>
-        <h3 class="action-heading">Daybreak</h3>
-        <p class="action-copy">${summary}</p>
-        <p class="phase-focus-note">Open the Events sheet below for the full log and investigation results.</p>
-      </div>`;
-
-    state.socket.emit('request-player-data', (response) => {
-      if (response.success) {
-        state.playerData = response.player;
-        state.roomData = response.room;
-        updateRoleCard();
-        updateAliveCount();
-        renderGamePlayerList();
-      }
-    });
-  }
-
-  function renderVotingPhase(container) {
-    if (state.hasVoted) {
-      container.innerHTML = '<div class="phase-focus-card"><div class="confirmed-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><p class="confirmed-text">VOTE SUBMITTED</p><p class="confirmed-detail">Your vote is locked in. Follow the rest of the round from the bottom sheets.</p></div>';
-      return;
-    }
-
-    const targets = getVoteTargets();
-    const aliveCount = state.totalAlive || state.roomData?.aliveCount || '?';
-
-    renderActionSurface(container, {
-      kicker: 'Town vote',
-      title: 'Choose a suspect',
-      description: `${state.votesCast} / ${aliveCount} votes cast`,
-      abilities: [
-        { id: 'vote', label: 'Eliminate', icon: '🗳️' },
-        { id: 'skip', label: 'Skip Vote', icon: '⏭️' },
-      ],
-      selectedAbility: state.selectedTarget === 'skip' ? 'skip' : 'vote',
-      showTargets: state.selectedTarget !== 'skip',
-      targets: targets.map((t) => ({ id: t.id, name: t.name })),
-      selectedTarget: state.selectedTarget === 'skip' ? null : state.selectedTarget,
-      targetLabel: 'Vote target',
-      helperText: 'Choose one player or switch to Skip Vote.',
-      confirmClass: 'btn-primary',
-      confirmLabel: state.selectedTarget === 'skip' ? 'Confirm Skip Vote' : 'Confirm Vote',
-      confirmEnabled: !!state.selectedTarget,
-      onSelectAbility: (ability) => {
-        state.selectedTarget = ability === 'skip' ? 'skip' : null;
-        renderVotingPhase(container);
-      },
-      onSelectTarget: (targetId) => {
-        state.selectedTarget = targetId;
-        renderVotingPhase(container);
-      },
-      onConfirm: () => {
-        if (!state.selectedTarget) return;
-        state.votesCast = (state.votesCast || 0) + 1;
-        renderVotingPhase(container);
-        state.socket.emit('vote', { targetId: state.selectedTarget }, (response) => {
-          if (response.success) {
-            state.hasVoted = true;
-            renderVotingPhase(container);
-            showToast('Vote cast', 'success');
-          } else {
-            state.votesCast = Math.max(0, (state.votesCast || 1) - 1);
-            renderVotingPhase(container);
-            showToast(response.error || 'Vote failed', 'error');
-          }
-        });
-      },
-    });
-  }
-
-  function renderVoteResult(message) {
-    const content = document.getElementById('game-content');
-    content.style.display = 'flex';
-
-    let icon = '🗳️';
-    if (message.type === 'eliminated') icon = '⚖️';
-
-    content.innerHTML = `<div class="phase-focus-card"><div class="vote-result-icon">${icon}</div><div class="vote-result-text">${message.text}</div><div class="vote-result-detail">The full sequence is available in the Events sheet below.</div></div>`;
 
     state.socket.emit('request-player-data', (response) => {
       if (response.success) {
@@ -1193,31 +814,6 @@
       });
     });
 
-    document.getElementById('btn-rejoin-room').addEventListener('click', () => {
-      if (!state.roomCode) {
-        showToast('No room to rejoin', 'error');
-        return;
-      }
-
-      if (state.roomData?.state === 'lobby') {
-        showScreen('room');
-        showNav();
-        renderRoom();
-        return;
-      }
-
-      if (!state.isHost) {
-        showToast('Waiting for host to reopen the room', 'error');
-        return;
-      }
-
-      state.socket.emit('reset-room', (response) => {
-        if (!response.success) {
-          showToast(response.error || 'Cannot reopen room', 'error');
-        }
-      });
-    });
-
     document.getElementById('btn-back-home').addEventListener('click', () => {
       state.roomCode = null;
       state.roomData = null;
@@ -1234,10 +830,7 @@
       state.gamePhase = null;
       state.allPlayersWithRoles = [];
       state.playerListOpen = false;
-      state.eventsSheetOpen = false;
-      state.eventLog = [];
       clearTimerInterval();
-      closeBottomSheets();
       showScreen('home');
       showNav();
       document.getElementById('input-username').value = '';
@@ -1246,17 +839,20 @@
       document.querySelector('[data-tab="home"]').classList.add('active');
     });
 
-    document.getElementById('btn-open-players').addEventListener('click', () => toggleBottomSheet('players'));
-    document.getElementById('btn-open-events').addEventListener('click', () => toggleBottomSheet('events'));
-    document.getElementById('btn-close-players').addEventListener('click', closeBottomSheets);
-    document.getElementById('btn-close-events').addEventListener('click', closeBottomSheets);
-    document.getElementById('sheet-overlay').addEventListener('click', closeBottomSheets);
+    // Collapsible player list toggle
+    document.getElementById('game-player-list-toggle').addEventListener('click', () => {
+      state.playerListOpen = !state.playerListOpen;
+      const body = document.getElementById('game-player-list-body');
+      const chevron = document.getElementById('player-list-chevron');
+      body.style.display = state.playerListOpen ? 'block' : 'none';
+      chevron.style.transform = state.playerListOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+      if (state.playerListOpen) renderGamePlayerList();
+    });
   }
 
   function init() {
     connectSocket();
     initEventListeners();
-    syncBottomSheetUI();
     showScreen('home');
     showNav();
   }
