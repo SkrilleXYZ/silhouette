@@ -185,10 +185,18 @@ io.on('connection', (socket) => {
             }
           }
         } else {
-          game.disconnectPlayer(mapping.code, socket.id);
-          const publicData = game.getRoomPublicData(mapping.code);
-          io.to(mapping.code).emit('room-updated', publicData);
-        }
+  const disconnectResult = game.disconnectPlayer(mapping.code, socket.id);
+  const publicData = game.getRoomPublicData(mapping.code);
+  io.to(mapping.code).emit('room-updated', publicData);
+  if (disconnectResult && disconnectResult.winner) {
+    clearAllTimers(mapping.code);
+    const allPlayers = game.getAllPlayersWithRoles(mapping.code);
+    io.to(mapping.code).emit('game-over', {
+      winner: disconnectResult.winner,
+      players: allPlayers
+    });
+  }
+}
       }
       socketMap.delete(socket.id);
     }
