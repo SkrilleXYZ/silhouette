@@ -89,6 +89,7 @@
       state.playerData = player;
       state.hasActed = player.hasSubmittedAction;
       state.hasVoted = player.hasVoted;
+      renderGamePlayerList();
     });
 
     state.socket.on('search-result', (result) => {
@@ -206,11 +207,11 @@
     const ul = document.getElementById('game-players-ul');
     if (!ul || !state.roomData) return;
 
-    const isDead = state.playerData && !state.playerData.alive;
     const players = state.roomData.players;
+    const currentPlayer = players.find(p => p.id === state.playerId);
+    const isDead = currentPlayer ? !currentPlayer.alive : !!(state.playerData && !state.playerData.alive);
 
-    // Build a role lookup from allPlayersWithRoles if available (game over)
-    // or from the dead player's perspective using allPlayersWithRoles populated during game
+    // Build role lookup from allPlayersWithRoles (populated on game-over)
     const roleMap = {};
     state.allPlayersWithRoles.forEach(p => { roleMap[p.id] = p; });
 
@@ -223,15 +224,18 @@
       const colorIdx = p.name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length;
       const initial = p.name.charAt(0).toUpperCase();
 
-      // Dead players can see roles of everyone
+      // Dead players see roles of ALL players (alive and dead)
+      // Roles come from roomData (server now sends role+faction in public data for dead players)
       let roleTag = '';
-      if (isDead && roleMap[p.id]) {
-        const rp = roleMap[p.id];
-        const isAssassin = rp.faction === 'Assassin';
-        roleTag = `<span class="gpl-role ${isAssassin ? 'assassin-role' : 'crew-role'}">${rp.role}</span>`;
-      } else if (isDead && !roleMap[p.id]) {
-        // We know our own role from playerData teammates etc, but for others just show ?
-        roleTag = `<span class="gpl-role unknown-role">?</span>`;
+      if (isDead) {
+        // Use allPlayersWithRoles if available, otherwise fall back to roomData role
+        const rp = roleMap[p.id] || p;
+        if (rp && rp.role) {
+          const isAssassin = rp.faction === 'Assassin';
+          roleTag = `<span class="gpl-role ${isAssassin ? 'assassin-role' : 'crew-role'}">${rp.role}</span>`;
+        } else {
+          roleTag = `<span class="gpl-role unknown-role">?</span>`;
+        }
       }
 
       row.innerHTML = `
@@ -379,14 +383,27 @@
     else if (player.role === 'Medic') actionDesc = 'Choose a player to protect tonight';
     else if (player.role === 'Agent') actionDesc = 'Choose a crew member to eliminate';
 
+    // For medic: find the last protected player name to show restriction
+    let medicNote = '';
+    if (player.role === 'Medic' && player.lastMedicTarget) {
+      const lastTarget = state.roomData?.players?.find(p => p.id === player.lastMedicTarget);
+      if (lastTarget) {
+        medicNote = `<div class="medic-restriction">⚠️ Cannot protect <strong>${lastTarget.name}</strong> again this night</div>`;
+      }
+    }
+
     container.innerHTML = `
       <div class="action-panel">
         <div class="action-title">NIGHT ACTION</div>
         <div class="action-subtitle">${actionDesc}</div>
         ${actionsHTML}
+        ${medicNote}
         <div class="target-label">SELECT TARGET</div>
         <div class="target-list" id="target-list">
-          ${targets.map(t => `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''}" data-target="${t.id}"><div class="target-dot"></div><span class="target-name">${t.name}</span></div>`).join('')}
+          ${targets.map(t => {
+            const isRestricted = player.role === 'Medic' && t.id === player.lastMedicTarget;
+            return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}><div class="target-dot"></div><span class="target-name">${t.name}${isRestricted ? ' <span class="restricted-label">(protected last night)</span>' : ''}</span></div>`;
+          }).join('')}
         </div>
         <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || !state.selectedTarget ? 'disabled' : ''}>CONFIRM</button>
         <button class="btn btn-ghost" id="btn-skip-night" style="margin-top:8px; width:100%;">SKIP (Do nothing)</button>
@@ -402,6 +419,10 @@
 
     container.querySelectorAll('.target-item').forEach(item => {
       item.addEventListener('click', () => {
+        if (item.dataset.restricted === 'true') {
+          showToast('You cannot protect the same player two nights in a row', 'error');
+          return;
+        }
         state.selectedTarget = item.dataset.target;
         renderNightPhase(container);
       });
@@ -579,7 +600,7 @@
 
     const descriptions = {
       Sheriff: 'You uphold justice from the shadows. Shoot or investigate.',
-      Medic: 'You protect the innocent through the darkest nights.',
+      Medic: 'You protect the innocent. Cannot protect the same player twice in a row.',
       Villager: 'Trust your instincts. Find the assassins among you.',
       Agent: 'Eliminate the crew. Stay hidden. Strike silently.',
     };

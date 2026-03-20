@@ -34,7 +34,8 @@ class GameLogic {
       nightTimer: null,
       morningMessages: [],
       playerOrder: [],
-      lastAction: Date.now()
+      lastAction: Date.now(),
+      lastMedicTarget: null,
     };
 
     room.players.set(hostId, {
@@ -97,13 +98,23 @@ class GameLogic {
     const room = this.rooms.get(code);
     if (!room) return null;
 
-    const player = room.players.get(playerId);
-    if (player) {
-      player.connected = false;
-    }
-
     if (room.state === 'lobby') {
       return this.leaveRoom(code, playerId);
+    }
+
+    const player = room.players.get(playerId);
+    if (!player) return { room };
+
+    player.connected = false;
+    if (player.alive) {
+      player.alive = false;
+
+      const winCheck = this.checkWinCondition(code);
+      if (winCheck && room.state !== 'ended') {
+        room.state = 'ended';
+        room.winner = winCheck;
+        return { room, winner: winCheck };
+      }
     }
 
     return { room };
@@ -169,6 +180,34 @@ class GameLogic {
     room.nightCount = 1;
     room.nightActions = {};
     room.morningMessages = [];
+    room.lastMedicTarget = null;
+
+    return { room };
+  }
+
+  resetRoom(code) {
+    const room = this.rooms.get(code);
+    if (!room) return { error: 'Room not found' };
+
+    for (const [, player] of room.players) {
+      player.role = null;
+      player.faction = null;
+      player.alive = true;
+      player.connected = true;
+    }
+
+    room.state = 'lobby';
+    room.phase = 0;
+    room.nightActions = {};
+    room.votes = {};
+    room.nightResults = [];
+    room.eliminatedToday = null;
+    room.winner = null;
+    room.nightCount = 0;
+    room.morningMessages = [];
+    room.playerOrder = [];
+    room.lastAction = Date.now();
+    room.lastMedicTarget = null;
 
     return { room };
   }
@@ -188,6 +227,10 @@ class GameLogic {
       if (targetId === playerId) return { error: 'Cannot target yourself' };
     } else if (player.role === 'Medic') {
       if (action !== 'protect') return { error: 'Invalid action for Medic' };
+      // Cannot protect the same player twice in a row
+      if (targetId === room.lastMedicTarget) {
+        return { error: 'You cannot protect the same player two nights in a row' };
+      }
     } else if (player.role === 'Agent') {
       if (action !== 'kill') return { error: 'Invalid action for Agent' };
       if (target.faction === 'Assassin') return { error: 'Cannot kill teammates' };
@@ -233,10 +276,24 @@ class GameLogic {
     const protected_ = new Set();
     const searchResults = {};
 
+    // Track who the medic protected this night
+    let medicTargetThisNight = null;
+
     for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      if (!player) continue;
       if (action.action === 'protect' && action.targetId) {
         protected_.add(action.targetId);
+        medicTargetThisNight = action.targetId;
       }
+    }
+
+    // Update lastMedicTarget for next night
+    if (medicTargetThisNight !== null) {
+      room.lastMedicTarget = medicTargetThisNight;
+    } else {
+      // If medic skipped, clear the restriction so they can protect anyone next night
+      room.lastMedicTarget = null;
     }
 
     for (const [playerId, action] of Object.entries(room.nightActions)) {
@@ -452,17 +509,11 @@ class GameLogic {
     }
 
     if (aliveAssassinCount === 0) {
-      return {
-        winner: 'Crew',
-        reason: 'All Assassins have been eliminated!'
-      };
+      return { winner: 'Crew', reason: 'All Assassins have been eliminated!' };
     }
 
     if (aliveAssassinCount >= aliveCrewCount) {
-      return {
-        winner: 'Assassin',
-        reason: 'Assassins have taken control!'
-      };
+      return { winner: 'Assassin', reason: 'Assassins have taken control!' };
     }
 
     return null;
@@ -483,7 +534,9 @@ class GameLogic {
         name: player.name,
         alive: player.alive,
         connected: player.connected,
-        isHost: id === room.hostId
+        isHost: id === room.hostId,
+        role: player.role,
+        faction: player.faction,
       });
     }
 
@@ -518,7 +571,8 @@ class GameLogic {
       ...player,
       teammates,
       hasSubmittedAction: !!room.nightActions[playerId],
-      hasVoted: !!room.votes[playerId]
+      hasVoted: !!room.votes[playerId],
+      lastMedicTarget: player.role === 'Medic' ? room.lastMedicTarget : null,
     };
   }
 
