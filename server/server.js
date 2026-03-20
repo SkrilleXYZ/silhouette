@@ -95,6 +95,26 @@ io.on('connection', (socket) => {
     callback({ success: true });
   });
 
+  socket.on('reset-room', (callback) => {
+    const mapping = socketMap.get(socket.id);
+    if (!mapping) {
+      callback({ success: false, error: 'Not in a room' });
+      return;
+    }
+
+    clearAllTimers(mapping.code);
+    const result = game.resetRoom(mapping.code, socket.id);
+    if (result.error) {
+      callback({ success: false, error: result.error });
+      return;
+    }
+
+    const publicData = game.getRoomPublicData(mapping.code);
+    io.to(mapping.code).emit('game-reset', { room: publicData });
+    io.to(mapping.code).emit('room-updated', publicData);
+    callback({ success: true, room: publicData });
+  });
+
   socket.on('night-action', ({ action, targetId }, callback) => {
     const mapping = socketMap.get(socket.id);
     if (!mapping) {

@@ -185,9 +185,10 @@ class GameLogic {
     return { room };
   }
 
-  resetRoom(code) {
+  resetRoom(code, requesterId) {
     const room = this.rooms.get(code);
     if (!room) return { error: 'Room not found' };
+    if (room.hostId !== requesterId) return { error: 'Only the host can reopen the room' };
 
     for (const [, player] of room.players) {
       player.role = null;
