@@ -273,6 +273,7 @@ function resolveNightPhase(code) {
     });
     clearAllTimers(code);
   } else {
+    // Morning phase: 2 minutes (120 seconds)
     const timer = setTimeout(() => {
       game.startVoting(code);
       io.to(code).emit('phase-changed', {
@@ -281,9 +282,9 @@ function resolveNightPhase(code) {
         room: game.getRoomPublicData(code)
       });
       startVotingTimer(code);
-    }, 10000);
+    }, 120000);
     morningTimers.set(code, timer);
-    io.to(code).emit('timer-start', { phase: 'morning', duration: 10 });
+    io.to(code).emit('timer-start', { phase: 'morning', duration: 120 });
   }
 }
 
