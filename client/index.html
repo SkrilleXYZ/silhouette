@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#050810">
+  <title>Silhouette</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="app">
+    <div class="grain-overlay"></div>
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+
+    <nav id="nav-tabs" class="nav-tabs">
+      <button class="nav-tab active" data-tab="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <span>Home</span>
+      </button>
+      <button class="nav-tab" data-tab="roles">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <span>Roles</span>
+      </button>
+      <button class="nav-tab" data-tab="setup">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+        <span>Setup</span>
+      </button>
+      <button class="nav-tab" data-tab="rules">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        <span>Rules</span>
+      </button>
+      <button class="nav-tab" data-tab="changelog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="12 8 12 12 14 14"/>
+          <circle cx="12" cy="12" r="10"/>
+        </svg>
+        <span>Log</span>
+      </button>
+    </nav>
+
+    <main id="main-content" class="main-content">
+
+      <!-- HOME -->
+      <section id="screen-home" class="screen active">
+        <div class="home-container">
+          <div class="logo-section">
+            <div class="logo-silhouette">
+              <svg viewBox="0 0 120 140" class="logo-icon">
+                <defs>
+                  <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:hsl(195,90%,60%);stop-opacity:0.8"/>
+                    <stop offset="100%" style="stop-color:hsl(220,60%,25%);stop-opacity:0.6"/>
+                  </linearGradient>
+                  <filter id="logoGlow">
+                    <feGaussianBlur stdDeviation="3" result="glow"/>
+                    <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  </filter>
+                </defs>
+                <ellipse cx="60" cy="28" rx="18" ry="22" fill="url(#logoGrad)" filter="url(#logoGlow)"/>
+                <path d="M30 65 Q35 50 60 48 Q85 50 90 65 L95 120 Q90 130 60 135 Q30 130 25 120 Z" fill="url(#logoGrad)" filter="url(#logoGlow)" opacity="0.9"/>
+                <text x="60" y="95" text-anchor="middle" font-family="Cinzel" font-size="48" font-weight="700" fill="hsl(220,20%,3%)" opacity="0.7">?</text>
+              </svg>
+            </div>
+            <h1 class="game-title">SILHOUETTE</h1>
+            <p class="game-subtitle">A GAME OF SHADOWS & DECEPTION</p>
+            <div class="title-divider"></div>
+          </div>
+          <div class="home-buttons">
+            <button class="btn btn-primary btn-large" id="btn-online">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+              <span>ONLINE</span>
+            </button>
+            <button class="btn btn-secondary btn-large" id="btn-local" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+              <span>LOCAL</span>
+              <span class="btn-badge">SOON</span>
+            </button>
+          </div>
+          <div class="home-footer"><p>v0.1.0 — Early Access</p></div>
+        </div>
+      </section>
+
+      <!-- ONLINE -->
+      <section id="screen-online" class="screen">
+        <div class="screen-container">
+          <button class="btn-back" id="btn-back-online">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            <span>Back</span>
+          </button>
+          <div class="online-container">
+            <h2 class="screen-title">ONLINE PLAY</h2>
+            <p class="screen-subtitle">Create or join a room</p>
+            <div class="online-buttons">
+              <button class="btn btn-primary btn-large" id="btn-create-room">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="16"/>
+                  <line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
+                <span>CREATE ROOM</span>
+              </button>
+              <button class="btn btn-accent btn-large" id="btn-join-room">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                  <polyline points="10 17 15 12 10 7"/>
+                  <line x1="15" y1="12" x2="3" y2="12"/>
+                </svg>
+                <span>JOIN ROOM</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- USERNAME -->
+      <section id="screen-username" class="screen">
+        <div class="screen-container">
+          <button class="btn-back" id="btn-back-username">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            <span>Back</span>
+          </button>
+          <div class="username-container">
+            <div class="username-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <h2 class="screen-title">ENTER YOUR NAME</h2>
+            <p class="screen-subtitle">Choose your identity wisely</p>
+            <div class="input-group">
+              <input type="text" id="input-username" class="text-input" placeholder="Agent name..." maxlength="16" autocomplete="off">
+              <div class="input-line"></div>
+            </div>
+            <div id="join-code-group" class="input-group" style="display:none;">
+              <input type="text" id="input-room-code" class="text-input" placeholder="Room code..." maxlength="6" autocomplete="off" style="text-transform: uppercase;">
+              <div class="input-line"></div>
+            </div>
+            <button class="btn btn-primary btn-large" id="btn-proceed" disabled>
+              <span>PROCEED</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon-right"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <p id="username-error" class="error-text"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ROOM/LOBBY -->
+      <section id="screen-room" class="screen">
+        <div class="screen-container room-container">
+          <div class="room-header">
+            <button class="btn-leave" id="btn-leave-room">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              <span>Leave</span>
+            </button>
+            <div class="room-title-area">
+              <h2 class="room-title">LOBBY</h2>
+              <span id="player-count" class="player-count">0 / 15</span>
+            </div>
+          </div>
+          <div class="players-list-container">
+            <div class="players-list-header">
+              <span>OPERATIVES</span>
+              <div class="waiting-indicator">
+                <div class="pulse-dot"></div>
+                <span>Waiting...</span>
+              </div>
+            </div>
+            <div id="players-list" class="players-list"></div>
+          </div>
+          <div class="room-footer">
+            <div class="room-code-display">
+              <span class="room-code-label">ROOM CODE</span>
+              <div class="room-code-value">
+                <span id="room-code-text">------</span>
+                <button class="btn-copy" id="btn-copy-code" title="Copy code">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-large btn-start" id="btn-start-game" disabled>
+              <span>START GAME</span>
+              <span id="start-game-count" class="start-count">(Need 5+)</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- GAME -->
+      <section id="screen-game" class="screen">
+        <div class="game-container">
+          <div class="game-header">
+            <div class="game-phase-indicator">
+              <div id="phase-icon" class="phase-icon night">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+              </div>
+              <div class="phase-info">
+                <span id="phase-name" class="phase-name">NIGHT</span>
+                <span id="phase-count" class="phase-count">Night 1</span>
+              </div>
+            </div>
+            <div id="game-timer" class="game-timer">
+              <svg viewBox="0 0 36 36" class="timer-circle">
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="hsl(220,25%,12%)" stroke-width="2"/>
+                <path id="timer-progress" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="hsl(195,90%,60%)" stroke-width="2" stroke-dasharray="100, 100" stroke-linecap="round"/>
+              </svg>
+              <span id="timer-text" class="timer-text">60</span>
+            </div>
+          </div>
+          <div id="role-card" class="role-card">
+            <div class="role-card-inner">
+              <div class="role-card-glow"></div>
+              <div class="role-faction" id="role-faction">CREW</div>
+              <div class="role-name" id="role-name">Sheriff</div>
+              <div class="role-divider"></div>
+              <div class="role-description" id="role-description">You uphold justice in the shadows.</div>
+              <div id="role-teammates" class="role-teammates" style="display:none;">
+                <span class="teammates-label">Fellow Assassins:</span>
+                <div id="teammates-list" class="teammates-list"></div>
+              </div>
+            </div>
+          </div>
+          <div id="game-content" class="game-content"></div>
+          <div id="game-messages" class="game-messages" style="display:none;">
+            <div id="messages-list" class="messages-list"></div>
+          </div>
+          <div class="game-status-bar">
+            <div class="alive-count">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+              </svg>
+              <span id="alive-count-text">0 alive</span>
+            </div>
+            <div id="action-status" class="action-status">
+              <div class="status-dot"></div>
+              <span>Awaiting actions...</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- GAME OVER -->
+      <section id="screen-gameover" class="screen">
+        <div class="gameover-container">
+          <div id="gameover-glow" class="gameover-glow"></div>
+          <h1 id="gameover-title" class="gameover-title">GAME OVER</h1>
+          <div id="gameover-faction" class="gameover-faction">CREW WINS</div>
+          <p id="gameover-reason" class="gameover-reason"></p>
+          <div class="gameover-divider"></div>
+          <div id="gameover-players" class="gameover-players"></div>
+          <button class="btn btn-primary btn-large" id="btn-back-home"><span>BACK TO HOME</span></button>
+        </div>
+      </section>
+
+      <!-- Placeholder tabs -->
+      <section id="screen-roles" class="screen">
+        <div class="placeholder-screen">
+          <h2 class="screen-title">ROLE GUIDE</h2>
+          <p class="screen-subtitle">Coming soon...</p>
+        </div>
+      </section>
+      <section id="screen-setup" class="screen">
+        <div class="placeholder-screen">
+          <h2 class="screen-title">GAME SETUP</h2>
+          <p class="screen-subtitle">Coming soon...</p>
+        </div>
+      </section>
+      <section id="screen-rules" class="screen">
+        <div class="placeholder-screen">
+          <h2 class="screen-title">RULES</h2>
+          <p class="screen-subtitle">Coming soon...</p>
+        </div>
+      </section>
+      <section id="screen-changelog" class="screen">
+        <div class="placeholder-screen">
+          <h2 class="screen-title">CHANGELOG</h2>
+          <p class="screen-subtitle">Coming soon...</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

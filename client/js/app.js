@@ -1,0 +1,712 @@
+(function () {
+  'use strict';
+
+  const state = {
+    socket: null,
+    currentScreen: 'home',
+    currentTab: 'home',
+    playerId: null,
+    username: null,
+    roomCode: null,
+    isHost: false,
+    joinMode: null,
+    playerData: null,
+    roomData: null,
+    selectedAction: null,
+    selectedTarget: null,
+    timerInterval: null,
+    timerValue: 0,
+    searchResult: null,
+    hasActed: false,
+    hasVoted: false,
+    morningMessages: [],
+    gamePhase: null,
+  };
+
+  function connectSocket() {
+    state.socket = io(window.location.origin, {
+      transports: ['websocket', 'polling'],
+    });
+
+    state.socket.on('connect', () => {
+      console.log('Connected to server:', state.socket.id);
+    });
+
+    state.socket.on('disconnect', () => {
+      console.log('Disconnected from server');
+      showToast('Connection lost. Reconnecting...', 'error');
+    });
+
+    state.socket.on('room-updated', (roomData) => {
+      state.roomData = roomData;
+      if (state.currentScreen === 'room') renderRoom();
+      updateAliveCount();
+    });
+
+    state.socket.on('host-changed', ({ newHostId }) => {
+      state.isHost = state.playerId === newHostId;
+      if (state.currentScreen === 'room') renderRoom();
+    });
+
+    state.socket.on('game-started', ({ player, room }) => {
+      state.playerData = player;
+      state.roomData = room;
+      state.hasActed = false;
+      state.hasVoted = false;
+      state.searchResult = null;
+      showScreen('game');
+      hideNav();
+      updateRoleCard();
+    });
+
+    state.socket.on('phase-changed', ({ phase, nightCount, messages, room }) => {
+      state.roomData = room;
+      state.gamePhase = phase;
+      state.hasActed = false;
+      state.hasVoted = false;
+      state.selectedAction = null;
+      state.selectedTarget = null;
+      if (messages) state.morningMessages = messages;
+      updatePhaseUI(phase, nightCount);
+      renderGameContent(phase);
+      updateAliveCount();
+    });
+
+    state.socket.on('player-updated', ({ player }) => {
+      state.playerData = player;
+      state.hasActed = player.hasSubmittedAction;
+      state.hasVoted = player.hasVoted;
+    });
+
+    state.socket.on('search-result', (result) => {
+      state.searchResult = result;
+    });
+
+    state.socket.on('timer-start', ({ phase, duration }) => {
+      startTimer(duration);
+    });
+
+    state.socket.on('vote-update', ({ votesCast, totalAlive }) => {
+      const el = document.getElementById('votes-cast-count');
+      if (el) el.textContent = `${votesCast} / ${totalAlive} votes cast`;
+    });
+
+    state.socket.on('vote-result', ({ message, eliminated, room }) => {
+      state.roomData = room;
+      renderVoteResult(message);
+      updateAliveCount();
+    });
+
+    state.socket.on('game-over', ({ winner, players }) => {
+      clearTimerInterval();
+      showGameOver(winner, players);
+    });
+  }
+
+  function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
+    const screen = document.getElementById(`screen-${screenId}`);
+    if (screen) {
+      screen.classList.add('active');
+      state.currentScreen = screenId;
+    }
+  }
+
+  function showNav() { document.getElementById('nav-tabs').classList.remove('hidden'); }
+  function hideNav() { document.getElementById('nav-tabs').classList.add('hidden'); }
+
+  function showToast(message, type = 'info') {
+    let toast = document.querySelector('.toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.className = 'toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.className = `toast ${type}`;
+    requestAnimationFrame(() => toast.classList.add('show'));
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  function startTimer(duration) {
+    clearTimerInterval();
+    state.timerValue = duration;
+    updateTimerDisplay();
+    state.timerInterval = setInterval(() => {
+      state.timerValue--;
+      if (state.timerValue <= 0) {
+        state.timerValue = 0;
+        clearTimerInterval();
+      }
+      updateTimerDisplay();
+    }, 1000);
+  }
+
+  function clearTimerInterval() {
+    if (state.timerInterval) {
+      clearInterval(state.timerInterval);
+      state.timerInterval = null;
+    }
+  }
+
+  function updateTimerDisplay() {
+    const text = document.getElementById('timer-text');
+    const progress = document.getElementById('timer-progress');
+    if (text) text.textContent = state.timerValue;
+    if (progress) {
+      const pct = (state.timerValue / 60) * 100;
+      progress.setAttribute('stroke-dasharray', `${pct}, 100`);
+      if (state.timerValue <= 10) progress.setAttribute('stroke', 'hsl(0,75%,45%)');
+      else if (state.timerValue <= 20) progress.setAttribute('stroke', 'hsl(45,90%,50%)');
+      else progress.setAttribute('stroke', 'hsl(195,90%,60%)');
+    }
+  }
+
+  function renderRoom() {
+    const data = state.roomData;
+    if (!data) return;
+
+    document.getElementById('room-code-text').textContent = data.code;
+    document.getElementById('player-count').textContent = `${data.playerCount} / 15`;
+
+    const list = document.getElementById('players-list');
+    list.innerHTML = '';
+
+    data.players.forEach((player) => {
+      const div = document.createElement('div');
+      div.className = `player-item${player.id === state.playerId ? ' is-self' : ''}`;
+      const initial = player.name.charAt(0).toUpperCase();
+      const colors = ['hsl(195,60%,30%)', 'hsl(220,50%,30%)', 'hsl(260,40%,30%)', 'hsl(340,40%,30%)', 'hsl(160,40%,25%)'];
+      const colorIdx = player.name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length;
+
+      div.innerHTML = `
+        <div class="player-avatar" style="background:${colors[colorIdx]}">${initial}</div>
+        <span class="player-name">${player.name}</span>
+        ${player.id === state.playerId ? '<span class="player-you">YOU</span>' : ''}
+        ${player.isHost ? '<span class="player-crown"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg></span>' : ''}
+      `;
+      list.appendChild(div);
+    });
+
+    const startBtn = document.getElementById('btn-start-game');
+    const startCount = document.getElementById('start-game-count');
+
+    if (state.isHost || state.playerId === data.hostId) {
+      startBtn.style.display = 'flex';
+      if (data.playerCount >= 5) {
+        startBtn.disabled = false;
+        startCount.textContent = `(${data.playerCount} players)`;
+      } else {
+        startBtn.disabled = true;
+        startCount.textContent = `(Need ${5 - data.playerCount} more)`;
+      }
+    } else {
+      startBtn.style.display = 'flex';
+      startBtn.disabled = true;
+      startCount.textContent = 'Waiting for host...';
+    }
+  }
+
+  function updatePhaseUI(phase, nightCount) {
+    const icon = document.getElementById('phase-icon');
+    const name = document.getElementById('phase-name');
+    const count = document.getElementById('phase-count');
+    icon.className = 'phase-icon';
+
+    switch (phase) {
+      case 'night':
+        icon.classList.add('night');
+        icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+        name.textContent = 'NIGHT';
+        count.textContent = `Night ${nightCount || state.roomData?.nightCount || 1}`;
+        break;
+      case 'morning':
+        icon.classList.add('morning');
+        icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+        name.textContent = 'MORNING';
+        count.textContent = 'Dawn breaks...';
+        break;
+      case 'voting':
+        icon.classList.add('voting');
+        icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+        name.textContent = 'VOTING';
+        count.textContent = 'Cast your vote';
+        break;
+      case 'ended':
+        name.textContent = 'GAME OVER';
+        count.textContent = '';
+        break;
+    }
+  }
+
+  function updateAliveCount() {
+    const el = document.getElementById('alive-count-text');
+    if (el && state.roomData) el.textContent = `${state.roomData.aliveCount} alive`;
+  }
+
+  function renderGameContent(phase) {
+    const content = document.getElementById('game-content');
+    const messages = document.getElementById('game-messages');
+    content.style.display = 'flex';
+    messages.style.display = 'none';
+
+    if (state.playerData && !state.playerData.alive) {
+      content.innerHTML = '<div class="dead-overlay"><div class="dead-icon">💀</div><h3 class="dead-title">ELIMINATED</h3><p class="dead-subtitle">You watch from the shadows as the game continues...</p></div>';
+      return;
+    }
+
+    switch (phase) {
+      case 'night': renderNightPhase(content); break;
+      case 'morning': renderMorningPhase(content, messages); break;
+      case 'voting': renderVotingPhase(content); break;
+    }
+  }
+
+  function renderNightPhase(container) {
+    const player = state.playerData;
+    if (!player) return;
+
+    if (player.role === 'Villager') {
+      container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">You have no abilities. Wait for dawn...</p></div>';
+      return;
+    }
+
+    if (state.hasActed) {
+      container.innerHTML = '<div class="action-confirmed"><div class="confirmed-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><p class="confirmed-text">ACTION SUBMITTED</p><p class="confirmed-detail">Waiting for others...</p></div>';
+      return;
+    }
+
+    const targets = getTargetPlayers();
+    const isAssassin = player.faction === 'Assassin';
+    const actionClass = isAssassin ? 'assassin-action' : '';
+    const targetClass = isAssassin ? 'assassin-target' : '';
+
+    let actionsHTML = '';
+    if (player.role === 'Sheriff') {
+      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'shoot' ? 'selected' : ''}" data-action="shoot">🔫 SHOOT</button><button class="action-btn ${state.selectedAction === 'search' ? 'selected' : ''}" data-action="search">🔍 SEARCH</button></div>`;
+    } else if (player.role === 'Medic') {
+      state.selectedAction = 'protect';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">🛡️ PROTECT</button></div>';
+    } else if (player.role === 'Agent') {
+      state.selectedAction = 'kill';
+      actionsHTML = `<div class="action-buttons"><button class="action-btn selected ${actionClass}" data-action="kill">🗡️ KILL</button></div>`;
+    }
+
+    let actionDesc = '';
+    if (player.role === 'Sheriff') actionDesc = 'Choose to shoot or investigate a player';
+    else if (player.role === 'Medic') actionDesc = 'Choose a player to protect tonight';
+    else if (player.role === 'Agent') actionDesc = 'Choose a crew member to eliminate';
+
+    container.innerHTML = `
+      <div class="action-panel">
+        <div class="action-title">NIGHT ACTION</div>
+        <div class="action-subtitle">${actionDesc}</div>
+        ${actionsHTML}
+        <div class="target-label">SELECT TARGET</div>
+        <div class="target-list" id="target-list">
+          ${targets.map(t => `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''}" data-target="${t.id}"><div class="target-dot"></div><span class="target-name">${t.name}</span></div>`).join('')}
+        </div>
+        <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || !state.selectedTarget ? 'disabled' : ''}>CONFIRM</button>
+        <button class="btn btn-ghost" id="btn-skip-night" style="margin-top:8px; width:100%;">SKIP (Do nothing)</button>
+      </div>`;
+
+    container.querySelectorAll('.action-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.selectedAction = btn.dataset.action;
+        state.selectedTarget = null;
+        renderNightPhase(container);
+      });
+    });
+
+    container.querySelectorAll('.target-item').forEach(item => {
+      item.addEventListener('click', () => {
+        state.selectedTarget = item.dataset.target;
+        renderNightPhase(container);
+      });
+    });
+
+    const confirmBtn = document.getElementById('btn-confirm-action');
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', () => {
+        if (!state.selectedAction || !state.selectedTarget) return;
+        state.socket.emit('night-action', { action: state.selectedAction, targetId: state.selectedTarget }, (response) => {
+          if (response.success) {
+            state.hasActed = true;
+            renderNightPhase(container);
+            showToast('Action submitted', 'success');
+          } else {
+            showToast(response.error || 'Action failed', 'error');
+          }
+        });
+      });
+    }
+
+    const skipBtn = document.getElementById('btn-skip-night');
+    if (skipBtn) {
+      skipBtn.addEventListener('click', () => {
+        state.socket.emit('skip-night', (response) => {
+          if (response.success) {
+            state.hasActed = true;
+            renderNightPhase(container);
+            showToast('Skipped night action', 'info');
+          }
+        });
+      });
+    }
+  }
+
+  function renderMorningPhase(container, messagesContainer) {
+    container.style.display = 'none';
+    messagesContainer.style.display = 'flex';
+
+    const msgList = document.getElementById('messages-list');
+    msgList.innerHTML = '';
+
+    if (state.searchResult) {
+      const isAssassin = state.searchResult.faction === 'Assassin';
+      const div = document.createElement('div');
+      div.className = 'search-result-card';
+      div.innerHTML = `<div class="search-label">🔍 INVESTIGATION RESULT</div><div class="search-target-name">${state.searchResult.targetName}</div><div class="search-target-role ${isAssassin ? 'assassin-role' : 'crew-role'}">${state.searchResult.role} (${state.searchResult.faction})</div>`;
+      msgList.appendChild(div);
+      state.searchResult = null;
+    }
+
+    state.morningMessages.forEach((msg, i) => {
+      const div = document.createElement('div');
+      div.className = `message-card ${msg.type}`;
+      div.style.animationDelay = `${(i + 1) * 0.3}s`;
+      let icon = '';
+      if (msg.type === 'death') icon = '💀';
+      else if (msg.type === 'protected') icon = '🛡️';
+      else if (msg.type === 'peaceful') icon = '🌅';
+      div.innerHTML = `<span class="message-icon">${icon}</span><span class="message-text">${msg.text}</span>`;
+      msgList.appendChild(div);
+    });
+
+    if (state.morningMessages.length === 0) {
+      const div = document.createElement('div');
+      div.className = 'message-card peaceful';
+      div.innerHTML = '<span class="message-icon">🌅</span><span class="message-text">The night passed peacefully.</span>';
+      msgList.appendChild(div);
+    }
+
+    state.socket.emit('request-player-data', (response) => {
+      if (response.success) {
+        state.playerData = response.player;
+        state.roomData = response.room;
+        updateRoleCard();
+        updateAliveCount();
+      }
+    });
+  }
+
+  function renderVotingPhase(container) {
+    if (state.hasVoted) {
+      container.innerHTML = '<div class="action-confirmed"><div class="confirmed-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><p class="confirmed-text">VOTE SUBMITTED</p><p class="confirmed-detail">Waiting for others...</p></div>';
+      return;
+    }
+
+    const targets = getVoteTargets();
+
+    container.innerHTML = `
+      <div class="voting-panel">
+        <div class="action-title">TOWN VOTE</div>
+        <div class="action-subtitle">Vote to eliminate a suspect</div>
+        <div class="vote-count-bar"><span id="votes-cast-count" class="vote-cast-count">0 / ${state.roomData?.aliveCount || '?'} votes cast</span></div>
+        <div class="target-list" id="vote-target-list">
+          ${targets.map(t => `<div class="target-item ${state.selectedTarget === t.id ? 'selected' : ''}" data-target="${t.id}"><div class="target-dot"></div><span class="target-name">${t.name}</span></div>`).join('')}
+        </div>
+        <button class="skip-vote-btn ${state.selectedTarget === 'skip' ? 'selected' : ''}" id="btn-vote-skip">⏭ SKIP VOTE</button>
+        <button class="btn btn-primary confirm-action" id="btn-confirm-vote" ${!state.selectedTarget ? 'disabled' : ''}>CONFIRM VOTE</button>
+      </div>`;
+
+    container.querySelectorAll('.target-item').forEach(item => {
+      item.addEventListener('click', () => {
+        state.selectedTarget = item.dataset.target;
+        renderVotingPhase(container);
+      });
+    });
+
+    const skipBtn = document.getElementById('btn-vote-skip');
+    if (skipBtn) {
+      skipBtn.addEventListener('click', () => {
+        state.selectedTarget = 'skip';
+        renderVotingPhase(container);
+      });
+    }
+
+    const confirmBtn = document.getElementById('btn-confirm-vote');
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', () => {
+        if (!state.selectedTarget) return;
+        state.socket.emit('vote', { targetId: state.selectedTarget }, (response) => {
+          if (response.success) {
+            state.hasVoted = true;
+            renderVotingPhase(container);
+            showToast('Vote cast', 'success');
+          } else {
+            showToast(response.error || 'Vote failed', 'error');
+          }
+        });
+      });
+    }
+  }
+
+  function renderVoteResult(message) {
+    const content = document.getElementById('game-content');
+    const messages = document.getElementById('game-messages');
+    content.style.display = 'flex';
+    messages.style.display = 'none';
+
+    let icon = '🗳️';
+    if (message.type === 'eliminated') icon = '⚖️';
+
+    content.innerHTML = `<div class="vote-result-panel"><div style="font-size:2rem; margin-bottom:12px;">${icon}</div><div class="vote-result-text">${message.text}</div><div class="vote-result-detail">Transitioning to next phase...</div></div>`;
+
+    state.socket.emit('request-player-data', (response) => {
+      if (response.success) {
+        state.playerData = response.player;
+        state.roomData = response.room;
+        updateRoleCard();
+        updateAliveCount();
+      }
+    });
+  }
+
+  function updateRoleCard() {
+    const player = state.playerData;
+    if (!player) return;
+
+    const card = document.getElementById('role-card');
+    const faction = document.getElementById('role-faction');
+    const roleName = document.getElementById('role-name');
+    const desc = document.getElementById('role-description');
+    const teammates = document.getElementById('role-teammates');
+    const teammatesList = document.getElementById('teammates-list');
+
+    card.className = `role-card ${player.faction?.toLowerCase() || ''}`;
+    faction.textContent = player.faction?.toUpperCase() || '';
+    roleName.textContent = player.role?.toUpperCase() || '';
+
+    const descriptions = {
+      Sheriff: 'You uphold justice from the shadows. Shoot or investigate.',
+      Medic: 'You protect the innocent through the darkest nights.',
+      Villager: 'Trust your instincts. Find the assassins among you.',
+      Agent: 'Eliminate the crew. Stay hidden. Strike silently.',
+    };
+    desc.textContent = descriptions[player.role] || '';
+
+    if (player.faction === 'Assassin' && player.teammates && player.teammates.length > 0) {
+      teammates.style.display = 'block';
+      teammatesList.innerHTML = player.teammates.map(t => `<span class="teammate-tag">${t.name} ${t.alive ? '' : '(Dead)'}</span>`).join('');
+    } else {
+      teammates.style.display = 'none';
+    }
+  }
+
+  function getTargetPlayers() {
+    if (!state.roomData || !state.playerData) return [];
+    return state.roomData.players.filter(p => {
+      if (!p.alive) return false;
+      if (p.id === state.playerId) return state.playerData.role === 'Medic';
+      if (state.playerData.role === 'Agent') {
+        const isTeammate = state.playerData.teammates?.some(t => t.id === p.id);
+        if (isTeammate) return false;
+      }
+      return true;
+    }).map(p => ({ id: p.id, name: p.name }));
+  }
+
+  function getVoteTargets() {
+    if (!state.roomData) return [];
+    return state.roomData.players.filter(p => p.alive && p.id !== state.playerId).map(p => ({ id: p.id, name: p.name }));
+  }
+
+  function showGameOver(winner, players) {
+    showScreen('gameover');
+    const glow = document.getElementById('gameover-glow');
+    const title = document.getElementById('gameover-faction');
+    const reason = document.getElementById('gameover-reason');
+    const playersList = document.getElementById('gameover-players');
+
+    glow.className = `gameover-glow ${winner.winner === 'Crew' ? 'crew-win' : 'assassin-win'}`;
+    title.className = `gameover-faction ${winner.winner === 'Crew' ? 'crew-text' : 'assassin-text'}`;
+    title.textContent = `${winner.winner.toUpperCase()} WINS`;
+    reason.textContent = winner.reason;
+
+    playersList.innerHTML = players.map(p => `
+      <div class="gameover-player ${!p.alive ? 'dead' : ''}">
+        <span class="gameover-player-name">${p.name}</span>
+        <span class="gameover-player-role ${p.faction === 'Crew' ? 'crew-role' : 'assassin-role'}">
+          ${p.role}
+          <span class="gameover-player-status">${p.alive ? '✓' : '✗'}</span>
+        </span>
+      </div>`).join('');
+  }
+
+  function initEventListeners() {
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        if (state.currentScreen === 'game' || state.currentScreen === 'gameover') return;
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const tabName = tab.dataset.tab;
+        state.currentTab = tabName;
+        if (tabName === 'home') {
+          if (state.roomCode) showScreen('room');
+          else showScreen('home');
+        } else if (tabName === 'roles') showScreen('roles');
+        else if (tabName === 'setup') showScreen('setup');
+        else if (tabName === 'rules') showScreen('rules');
+        else if (tabName === 'changelog') showScreen('changelog');
+      });
+    });
+
+    document.getElementById('btn-online').addEventListener('click', () => showScreen('online'));
+
+    document.getElementById('btn-back-online').addEventListener('click', () => showScreen('home'));
+
+    document.getElementById('btn-create-room').addEventListener('click', () => {
+      state.joinMode = 'create';
+      document.getElementById('join-code-group').style.display = 'none';
+      showScreen('username');
+    });
+
+    document.getElementById('btn-join-room').addEventListener('click', () => {
+      state.joinMode = 'join';
+      document.getElementById('join-code-group').style.display = 'block';
+      showScreen('username');
+    });
+
+    document.getElementById('btn-back-username').addEventListener('click', () => {
+      showScreen('online');
+      document.getElementById('input-username').value = '';
+      document.getElementById('input-room-code').value = '';
+      document.getElementById('username-error').textContent = '';
+    });
+
+    const usernameInput = document.getElementById('input-username');
+    const roomCodeInput = document.getElementById('input-room-code');
+    const proceedBtn = document.getElementById('btn-proceed');
+
+    function validateInputs() {
+      const name = usernameInput.value.trim();
+      const code = roomCodeInput.value.trim();
+      proceedBtn.disabled = !(name.length >= 2 && (state.joinMode === 'create' || code.length === 6));
+    }
+
+    usernameInput.addEventListener('input', validateInputs);
+    roomCodeInput.addEventListener('input', validateInputs);
+
+    proceedBtn.addEventListener('click', () => {
+      const username = usernameInput.value.trim();
+      const errorEl = document.getElementById('username-error');
+      errorEl.textContent = '';
+
+      if (username.length < 2) {
+        errorEl.textContent = 'Name must be at least 2 characters';
+        return;
+      }
+
+      state.username = username;
+
+      if (state.joinMode === 'create') {
+        state.socket.emit('create-room', { username }, (response) => {
+          if (response.success) {
+            state.playerId = response.playerId;
+            state.roomCode = response.room.code;
+            state.roomData = response.room;
+            state.isHost = true;
+            showScreen('room');
+            renderRoom();
+          } else {
+            errorEl.textContent = response.error || 'Failed to create room';
+          }
+        });
+      } else {
+        const code = roomCodeInput.value.trim().toUpperCase();
+        if (code.length !== 6) {
+          errorEl.textContent = 'Room code must be 6 characters';
+          return;
+        }
+        state.socket.emit('join-room', { code, username }, (response) => {
+          if (response.success) {
+            state.playerId = response.playerId;
+            state.roomCode = response.room.code;
+            state.roomData = response.room;
+            state.isHost = false;
+            showScreen('room');
+            renderRoom();
+          } else {
+            errorEl.textContent = response.error || 'Failed to join room';
+          }
+        });
+      }
+    });
+
+    document.getElementById('btn-leave-room').addEventListener('click', () => {
+      state.socket.emit('leave-room', () => {
+        state.roomCode = null;
+        state.roomData = null;
+        state.isHost = false;
+        showScreen('home');
+        showNav();
+      });
+    });
+
+    document.getElementById('btn-copy-code').addEventListener('click', () => {
+      const code = state.roomCode || '';
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(code).then(() => showToast('Code copied!', 'success'));
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = code;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast('Code copied!', 'success');
+      }
+    });
+
+    document.getElementById('btn-start-game').addEventListener('click', () => {
+      state.socket.emit('start-game', (response) => {
+        if (!response.success) showToast(response.error || 'Cannot start game', 'error');
+      });
+    });
+
+    document.getElementById('btn-back-home').addEventListener('click', () => {
+      state.roomCode = null;
+      state.roomData = null;
+      state.playerData = null;
+      state.isHost = false;
+      state.hasActed = false;
+      state.hasVoted = false;
+      state.searchResult = null;
+      state.selectedAction = null;
+      state.selectedTarget = null;
+      state.morningMessages = [];
+      state.gamePhase = null;
+      clearTimerInterval();
+      showScreen('home');
+      showNav();
+      document.getElementById('input-username').value = '';
+      document.getElementById('input-room-code').value = '';
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelector('[data-tab="home"]').classList.add('active');
+    });
+  }
+
+  function init() {
+    connectSocket();
+    initEventListeners();
+    showScreen('home');
+    showNav();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
