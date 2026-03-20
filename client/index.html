@@ -35,13 +35,6 @@
         </svg>
         <span>Roles</span>
       </button>
-      <button class="nav-tab" data-tab="setup">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-        </svg>
-        <span>Setup</span>
-      </button>
       <button class="nav-tab" data-tab="rules">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -95,15 +88,6 @@
                 <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
               </svg>
               <span>ONLINE</span>
-            </button>
-            <button class="btn btn-secondary btn-large" id="btn-local" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                <line x1="8" y1="21" x2="16" y2="21"/>
-                <line x1="12" y1="17" x2="12" y2="21"/>
-              </svg>
-              <span>LOCAL</span>
-              <span class="btn-badge">SOON</span>
             </button>
           </div>
           <div class="home-footer"><p>v0.1.0 — Early Access</p></div>
@@ -194,7 +178,7 @@
           </div>
           <div class="players-list-container">
             <div class="players-list-header">
-              <span>OPERATIVES</span>
+              <span>PLAYERS</span>
               <div class="waiting-indicator">
                 <div class="pulse-dot"></div>
                 <span>Waiting...</span>
@@ -263,6 +247,18 @@
           <div id="game-messages" class="game-messages" style="display:none;">
             <div id="messages-list" class="messages-list"></div>
           </div>
+          <!-- PLAYER LIST PANEL -->
+          <div id="game-player-list" class="game-player-list">
+            <div class="game-player-list-header" id="game-player-list-toggle">
+              <span>PLAYERS</span>
+              <svg id="player-list-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+            <div id="game-player-list-body" class="game-player-list-body" style="display:none;">
+              <div id="game-players-ul" class="game-players-ul"></div>
+            </div>
+          </div>
           <div class="game-status-bar">
             <div class="alive-count">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
@@ -296,12 +292,6 @@
       <section id="screen-roles" class="screen">
         <div class="placeholder-screen">
           <h2 class="screen-title">ROLE GUIDE</h2>
-          <p class="screen-subtitle">Coming soon...</p>
-        </div>
-      </section>
-      <section id="screen-setup" class="screen">
-        <div class="placeholder-screen">
-          <h2 class="screen-title">GAME SETUP</h2>
           <p class="screen-subtitle">Coming soon...</p>
         </div>
       </section>

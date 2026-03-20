@@ -16,11 +16,16 @@
     selectedTarget: null,
     timerInterval: null,
     timerValue: 0,
+    timerDuration: 60,
     searchResult: null,
     hasActed: false,
     hasVoted: false,
+    votesCast: 0,
+    totalAlive: 0,
     morningMessages: [],
     gamePhase: null,
+    allPlayersWithRoles: [],
+    playerListOpen: false,
   };
 
   function connectSocket() {
@@ -41,6 +46,7 @@
       state.roomData = roomData;
       if (state.currentScreen === 'room') renderRoom();
       updateAliveCount();
+      renderGamePlayerList();
     });
 
     state.socket.on('host-changed', ({ newHostId }) => {
@@ -53,10 +59,14 @@
       state.roomData = room;
       state.hasActed = false;
       state.hasVoted = false;
+      state.votesCast = 0;
+      state.totalAlive = 0;
       state.searchResult = null;
+      state.allPlayersWithRoles = [];
       showScreen('game');
       hideNav();
       updateRoleCard();
+      renderGamePlayerList();
     });
 
     state.socket.on('phase-changed', ({ phase, nightCount, messages, room }) => {
@@ -64,12 +74,15 @@
       state.gamePhase = phase;
       state.hasActed = false;
       state.hasVoted = false;
+      state.votesCast = 0;
+      state.totalAlive = room?.aliveCount || 0;
       state.selectedAction = null;
       state.selectedTarget = null;
       if (messages) state.morningMessages = messages;
       updatePhaseUI(phase, nightCount);
       renderGameContent(phase);
       updateAliveCount();
+      renderGamePlayerList();
     });
 
     state.socket.on('player-updated', ({ player }) => {
@@ -87,6 +100,8 @@
     });
 
     state.socket.on('vote-update', ({ votesCast, totalAlive }) => {
+      state.votesCast = votesCast;
+      state.totalAlive = totalAlive;
       const el = document.getElementById('votes-cast-count');
       if (el) el.textContent = `${votesCast} / ${totalAlive} votes cast`;
     });
@@ -95,11 +110,34 @@
       state.roomData = room;
       renderVoteResult(message);
       updateAliveCount();
+      renderGamePlayerList();
     });
 
     state.socket.on('game-over', ({ winner, players }) => {
+      state.allPlayersWithRoles = players;
       clearTimerInterval();
       showGameOver(winner, players);
+    });
+
+    state.socket.on('game-reset', ({ room }) => {
+      state.roomData = room;
+      state.playerData = null;
+      state.hasActed = false;
+      state.hasVoted = false;
+      state.votesCast = 0;
+      state.totalAlive = 0;
+      state.searchResult = null;
+      state.selectedAction = null;
+      state.selectedTarget = null;
+      state.morningMessages = [];
+      state.gamePhase = null;
+      state.allPlayersWithRoles = [];
+      state.playerListOpen = false;
+      clearTimerInterval();
+      showScreen('room');
+      showNav();
+      renderRoom();
+      showToast('Game reset! Ready to play again.', 'success');
     });
   }
 
@@ -131,6 +169,7 @@
   function startTimer(duration) {
     clearTimerInterval();
     state.timerValue = duration;
+    state.timerDuration = duration;
     updateTimerDisplay();
     state.timerInterval = setInterval(() => {
       state.timerValue--;
@@ -154,12 +193,55 @@
     const progress = document.getElementById('timer-progress');
     if (text) text.textContent = state.timerValue;
     if (progress) {
-      const pct = (state.timerValue / 60) * 100;
+      const pct = (state.timerValue / state.timerDuration) * 100;
       progress.setAttribute('stroke-dasharray', `${pct}, 100`);
       if (state.timerValue <= 10) progress.setAttribute('stroke', 'hsl(0,75%,45%)');
       else if (state.timerValue <= 20) progress.setAttribute('stroke', 'hsl(45,90%,50%)');
       else progress.setAttribute('stroke', 'hsl(195,90%,60%)');
     }
+  }
+
+  // Renders the collapsible player list during the game
+  function renderGamePlayerList() {
+    const ul = document.getElementById('game-players-ul');
+    if (!ul || !state.roomData) return;
+
+    const isDead = state.playerData && !state.playerData.alive;
+    const players = state.roomData.players;
+
+    // Build a role lookup from allPlayersWithRoles if available (game over)
+    // or from the dead player's perspective using allPlayersWithRoles populated during game
+    const roleMap = {};
+    state.allPlayersWithRoles.forEach(p => { roleMap[p.id] = p; });
+
+    ul.innerHTML = '';
+    players.forEach(p => {
+      const row = document.createElement('div');
+      row.className = `gpl-row${p.alive ? '' : ' gpl-dead'}${p.id === state.playerId ? ' gpl-self' : ''}`;
+
+      const colors = ['hsl(195,60%,30%)', 'hsl(220,50%,30%)', 'hsl(260,40%,30%)', 'hsl(340,40%,30%)', 'hsl(160,40%,25%)'];
+      const colorIdx = p.name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length;
+      const initial = p.name.charAt(0).toUpperCase();
+
+      // Dead players can see roles of everyone
+      let roleTag = '';
+      if (isDead && roleMap[p.id]) {
+        const rp = roleMap[p.id];
+        const isAssassin = rp.faction === 'Assassin';
+        roleTag = `<span class="gpl-role ${isAssassin ? 'assassin-role' : 'crew-role'}">${rp.role}</span>`;
+      } else if (isDead && !roleMap[p.id]) {
+        // We know our own role from playerData teammates etc, but for others just show ?
+        roleTag = `<span class="gpl-role unknown-role">?</span>`;
+      }
+
+      row.innerHTML = `
+        <div class="gpl-avatar" style="background:${colors[colorIdx]}">${p.alive ? initial : '💀'}</div>
+        <span class="gpl-name">${p.name}${p.id === state.playerId ? ' <span class="player-you">YOU</span>' : ''}</span>
+        ${roleTag}
+        <span class="gpl-status">${p.alive ? '● alive' : '○ dead'}</span>
+      `;
+      ul.appendChild(row);
+    });
   }
 
   function renderRoom() {
@@ -251,7 +333,7 @@
     messages.style.display = 'none';
 
     if (state.playerData && !state.playerData.alive) {
-      content.innerHTML = '<div class="dead-overlay"><div class="dead-icon">💀</div><h3 class="dead-title">ELIMINATED</h3><p class="dead-subtitle">You watch from the shadows as the game continues...</p></div>';
+      content.innerHTML = '<div class="dead-overlay"><div class="dead-icon">💀</div><h3 class="dead-title">ELIMINATED</h3><p class="dead-subtitle">You watch from the shadows as the game continues...<br><span style="font-size:0.8rem;opacity:0.6;">Open the player list below to see all roles.</span></p></div>';
       return;
     }
 
@@ -396,6 +478,7 @@
         state.roomData = response.room;
         updateRoleCard();
         updateAliveCount();
+        renderGamePlayerList();
       }
     });
   }
@@ -407,12 +490,13 @@
     }
 
     const targets = getVoteTargets();
+    const aliveCount = state.totalAlive || state.roomData?.aliveCount || '?';
 
     container.innerHTML = `
       <div class="voting-panel">
         <div class="action-title">TOWN VOTE</div>
         <div class="action-subtitle">Vote to eliminate a suspect</div>
-        <div class="vote-count-bar"><span id="votes-cast-count" class="vote-cast-count">0 / ${state.roomData?.aliveCount || '?'} votes cast</span></div>
+        <div class="vote-count-bar"><span id="votes-cast-count" class="vote-cast-count">${state.votesCast} / ${aliveCount} votes cast</span></div>
         <div class="target-list" id="vote-target-list">
           ${targets.map(t => `<div class="target-item ${state.selectedTarget === t.id ? 'selected' : ''}" data-target="${t.id}"><div class="target-dot"></div><span class="target-name">${t.name}</span></div>`).join('')}
         </div>
@@ -439,12 +523,16 @@
     if (confirmBtn) {
       confirmBtn.addEventListener('click', () => {
         if (!state.selectedTarget) return;
+        state.votesCast = (state.votesCast || 0) + 1;
+        renderVotingPhase(container);
         state.socket.emit('vote', { targetId: state.selectedTarget }, (response) => {
           if (response.success) {
             state.hasVoted = true;
             renderVotingPhase(container);
             showToast('Vote cast', 'success');
           } else {
+            state.votesCast = Math.max(0, (state.votesCast || 1) - 1);
+            renderVotingPhase(container);
             showToast(response.error || 'Vote failed', 'error');
           }
         });
@@ -469,6 +557,7 @@
         state.roomData = response.room;
         updateRoleCard();
         updateAliveCount();
+        renderGamePlayerList();
       }
     });
   }
@@ -542,6 +631,37 @@
           <span class="gameover-player-status">${p.alive ? '✓' : '✗'}</span>
         </span>
       </div>`).join('');
+
+    const existingPlayAgain = document.getElementById('btn-play-again');
+    if (existingPlayAgain) existingPlayAgain.remove();
+
+    const gameoverScreen = document.getElementById('screen-gameover');
+
+    if (state.isHost) {
+      const btn = document.createElement('button');
+      btn.id = 'btn-play-again';
+      btn.className = 'btn btn-primary';
+      btn.style.cssText = 'margin-top: 24px; width: 100%; max-width: 320px; display: flex; align-items: center; justify-content: center; gap: 8px;';
+      btn.innerHTML = '▶ PLAY AGAIN';
+      btn.addEventListener('click', () => {
+        btn.disabled = true;
+        btn.textContent = 'Starting...';
+        state.socket.emit('start-game', (response) => {
+          if (!response.success) {
+            showToast(response.error || 'Cannot start game', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '▶ PLAY AGAIN';
+          }
+        });
+      });
+      gameoverScreen.appendChild(btn);
+    } else {
+      const waiting = document.createElement('p');
+      waiting.id = 'btn-play-again';
+      waiting.style.cssText = 'margin-top: 24px; color: hsl(195,60%,60%); font-size: 0.85rem; text-align: center;';
+      waiting.textContent = 'Waiting for host to start a new game...';
+      gameoverScreen.appendChild(waiting);
+    }
   }
 
   function initEventListeners() {
@@ -556,14 +676,12 @@
           if (state.roomCode) showScreen('room');
           else showScreen('home');
         } else if (tabName === 'roles') showScreen('roles');
-        else if (tabName === 'setup') showScreen('setup');
         else if (tabName === 'rules') showScreen('rules');
         else if (tabName === 'changelog') showScreen('changelog');
       });
     });
 
     document.getElementById('btn-online').addEventListener('click', () => showScreen('online'));
-
     document.getElementById('btn-back-online').addEventListener('click', () => showScreen('home'));
 
     document.getElementById('btn-create-room').addEventListener('click', () => {
@@ -682,11 +800,15 @@
       state.isHost = false;
       state.hasActed = false;
       state.hasVoted = false;
+      state.votesCast = 0;
+      state.totalAlive = 0;
       state.searchResult = null;
       state.selectedAction = null;
       state.selectedTarget = null;
       state.morningMessages = [];
       state.gamePhase = null;
+      state.allPlayersWithRoles = [];
+      state.playerListOpen = false;
       clearTimerInterval();
       showScreen('home');
       showNav();
@@ -694,6 +816,16 @@
       document.getElementById('input-room-code').value = '';
       document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
       document.querySelector('[data-tab="home"]').classList.add('active');
+    });
+
+    // Collapsible player list toggle
+    document.getElementById('game-player-list-toggle').addEventListener('click', () => {
+      state.playerListOpen = !state.playerListOpen;
+      const body = document.getElementById('game-player-list-body');
+      const chevron = document.getElementById('player-list-chevron');
+      body.style.display = state.playerListOpen ? 'block' : 'none';
+      chevron.style.transform = state.playerListOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+      if (state.playerListOpen) renderGamePlayerList();
     });
   }
 

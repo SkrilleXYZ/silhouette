@@ -1387,3 +1387,60 @@ body {
   }
   .main-content { padding-bottom: 0; padding-top: 60px; }
 }
+/* ── In-game player list ── */
+.game-player-list {
+  width: 100%;
+  max-width: 420px;
+  margin: 8px auto 0;
+  background: hsl(220,25%,8%);
+  border: 1px solid hsl(220,25%,16%);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.game-player-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  font-size: 0.7rem;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.1em;
+  color: hsl(215,20%,55%);
+  cursor: pointer;
+  user-select: none;
+}
+.game-player-list-header:hover { color: hsl(195,90%,60%); }
+#player-list-chevron { transition: transform 0.2s ease; }
+.game-player-list-body { padding: 4px 8px 8px; }
+.game-players-ul { display: flex; flex-direction: column; gap: 4px; }
+.gpl-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: hsl(220,25%,11%);
+  font-size: 0.85rem;
+}
+.gpl-row.gpl-dead { opacity: 0.5; }
+.gpl-row.gpl-self { border: 1px solid hsl(195,90%,40%); }
+.gpl-avatar {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.gpl-name { flex: 1; color: hsl(215,20%,80%); font-size: 0.85rem; }
+.gpl-role {
+  font-size: 0.7rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+.gpl-role.crew-role { background: hsl(195,60%,20%); color: hsl(195,90%,70%); }
+.gpl-role.assassin-role { background: hsl(0,40%,20%); color: hsl(0,80%,70%); }
+.gpl-role.unknown-role { background: hsl(220,25%,16%); color: hsl(215,20%,50%); }
+.gpl-status { font-size: 0.65rem; color: hsl(215,20%,45%); white-space: nowrap; }
