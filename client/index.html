@@ -199,20 +199,29 @@
                 </button>
               </div>
             </div>
-            <section class="room-settings-panel">
-              <div class="room-settings-header">
-                <span class="room-settings-kicker">GAME SETTINGS</span>
-                <span class="room-settings-subtitle">Room-wide rules before the match starts</span>
-              </div>
-              <label class="room-setting-toggle">
-                <span class="room-setting-copy">
-                  <span class="room-setting-title">Anonymous Votes</span>
-                  <span class="room-setting-subtitle">Hide who voted for who in chat</span>
+            <details class="room-settings-panel">
+              <summary class="room-settings-summary">
+                <span class="room-settings-header">
+                  <span class="room-settings-kicker">GAME SETTINGS</span>
+                  <span class="room-settings-subtitle">Open to view room rules</span>
                 </span>
-                <input type="checkbox" id="toggle-anonymous-votes">
-                <span class="room-toggle-slider"></span>
-              </label>
-            </section>
+                <span class="room-settings-chevron" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </span>
+              </summary>
+              <div class="room-settings-body">
+                <label class="room-setting-toggle">
+                  <span class="room-setting-copy">
+                    <span class="room-setting-title">Anonymous Votes</span>
+                    <span class="room-setting-subtitle">Hide who voted for who in chat</span>
+                  </span>
+                  <input type="checkbox" id="toggle-anonymous-votes">
+                  <span class="room-toggle-slider"></span>
+                </label>
+              </div>
+            </details>
             <button class="btn btn-primary btn-large btn-start" id="btn-start-game" disabled>
               <span>START GAME</span>
               <span id="start-game-count" class="start-count">(Need 5+)</span>

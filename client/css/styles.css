@@ -669,20 +669,53 @@ body {
 .btn-start { width: 100%; }
 
 .room-settings-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 14px 16px;
   margin-bottom: 14px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.room-settings-panel[open] {
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
+.room-settings-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.room-settings-summary::-webkit-details-marker {
+  display: none;
 }
 
 .room-settings-header {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.room-settings-chevron {
+  width: 18px;
+  height: 18px;
+  color: var(--fg-dim);
+  transition: transform 0.2s ease, color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.room-settings-chevron svg {
+  width: 100%;
+  height: 100%;
+}
+
+.room-settings-panel[open] .room-settings-chevron {
+  transform: rotate(180deg);
+  color: var(--fg);
 }
 
 .room-settings-kicker {
@@ -694,6 +727,10 @@ body {
 .room-settings-subtitle {
   font-size: 0.74rem;
   color: var(--fg-muted);
+}
+
+.room-settings-body {
+  padding: 0 16px 16px;
 }
 
 .room-setting-toggle {
