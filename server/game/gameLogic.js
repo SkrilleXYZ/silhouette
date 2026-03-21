@@ -34,6 +34,7 @@ class GameLogic {
       nightTimer: null,
       morningMessages: [],
       chatMessages: [],
+      currentPhaseSummaryId: null,
       anonymousVotes: false,
       playerOrder: [],
       lastAction: Date.now(),
@@ -183,10 +184,11 @@ class GameLogic {
     room.nightActions = {};
     room.morningMessages = [];
     room.chatMessages = [];
+    room.currentPhaseSummaryId = null;
     room.anonymousVotes = false;
     room.lastMedicTarget = null;
 
-    this.addSystemChatMessage(code, 'Night 1 has begun. Chat is locked until morning.');
+    this.beginPhaseSummary(code, 'Night 1 has begun. Chat is locked until morning.');
 
     return { room };
   }
@@ -212,6 +214,7 @@ class GameLogic {
     room.nightCount = 0;
     room.morningMessages = [];
     room.chatMessages = [];
+    room.currentPhaseSummaryId = null;
     room.playerOrder = [];
     room.lastAction = Date.now();
     room.lastMedicTarget = null;
@@ -380,15 +383,13 @@ class GameLogic {
     }
 
     room.morningMessages = messages;
-    this.addSystemChatMessage(code, `Morning ${room.nightCount} begins.`);
-    messages.forEach((msg) => {
-      if (msg.public) this.addSystemChatMessage(code, msg.text);
-    });
     const alivePlayers = Array.from(room.players.values()).filter(p => p.alive).map(p => p.name);
-    this.addSystemChatMessage(code, `Alive: ${alivePlayers.join(', ') || 'No one'}.`);
+    const morningLines = messages.filter((msg) => msg.public).map((msg) => msg.text);
+    morningLines.push(`Alive players: ${alivePlayers.join(', ') || 'No one'}.`);
+    room.state = 'morning';
+    this.beginPhaseSummary(code, `Morning ${room.nightCount} begins.`, morningLines);
     room.searchResults = searchResults;
     room.nightActions = {};
-    room.state = 'morning';
 
     const winCheck = this.checkWinCondition(code);
     if (winCheck) {
@@ -505,7 +506,7 @@ class GameLogic {
 
     room.eliminatedToday = eliminated;
     room.votes = {};
-    this.addSystemChatMessage(code, message.text);
+    this.appendToPhaseSummary(code, message.text);
 
     const winCheck = this.checkWinCondition(code);
     if (winCheck) {
@@ -515,7 +516,7 @@ class GameLogic {
       room.state = 'night';
       room.nightCount++;
       room.nightActions = {};
-      this.addSystemChatMessage(code, `Night ${room.nightCount} begins. Chat is locked until morning.`);
+      this.beginPhaseSummary(code, `Night ${room.nightCount} begins. Chat is locked until morning.`);
     }
 
     return {
@@ -532,6 +533,7 @@ class GameLogic {
     if (!room) return null;
     room.state = 'voting';
     room.votes = {};
+    this.beginPhaseSummary(code, 'Voting has started.');
     return room;
   }
 
@@ -603,6 +605,54 @@ class GameLogic {
     if (room.chatMessages.length > 150) room.chatMessages = room.chatMessages.slice(-150);
     room.lastAction = Date.now();
     return message;
+  }
+
+  beginPhaseSummary(code, title, lines = []) {
+    const room = this.rooms.get(code);
+    if (!room || !title) return null;
+
+    const message = this.createChatMessage(
+      'system',
+      'SYSTEM',
+      this.formatPhaseSummary(title, lines),
+      null,
+      room.state
+    );
+
+    message.summaryTitle = title;
+    message.summaryLines = [...lines];
+    room.chatMessages.push(message);
+    room.currentPhaseSummaryId = message.id;
+    if (room.chatMessages.length > 150) room.chatMessages = room.chatMessages.slice(-150);
+    room.lastAction = Date.now();
+    return message;
+  }
+
+  appendToPhaseSummary(code, line) {
+    const room = this.rooms.get(code);
+    if (!room || !line) return null;
+
+    const message = room.chatMessages.find((entry) => entry.id === room.currentPhaseSummaryId);
+    if (!message) {
+      return this.beginPhaseSummary(code, line);
+    }
+
+    message.summaryTitle = message.summaryTitle || message.text;
+    message.summaryLines = [...(message.summaryLines || []), line];
+    message.text = this.formatPhaseSummary(message.summaryTitle, message.summaryLines);
+    message.createdAt = Date.now();
+    room.lastAction = Date.now();
+    return message;
+  }
+
+  formatPhaseSummary(title, lines = []) {
+    const cleanTitle = String(title || '').trim();
+    const cleanLines = lines
+      .map((line) => String(line || '').trim())
+      .filter(Boolean);
+
+    if (!cleanLines.length) return cleanTitle;
+    return `${cleanTitle}\n\n${cleanLines.map((line) => `- ${line}`).join('\n')}`;
   }
 
   createPrivateSystemMessage(code, text) {

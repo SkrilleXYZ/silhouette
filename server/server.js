@@ -125,13 +125,13 @@ io.on('connection', (socket) => {
       return;
     }
     let publicNightMessage = null;
-    if (action === 'shoot') publicNightMessage = 'The sheriff has loaded their gun.';
-    else if (action === 'search') publicNightMessage = 'The sheriff is investigating someone.';
-    else if (action === 'protect') publicNightMessage = 'The medic has protected someone.';
-    else if (action === 'kill') publicNightMessage = 'An assassin is moving through the shadows.';
+    if (action === 'shoot') publicNightMessage = 'Sheriff has used their gun.';
+    else if (action === 'search') publicNightMessage = 'Sheriff is investigating someone.';
+    else if (action === 'protect') publicNightMessage = 'Medic has protected someone.';
+    else if (action === 'kill') publicNightMessage = 'An Agent has moved through the shadows.';
     if (publicNightMessage) {
-      const chatMessage = game.addSystemChatMessage(mapping.code, publicNightMessage);
-      if (chatMessage) io.to(mapping.code).emit('chat-message', { message: chatMessage });
+      const chatMessage = game.appendToPhaseSummary(mapping.code, publicNightMessage);
+      if (chatMessage) io.to(mapping.code).emit('chat-message-updated', { message: chatMessage });
     }
     const playerData = game.getPlayerData(mapping.code, socket.id);
     socket.emit('player-updated', { player: playerData });
@@ -179,8 +179,8 @@ io.on('connection', (socket) => {
         const target = room.players.get(targetId);
         voteText = `${voter.name} voted for ${target.name}.`;
       }
-      const chatMessage = game.addSystemChatMessage(mapping.code, voteText);
-      if (chatMessage) io.to(mapping.code).emit('chat-message', { message: chatMessage });
+      const chatMessage = game.appendToPhaseSummary(mapping.code, voteText);
+      if (chatMessage) io.to(mapping.code).emit('chat-message-updated', { message: chatMessage });
     }
     const playerData = game.getPlayerData(mapping.code, socket.id);
     socket.emit('player-updated', { player: playerData });

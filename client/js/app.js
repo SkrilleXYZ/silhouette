@@ -108,6 +108,17 @@
       renderChatBox();
     });
 
+    state.socket.on('chat-message-updated', ({ message }) => {
+      const index = state.chatMessages.findIndex((entry) => entry.id === message.id);
+      if (index >= 0) {
+        state.chatMessages[index] = message;
+      } else {
+        state.chatMessages.push(message);
+        if (state.chatMessages.length > 150) state.chatMessages = state.chatMessages.slice(-150);
+      }
+      renderChatBox();
+    });
+
     state.socket.on('private-chat-message', ({ message }) => {
       state.privateChatMessages.push(message);
       if (state.privateChatMessages.length > 50) state.privateChatMessages = state.privateChatMessages.slice(-50);
@@ -132,6 +143,7 @@
     state.socket.on('vote-result', ({ message, eliminated, room }) => {
       state.roomData = room;
       state.chatMessages = room?.chatMessages || state.chatMessages;
+      state.gamePhase = 'vote-result';
       renderVoteResult(message);
       updateAliveCount();
       renderGamePlayerList();
@@ -367,6 +379,7 @@
     if (state.gamePhase === 'morning') return 'morning';
     if (state.gamePhase === 'voting') return 'voting';
     if (state.gamePhase === 'night') return 'night';
+    if (state.gamePhase === 'vote-result') return 'readonly';
     return 'hidden';
   }
 
@@ -376,6 +389,11 @@
 
     const mode = getChatMode();
     const canChat = mode === 'morning' || mode === 'voting';
+    const subtitle = canChat
+      ? 'Chat is open for discussion.'
+      : mode === 'readonly'
+        ? 'Waiting for the next phase...'
+        : 'Chat is visible but locked until morning.';
     const messages = state.chatMessages || [];
 
     panel.className = `phase-chat-panel ${mode === 'morning' ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}`;
@@ -402,7 +420,7 @@
       <div class="chat-panel-header">
         <div>
           <div class="chat-panel-title">Room Chat</div>
-          <div class="chat-panel-subtitle">${canChat ? 'Chat is open for discussion.' : 'Chat is visible but locked until morning.'}</div>
+          <div class="chat-panel-subtitle">${subtitle}</div>
         </div>
       </div>
       <div class="chat-messages" id="chat-messages">${items}</div>
@@ -893,7 +911,7 @@
     let icon = '🗳️';
     if (message.type === 'eliminated') icon = '⚖️';
 
-    content.innerHTML = `<div class="vote-result-panel"><div style="font-size:2rem; margin-bottom:12px;">${icon}</div><div class="vote-result-text">${message.text}</div><div class="vote-result-detail">Transitioning to next phase...</div></div><div id="phase-chat-panel"></div>`;
+    content.innerHTML = '<div id="phase-chat-panel"></div>';
     renderChatBox();
 
     state.socket.emit('request-player-data', (response) => {
@@ -1401,7 +1419,7 @@
     let icon = '🗳️';
     if (message.type === 'eliminated') icon = '⚖️';
 
-    content.innerHTML = `<div class="vote-result-panel"><div style="font-size:2rem; margin-bottom:12px;">${icon}</div><div class="vote-result-text">${message.text}</div><div class="vote-result-detail">Transitioning to next phase...</div></div><div id="phase-chat-panel"></div>`;
+    content.innerHTML = '<div id="phase-chat-panel"></div>';
     renderChatBox();
 
     state.socket.emit('request-player-data', (response) => {
@@ -1580,6 +1598,11 @@
 
     const mode = getChatMode();
     const canChat = mode === 'morning' || mode === 'voting';
+    const subtitle = canChat
+      ? 'Chat is open for discussion.'
+      : mode === 'readonly'
+        ? 'Waiting for the next phase...'
+        : 'Chat is visible but locked until morning.';
     const messages = [...(state.chatMessages || []), ...(state.privateChatMessages || [])]
       .sort((a, b) => a.createdAt - b.createdAt);
 
@@ -1609,7 +1632,7 @@
       <div class="chat-panel-header">
         <div>
           <div class="chat-panel-title">Room Chat</div>
-          <div class="chat-panel-subtitle">${canChat ? 'Chat is open for discussion.' : 'Chat is visible but locked until morning.'}</div>
+          <div class="chat-panel-subtitle">${subtitle}</div>
         </div>
       </div>
       <div class="chat-messages" id="chat-messages">${items}</div>
