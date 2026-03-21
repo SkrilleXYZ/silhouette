@@ -1049,10 +1049,11 @@
     const title = document.getElementById('gameover-faction');
     const reason = document.getElementById('gameover-reason');
     const playersList = document.getElementById('gameover-players');
+    const winnerLabel = winner.winner === 'Assassin' ? 'Assassins Win' : 'Crew Wins';
 
     glow.className = `gameover-glow ${winner.winner === 'Crew' ? 'crew-win' : 'assassin-win'}`;
     title.className = `gameover-faction ${winner.winner === 'Crew' ? 'crew-text' : 'assassin-text'}`;
-    title.textContent = `${winner.winner.toUpperCase()} WINS`;
+    title.textContent = winnerLabel.toUpperCase();
     reason.textContent = winner.reason;
 
     playersList.innerHTML = players.map(p => `
@@ -1529,10 +1530,29 @@
       : mode === 'readonly'
         ? 'Waiting for the next phase...'
         : 'Chat is visible but locked until morning.';
+    const gameContainer = document.querySelector('.game-container');
     const messages = [...(state.chatMessages || []), ...(state.privateChatMessages || [])]
       .sort((a, b) => a.createdAt - b.createdAt);
 
     panel.className = `phase-chat-panel ${mode === 'morning' ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isOverlayOpen && isDockedMode ? ' chat-overlay-open' : ''}`;
+    if (gameContainer) {
+      gameContainer.classList.toggle('chat-overlay-active', !!(isDockedMode && isOverlayOpen));
+    }
+    if (isDockedMode && isOverlayOpen) {
+      const roleCard = document.getElementById('role-card');
+      const containerRect = gameContainer ? gameContainer.getBoundingClientRect() : null;
+      const roleRect = roleCard ? roleCard.getBoundingClientRect() : null;
+      const overlayTop = Math.round((roleRect ? roleRect.bottom : (containerRect ? containerRect.top + 120 : 120)) + 10);
+      const overlayLeft = Math.round(containerRect ? containerRect.left : 10);
+      const overlayWidth = Math.round(containerRect ? containerRect.width : Math.min(window.innerWidth - 20, 420));
+      panel.style.setProperty('--chat-overlay-top', `${overlayTop}px`);
+      panel.style.setProperty('--chat-overlay-left', `${overlayLeft}px`);
+      panel.style.setProperty('--chat-overlay-width', `${overlayWidth}px`);
+    } else {
+      panel.style.removeProperty('--chat-overlay-top');
+      panel.style.removeProperty('--chat-overlay-left');
+      panel.style.removeProperty('--chat-overlay-width');
+    }
 
     if (mode === 'hidden') {
       panel.innerHTML = '';

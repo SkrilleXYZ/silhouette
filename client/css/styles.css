@@ -1043,11 +1043,33 @@ body {
   padding-bottom: 16px;
 }
 
-.action-panel {
+.game-container > .game-header,
+.game-container > .role-card,
+.game-container > .game-status-bar,
+.game-content > * {
+  transition: filter 0.28s ease, opacity 0.28s ease, transform 0.28s ease;
+}
+
+.game-container.chat-overlay-active > .game-header,
+.game-container.chat-overlay-active > .role-card,
+.game-container.chat-overlay-active > .game-status-bar,
+.game-container.chat-overlay-active .game-content > :not(.phase-chat-panel) {
+  filter: blur(7px);
+  opacity: 0.34;
+  transform: scale(0.992);
+  pointer-events: none;
+}
+
+.action-panel,
+.voting-panel {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .action-title {
@@ -1415,19 +1437,35 @@ body {
 
 .phase-chat-panel.chat-overlay-open {
   position: fixed;
-  left: 50%;
+  left: var(--chat-overlay-left, 10px);
   right: auto;
+  top: var(--chat-overlay-top, 140px);
   bottom: calc(14px + env(safe-area-inset-bottom));
-  top: auto;
-  width: min(420px, calc(100vw - 20px));
-  max-height: 62vh;
-  transform: translateX(-50%);
+  width: var(--chat-overlay-width, min(420px, calc(100vw - 20px)));
+  max-height: calc(100dvh - var(--chat-overlay-top, 140px) - 14px - env(safe-area-inset-bottom));
+  transform-origin: center bottom;
   z-index: 40;
   margin: 0;
   border-radius: 18px;
   border: 1px solid var(--border);
-  background: hsl(228, 30%, 8%);
-  box-shadow: 0 18px 44px rgba(0,0,0,0.38);
+  background:
+    linear-gradient(180deg, rgba(17, 24, 38, 0.94), rgba(9, 13, 22, 0.97)),
+    hsl(228, 30%, 8%);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 24px 54px rgba(0,0,0,0.46);
+  animation: chatSheetRise 0.28s cubic-bezier(.2,.85,.2,1);
+}
+
+@keyframes chatSheetRise {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scaleY(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+  }
 }
 
 .chat-dock-toggle {
@@ -1504,7 +1542,8 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: auto;
+  padding-top: 10px;
 }
 
 .chat-local-actions .confirm-action,
@@ -1545,15 +1584,16 @@ body {
 .action-panel .target-list,
 .voting-panel .target-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
+  align-content: start;
 }
 
 .action-panel .target-item,
 .voting-panel .target-item {
-  min-height: 82px;
-  padding: 10px 10px 8px;
-  gap: 6px;
+  min-height: 72px;
+  padding: 8px 8px 7px;
+  gap: 5px;
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -1562,7 +1602,7 @@ body {
 
 .action-panel .target-name,
 .voting-panel .target-name {
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 600;
   line-height: 1.15;
   display: -webkit-box;
@@ -1613,6 +1653,12 @@ body {
   margin-top: 0;
 }
 
+.action-panel > .target-list,
+.voting-panel > .target-list {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .chat-expanded { min-height: 0; }
 .chat-compact { min-height: 0; }
 
@@ -1655,9 +1701,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  flex: 1;
-  min-height: 140px;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 12px;
   background: hsl(220,25%,10%);
 }
@@ -1665,6 +1714,7 @@ body {
 .chat-message {
   align-self: flex-start;
   max-width: 100%;
+  flex-shrink: 0;
   padding: 10px 12px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
@@ -1807,13 +1857,19 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 .chat-summary-line {
+  flex-shrink: 0;
   padding: 9px 11px;
   border-radius: 10px;
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.08);
+}
+
+.chat-empty {
+  flex-shrink: 0;
 }
 
 .chat-summary-line.summary-death {
