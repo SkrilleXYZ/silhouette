@@ -668,6 +668,79 @@ body {
 
 .btn-start { width: 100%; }
 
+.room-setting-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.room-setting-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.room-setting-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.room-setting-subtitle {
+  font-size: 0.72rem;
+  color: var(--fg-muted);
+}
+
+.room-setting-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.room-toggle-slider {
+  position: relative;
+  width: 46px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: hsl(220,25%,18%);
+  border: 1px solid var(--border);
+  transition: var(--transition);
+}
+
+.room-toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: hsl(0,0%,92%);
+  transition: var(--transition);
+}
+
+.room-setting-toggle input:checked + .room-toggle-slider {
+  background: var(--crew-dim);
+  border-color: var(--crew);
+}
+
+.room-setting-toggle input:checked + .room-toggle-slider::after {
+  transform: translateX(18px);
+  background: var(--crew);
+}
+
+.room-setting-toggle input:disabled + .room-toggle-slider {
+  opacity: 0.5;
+}
+
 .btn-start:not(:disabled) {
   animation: startGlow 2s ease-in-out infinite;
 }
@@ -1104,6 +1177,34 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
+}
+
+.chat-local-panel {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  background: hsl(220,25%,13%);
+}
+
+.chat-local-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+
+.chat-local-copy {
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+  margin-bottom: 12px;
+}
+
+.chat-local-skip {
+  width: 100%;
+  margin-top: 8px;
+}
+
+#game-content > .phase-chat-panel:first-child {
+  margin-top: 0;
 }
 
 .chat-expanded { min-height: 320px; }

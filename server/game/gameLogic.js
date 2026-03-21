@@ -34,6 +34,7 @@ class GameLogic {
       nightTimer: null,
       morningMessages: [],
       chatMessages: [],
+      anonymousVotes: false,
       playerOrder: [],
       lastAction: Date.now(),
       lastMedicTarget: null,
@@ -182,6 +183,7 @@ class GameLogic {
     room.nightActions = {};
     room.morningMessages = [];
     room.chatMessages = [];
+    room.anonymousVotes = false;
     room.lastMedicTarget = null;
 
     this.addSystemChatMessage(code, 'Night 1 has begun. Chat is locked until morning.');
@@ -404,6 +406,20 @@ class GameLogic {
     return { success: true, room };
   }
 
+  updateRoomSettings(code, requesterId, settings) {
+    const room = this.rooms.get(code);
+    if (!room) return { error: 'Room not found' };
+    if (room.hostId !== requesterId) return { error: 'Only the host can change settings' };
+    if (room.state !== 'lobby') return { error: 'Settings can only be changed in the lobby' };
+
+    if (typeof settings.anonymousVotes === 'boolean') {
+      room.anonymousVotes = settings.anonymousVotes;
+    }
+
+    room.lastAction = Date.now();
+    return { success: true, room };
+  }
+
   checkAllVotesSubmitted(code) {
     const room = this.rooms.get(code);
     if (!room) return false;
@@ -562,6 +578,7 @@ class GameLogic {
       playerCount: room.players.size,
       aliveCount: players.filter(p => p.alive).length,
       chatMessages: room.chatMessages.slice(-150),
+      anonymousVotes: room.anonymousVotes,
     };
   }
 

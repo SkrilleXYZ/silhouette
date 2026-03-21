@@ -95,6 +95,24 @@ io.on('connection', (socket) => {
     callback({ success: true });
   });
 
+  socket.on('update-room-settings', ({ anonymousVotes }, callback) => {
+    const mapping = socketMap.get(socket.id);
+    if (!mapping) {
+      if (callback) callback({ success: false, error: 'Not in a room' });
+      return;
+    }
+
+    const result = game.updateRoomSettings(mapping.code, socket.id, { anonymousVotes });
+    if (result.error) {
+      if (callback) callback({ success: false, error: result.error });
+      return;
+    }
+
+    const publicData = game.getRoomPublicData(mapping.code);
+    io.to(mapping.code).emit('room-updated', publicData);
+    if (callback) callback({ success: true, room: publicData });
+  });
+
   socket.on('night-action', ({ action, targetId }, callback) => {
     const mapping = socketMap.get(socket.id);
     if (!mapping) {
@@ -143,6 +161,17 @@ io.on('connection', (socket) => {
     if (result.error) {
       callback({ success: false, error: result.error });
       return;
+    }
+    const room = game.getRoom(mapping.code);
+    if (room && !room.anonymousVotes) {
+      const voter = room.players.get(socket.id);
+      let voteText = `${voter.name} skipped their vote.`;
+      if (targetId !== 'skip') {
+        const target = room.players.get(targetId);
+        voteText = `${voter.name} voted for ${target.name}.`;
+      }
+      const chatMessage = game.addSystemChatMessage(mapping.code, voteText);
+      if (chatMessage) io.to(mapping.code).emit('chat-message', { message: chatMessage });
     }
     const playerData = game.getPlayerData(mapping.code, socket.id);
     socket.emit('player-updated', { player: playerData });

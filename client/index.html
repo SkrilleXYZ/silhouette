@@ -199,6 +199,14 @@
                 </button>
               </div>
             </div>
+            <label class="room-setting-toggle">
+              <span class="room-setting-copy">
+                <span class="room-setting-title">Anonymous Votes</span>
+                <span class="room-setting-subtitle">Hide who voted for who in chat</span>
+              </span>
+              <input type="checkbox" id="toggle-anonymous-votes">
+              <span class="room-toggle-slider"></span>
+            </label>
             <button class="btn btn-primary btn-large btn-start" id="btn-start-game" disabled>
               <span>START GAME</span>
               <span id="start-game-count" class="start-count">(Need 5+)</span>
@@ -247,18 +255,6 @@
           <div id="game-messages" class="game-messages" style="display:none;">
             <div id="messages-list" class="messages-list"></div>
           </div>
-          <!-- PLAYER LIST PANEL -->
-          <div id="game-player-list" class="game-player-list">
-            <div class="game-player-list-header" id="game-player-list-toggle">
-              <span>PLAYERS</span>
-              <svg id="player-list-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </div>
-            <div id="game-player-list-body" class="game-player-list-body" style="display:none;">
-              <div id="game-players-ul" class="game-players-ul"></div>
-            </div>
-          </div>
           <div class="game-status-bar">
             <div class="alive-count">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
@@ -268,8 +264,8 @@
               <span id="alive-count-text">0 alive</span>
             </div>
             <div id="action-status" class="action-status">
-              <div class="status-dot"></div>
-              <span>Awaiting actions...</span>
+              <span>Room</span>
+              <span id="game-room-code">------</span>
             </div>
           </div>
         </div>
