@@ -56,6 +56,14 @@
     return `<img class="${className}" src="${avatarSrc}" alt="" />`;
   }
 
+  function getPlayerChatStyle(message) {
+    if (!message || message.type === 'system') return '';
+    const source = String(message.senderId || message.senderName || 'player');
+    const seed = source.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const hue = seed % 360;
+    return `--chat-accent:${hue};`;
+  }
+
   function connectSocket() {
     state.socket = io(window.location.origin, {
       transports: ['websocket', 'polling'],
@@ -1591,10 +1599,11 @@
         const isSelf = message.senderId === state.playerId;
         const phaseClass = message.type === 'system' && message.phase ? ` phase-${message.phase}` : '';
         const summaryClass = message.type === 'system' && message.summaryTitle ? ' phase-summary' : '';
-        const classes = `chat-message ${message.type === 'system' ? 'system' : ''}${phaseClass}${summaryClass}${message.private ? ' private' : ''}${isSelf ? ' self' : ''}`;
+        const classes = `chat-message ${message.type === 'system' ? 'system' : 'player'}${phaseClass}${summaryClass}${message.private ? ' private' : ''}${isSelf ? ' self' : ''}`;
         const sender = message.type === 'system' ? 'SYSTEM' : message.senderName;
+        const style = getPlayerChatStyle(message);
         return `
-          <div class="${classes}">
+          <div class="${classes}"${style ? ` style="${style}"` : ''}>
             <div class="chat-message-meta">${sender}</div>
             <div class="chat-message-text">${formatChatMessageHtml(message)}</div>
           </div>`;
