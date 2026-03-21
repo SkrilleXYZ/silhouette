@@ -50,8 +50,9 @@
     return source.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % LOBBY_AVATAR_IMAGES.length;
   }
 
-  function renderAvatarMarkup(key, className = 'player-avatar') {
-    const avatarSrc = getLobbyAvatarSrc(getAvatarIndex(key));
+  function renderAvatarMarkup(key, className = 'player-avatar', avatarIndex = null) {
+    const resolvedIndex = Number.isInteger(avatarIndex) ? avatarIndex : getAvatarIndex(key);
+    const avatarSrc = getLobbyAvatarSrc(resolvedIndex);
     return `<img class="${className}" src="${avatarSrc}" alt="" />`;
   }
 
@@ -340,7 +341,7 @@
       div.className = `player-item${player.id === state.playerId ? ' is-self' : ''}`;
 
       div.innerHTML = `
-        ${renderAvatarMarkup(player.id || player.name, 'player-avatar')}
+        ${renderAvatarMarkup(player.id || player.name, 'player-avatar', player.avatarIndex)}
         <span class="player-name">${player.name}</span>
         <div class="player-badges">
           ${player.id === state.playerId ? '<span class="player-you">YOU</span>' : ''}
@@ -1035,12 +1036,14 @@
         if (isTeammate) return false;
       }
       return true;
-    }).map(p => ({ id: p.id, name: p.name }));
+    }).map(p => ({ id: p.id, name: p.name, avatarIndex: p.avatarIndex }));
   }
 
   function getVoteTargets() {
     if (!state.roomData) return [];
-    return state.roomData.players.filter(p => p.alive && p.id !== state.playerId).map(p => ({ id: p.id, name: p.name }));
+    return state.roomData.players
+      .filter(p => p.alive && p.id !== state.playerId)
+      .map(p => ({ id: p.id, name: p.name, avatarIndex: p.avatarIndex }));
   }
 
   function showGameOver(winner, players) {
@@ -1716,7 +1719,7 @@
         <div class="target-list chat-target-list" id="target-list">
           ${targets.map(t => {
             const isRestricted = player.role === 'Medic' && t.id === player.lastMedicTarget;
-            return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar')}<span class="target-name">${t.name}</span></div>`;
+            return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`;
           }).join('')}
         </div>
         <div class="chat-local-actions">
@@ -1813,7 +1816,7 @@
         <div class="action-subtitle">${state.votesCast} / ${aliveCount} votes cast</div>
         <div class="target-label">SELECT PLAYER</div>
         <div class="target-list chat-target-list" id="vote-target-list">
-          ${targets.map(t => `<div class="target-item ${state.selectedTarget === t.id ? 'selected' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar')}<span class="target-name">${t.name}</span></div>`).join('')}
+          ${targets.map(t => `<div class="target-item ${state.selectedTarget === t.id ? 'selected' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`).join('')}
         </div>
         <div class="chat-local-actions">
           <button class="skip-vote-btn ${state.selectedTarget === 'skip' ? 'selected' : ''}" id="btn-vote-skip">Skip Vote</button>

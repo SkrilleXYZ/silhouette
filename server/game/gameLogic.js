@@ -1,6 +1,25 @@
 class GameLogic {
   constructor() {
     this.rooms = new Map();
+    this.avatarCount = 5;
+  }
+
+  assignAvatarIndex(room) {
+    const usedIndexes = new Set();
+    for (const [, player] of room.players) {
+      if (Number.isInteger(player.avatarIndex)) usedIndexes.add(player.avatarIndex);
+    }
+
+    const availableIndexes = [];
+    for (let index = 0; index < this.avatarCount; index++) {
+      if (!usedIndexes.has(index)) availableIndexes.push(index);
+    }
+
+    if (availableIndexes.length) {
+      return availableIndexes[Math.floor(Math.random() * availableIndexes.length)];
+    }
+
+    return Math.floor(Math.random() * this.avatarCount);
   }
 
   generateRoomCode() {
@@ -45,6 +64,7 @@ class GameLogic {
     room.players.set(hostId, {
       id: hostId,
       name: hostName,
+      avatarIndex: this.assignAvatarIndex(room),
       role: null,
       faction: null,
       alive: true,
@@ -70,6 +90,7 @@ class GameLogic {
     room.players.set(playerId, {
       id: playerId,
       name: playerName,
+      avatarIndex: this.assignAvatarIndex(room),
       role: null,
       faction: null,
       alive: true,
@@ -577,6 +598,7 @@ class GameLogic {
       players.push({
         id,
         name: player.name,
+        avatarIndex: player.avatarIndex,
         alive: player.alive,
         connected: player.connected,
         isHost: id === room.hostId,

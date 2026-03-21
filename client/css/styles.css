@@ -1581,8 +1581,8 @@ body {
   gap: 6px;
 }
 
-.action-panel .target-list,
-.voting-panel .target-list {
+.action-panel .target-list.chat-target-list,
+.voting-panel .target-list.chat-target-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
