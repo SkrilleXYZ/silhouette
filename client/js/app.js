@@ -59,62 +59,62 @@
   function buildLobbyAvatarSvg({ skin, hair, shirt, accent, pose = 'idle' }) {
     const poses = {
       idle: {
-        leftArm: '<rect x="10" y="52" width="6" height="12" rx="3" fill="${skin}"/>',
-        rightArm: '<rect x="48" y="52" width="6" height="12" rx="3" fill="${skin}"/>',
-        leftLeg: '<rect x="22" y="66" width="8" height="6" fill="${accent}"/>',
-        rightLeg: '<rect x="34" y="66" width="8" height="6" fill="${accent}"/>',
+        leftArm: '<rect x="8" y="43" width="7" height="14" rx="3" fill="${skin}"/>',
+        rightArm: '<rect x="49" y="43" width="7" height="14" rx="3" fill="${skin}"/>',
+        shoulder: '<rect x="14" y="42" width="36" height="18" rx="8" fill="${shirt}"/>',
+        chest: '<rect x="18" y="36" width="28" height="18" rx="6" fill="${shirt}"/>',
       },
       wave: {
-        leftArm: '<rect x="8" y="46" width="6" height="16" rx="3" transform="rotate(-28 11 54)" fill="${skin}"/>',
-        rightArm: '<rect x="48" y="52" width="6" height="12" rx="3" fill="${skin}"/>',
-        leftLeg: '<rect x="22" y="66" width="8" height="6" fill="${accent}"/>',
-        rightLeg: '<rect x="34" y="66" width="8" height="6" fill="${accent}"/>',
+        leftArm: '<rect x="6" y="34" width="7" height="18" rx="3" transform="rotate(-22 10 43)" fill="${skin}"/>',
+        rightArm: '<rect x="49" y="44" width="7" height="13" rx="3" fill="${skin}"/>',
+        shoulder: '<rect x="14" y="42" width="36" height="18" rx="8" fill="${shirt}"/>',
+        chest: '<rect x="18" y="36" width="28" height="18" rx="6" fill="${shirt}"/>',
       },
       lean: {
-        leftArm: '<rect x="11" y="52" width="6" height="11" rx="3" transform="rotate(10 14 57)" fill="${skin}"/>',
-        rightArm: '<rect x="47" y="50" width="6" height="13" rx="3" transform="rotate(14 50 56)" fill="${skin}"/>',
-        leftLeg: '<rect x="21" y="66" width="8" height="6" fill="${accent}"/>',
-        rightLeg: '<rect x="35" y="65" width="8" height="7" fill="${accent}"/>',
+        leftArm: '<rect x="10" y="45" width="7" height="12" rx="3" transform="rotate(10 13 51)" fill="${skin}"/>',
+        rightArm: '<rect x="47" y="42" width="7" height="15" rx="3" transform="rotate(12 50 49)" fill="${skin}"/>',
+        shoulder: '<rect x="13" y="43" width="38" height="17" rx="8" fill="${shirt}"/>',
+        chest: '<rect x="19" y="36" width="27" height="18" rx="6" fill="${shirt}"/>',
       },
       'hands-up': {
-        leftArm: '<rect x="11" y="46" width="6" height="15" rx="3" transform="rotate(-18 14 54)" fill="${skin}"/>',
-        rightArm: '<rect x="47" y="46" width="6" height="15" rx="3" transform="rotate(18 50 54)" fill="${skin}"/>',
-        leftLeg: '<rect x="22" y="66" width="8" height="6" fill="${accent}"/>',
-        rightLeg: '<rect x="34" y="66" width="8" height="6" fill="${accent}"/>',
+        leftArm: '<rect x="10" y="36" width="7" height="18" rx="3" transform="rotate(-18 13 45)" fill="${skin}"/>',
+        rightArm: '<rect x="47" y="36" width="7" height="18" rx="3" transform="rotate(18 50 45)" fill="${skin}"/>',
+        shoulder: '<rect x="14" y="43" width="36" height="17" rx="8" fill="${shirt}"/>',
+        chest: '<rect x="18" y="36" width="28" height="18" rx="6" fill="${shirt}"/>',
       },
       'step-left': {
-        leftArm: '<rect x="10" y="53" width="6" height="11" rx="3" fill="${skin}"/>',
-        rightArm: '<rect x="48" y="51" width="6" height="13" rx="3" fill="${skin}"/>',
-        leftLeg: '<rect x="20" y="65" width="8" height="7" fill="${accent}"/>',
-        rightLeg: '<rect x="35" y="66" width="8" height="6" fill="${accent}"/>',
+        leftArm: '<rect x="9" y="44" width="7" height="14" rx="3" fill="${skin}"/>',
+        rightArm: '<rect x="49" y="43" width="7" height="14" rx="3" fill="${skin}"/>',
+        shoulder: '<rect x="12" y="43" width="38" height="18" rx="8" fill="${shirt}"/>',
+        chest: '<rect x="17" y="36" width="28" height="19" rx="6" fill="${shirt}"/>',
       },
       'step-right': {
-        leftArm: '<rect x="10" y="51" width="6" height="13" rx="3" fill="${skin}"/>',
-        rightArm: '<rect x="48" y="53" width="6" height="11" rx="3" fill="${skin}"/>',
-        leftLeg: '<rect x="22" y="66" width="8" height="6" fill="${accent}"/>',
-        rightLeg: '<rect x="36" y="65" width="8" height="7" fill="${accent}"/>',
+        leftArm: '<rect x="9" y="43" width="7" height="14" rx="3" fill="${skin}"/>',
+        rightArm: '<rect x="48" y="44" width="7" height="14" rx="3" fill="${skin}"/>',
+        shoulder: '<rect x="14" y="43" width="38" height="18" rx="8" fill="${shirt}"/>',
+        chest: '<rect x="19" y="36" width="27" height="19" rx="6" fill="${shirt}"/>',
       },
     };
 
     const activePose = poses[pose] || poses.idle;
     return `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 72">
-        <rect width="64" height="72" fill="transparent"/>
-        <rect x="24" y="12" width="16" height="4" fill="${hair}"/>
-        <rect x="18" y="16" width="28" height="4" fill="${hair}"/>
-        <rect x="16" y="20" width="32" height="4" fill="${hair}"/>
-        <rect x="14" y="24" width="8" height="12" fill="${hair}"/>
-        <rect x="42" y="24" width="8" height="12" fill="${hair}"/>
-        <rect x="18" y="24" width="28" height="24" rx="4" fill="${skin}"/>
-        <rect x="24" y="30" width="6" height="10" fill="#121212"/>
-        <rect x="34" y="30" width="6" height="10" fill="#121212"/>
-        <rect x="28" y="42" width="8" height="2" fill="#d38d74"/>
-        <rect x="18" y="48" width="28" height="4" fill="${shirt}"/>
-        <rect x="14" y="52" width="36" height="14" rx="4" fill="${shirt}"/>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+        <rect width="64" height="64" fill="transparent"/>
+        <ellipse cx="32" cy="58" rx="24" ry="6" fill="rgba(0,0,0,0.08)"/>
+        ${activePose.shoulder.replace(/\$\{shirt\}/g, shirt)}
+        ${activePose.chest.replace(/\$\{shirt\}/g, shirt)}
+        <rect x="27" y="34" width="10" height="6" rx="2" fill="${skin}"/>
+        <rect x="18" y="12" width="28" height="26" rx="10" fill="${skin}"/>
+        <rect x="15" y="10" width="34" height="8" rx="4" fill="${hair}"/>
+        <rect x="13" y="16" width="38" height="8" rx="4" fill="${hair}"/>
+        <rect x="12" y="22" width="10" height="12" rx="4" fill="${hair}"/>
+        <rect x="42" y="22" width="10" height="12" rx="4" fill="${hair}"/>
+        <rect x="24" y="22" width="6" height="11" rx="2" fill="#121212"/>
+        <rect x="34" y="22" width="6" height="11" rx="2" fill="#121212"/>
+        <rect x="27" y="33" width="10" height="2" rx="1" fill="#d38d74"/>
         ${activePose.leftArm.replace(/\$\{skin\}/g, skin)}
         ${activePose.rightArm.replace(/\$\{skin\}/g, skin)}
-        ${activePose.leftLeg.replace(/\$\{accent\}/g, accent)}
-        ${activePose.rightLeg.replace(/\$\{accent\}/g, accent)}
+        <rect x="18" y="41" width="28" height="3" fill="${accent}" opacity="0.35"/>
       </svg>
     `.trim();
   }
@@ -490,6 +490,40 @@
     if (state.gamePhase === 'night') return 'night';
     if (state.gamePhase === 'vote-result') return 'readonly';
     return 'hidden';
+  }
+
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function getSummaryLineClass(line) {
+    const text = String(line || '').trim();
+    if (!text) return '';
+    if (/alive players:/i.test(text)) return 'summary-alive';
+    if (/was found dead|was eliminated by vote/i.test(text)) return 'summary-death';
+    if (/used their gun/i.test(text)) return 'summary-shoot';
+    if (/investigating someone/i.test(text)) return 'summary-search';
+    if (/protected someone/i.test(text)) return 'summary-protect';
+    if (/moved through the shadows/i.test(text)) return 'summary-kill';
+    return '';
+  }
+
+  function formatChatMessageHtml(message) {
+    if (message.type === 'system' && message.summaryTitle) {
+      const title = `<div class="chat-summary-title">${escapeHtml(message.summaryTitle)}</div>`;
+      const lines = (message.summaryLines || []).map((line) => {
+        const lineClass = getSummaryLineClass(line);
+        return `<div class="chat-summary-line${lineClass ? ` ${lineClass}` : ''}">${escapeHtml(line)}</div>`;
+      }).join('');
+      return `${title}${lines ? `<div class="chat-summary-lines">${lines}</div>` : ''}`;
+    }
+
+    return escapeHtml(message.text).replace(/\n/g, '<br>');
   }
 
   function renderChatBox() {
@@ -1557,170 +1591,7 @@
     const player = state.playerData;
     if (!player) return '';
 
-    if (state.gamePhase === 'night') {
-      if (player.role === 'Villager') {
-        return '<div class="chat-local-panel"><div class="chat-local-title">Night</div><div class="chat-local-copy">You have no abilities tonight. Watch the chat and wait for dawn.</div></div>';
-      }
-      if (state.hasActed) return '';
-
-      const targets = getTargetPlayers();
-      const isAssassin = player.faction === 'Assassin';
-      const actionClass = isAssassin ? 'assassin-action' : '';
-      const targetClass = isAssassin ? 'assassin-target' : '';
-
-      let actionsHTML = '';
-      if (player.role === 'Sheriff') {
-        actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'shoot' ? 'selected' : ''}" data-action="shoot">Shoot</button><button class="action-btn ${state.selectedAction === 'search' ? 'selected' : ''}" data-action="search">Search</button></div>`;
-      } else if (player.role === 'Medic') {
-        state.selectedAction = 'protect';
-        actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">Protect</button></div>';
-      } else if (player.role === 'Assassin') {
-        state.selectedAction = 'kill';
-        actionsHTML = `<div class="action-buttons"><button class="action-btn selected ${actionClass}" data-action="kill">Kill</button></div>`;
-      }
-
-      let actionDesc = '';
-      if (player.role === 'Sheriff') actionDesc = 'Choose to shoot or investigate a player';
-      else if (player.role === 'Medic') actionDesc = 'Choose a player to protect tonight';
-      else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
-
-      return `
-        <div class="chat-local-panel">
-          <div class="chat-local-header">
-            <div class="chat-local-title">Your Night Action</div>
-            <div class="chat-local-copy">${actionDesc}</div>
-          </div>
-          ${actionsHTML}
-          <div class="target-label">Select Target</div>
-          <div class="target-list chat-target-list" id="target-list">
-            ${targets.map(t => {
-              const isRestricted = player.role === 'Medic' && t.id === player.lastMedicTarget;
-              return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar')}<span class="target-name">${t.name}</span></div>`;
-            }).join('')}
-          </div>
-          <div class="chat-local-actions">
-            <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || !state.selectedTarget ? 'disabled' : ''}>Confirm</button>
-            <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>
-          </div>
-        </div>`;
-    }
-
-    if (state.gamePhase === 'voting') {
-      if (state.hasVoted) {
-        return '<div class="chat-local-panel"><div class="chat-local-title">Vote Locked</div><div class="chat-local-copy">Your vote is submitted. Keep following the discussion in chat.</div></div>';
-      }
-
-      const targets = getVoteTargets();
-      const aliveCount = state.totalAlive || state.roomData?.aliveCount || '?';
-      return `
-        <div class="chat-local-panel">
-          <div class="chat-local-header">
-            <div class="chat-local-title">Your Vote</div>
-            <div class="chat-local-copy">${state.votesCast} / ${aliveCount} votes cast</div>
-          </div>
-          <div class="target-list chat-target-list" id="vote-target-list">
-            ${targets.map(t => `<div class="target-item ${state.selectedTarget === t.id ? 'selected' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar')}<span class="target-name">${t.name}</span></div>`).join('')}
-          </div>
-          <div class="chat-local-actions">
-            <button class="skip-vote-btn ${state.selectedTarget === 'skip' ? 'selected' : ''}" id="btn-vote-skip">Skip Vote</button>
-            <button class="btn btn-primary confirm-action" id="btn-confirm-vote" ${!state.selectedTarget ? 'disabled' : ''}>Confirm Vote</button>
-          </div>
-        </div>`;
-    }
-
     return '';
-  }
-
-  function bindLocalActionPanelHandlers(container) {
-    if (state.gamePhase === 'night') {
-      container.querySelectorAll('.action-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          btn.classList.remove('action-activate');
-          void btn.offsetWidth;
-          btn.classList.add('action-activate');
-          state.selectedAction = btn.dataset.action;
-          state.selectedTarget = null;
-          renderChatBox();
-        });
-      });
-
-      container.querySelectorAll('#target-list .target-item').forEach(item => {
-        item.addEventListener('click', () => {
-          if (item.dataset.restricted === 'true') {
-            showToast('You cannot protect the same player two nights in a row', 'error');
-            return;
-          }
-          state.selectedTarget = item.dataset.target;
-          renderChatBox();
-        });
-      });
-
-      const confirmBtn = document.getElementById('btn-confirm-action');
-      if (confirmBtn) {
-        confirmBtn.addEventListener('click', () => {
-          if (!state.selectedAction || !state.selectedTarget) return;
-          state.socket.emit('night-action', { action: state.selectedAction, targetId: state.selectedTarget }, (response) => {
-            if (response.success) {
-              state.hasActed = true;
-              renderGameContent('night');
-              showToast('Action submitted', 'success');
-            } else {
-              showToast(response.error || 'Action failed', 'error');
-            }
-          });
-        });
-      }
-
-      const skipBtn = document.getElementById('btn-skip-night');
-      if (skipBtn) {
-        skipBtn.addEventListener('click', () => {
-          state.socket.emit('skip-night', (response) => {
-            if (response.success) {
-              state.hasActed = true;
-              renderGameContent('night');
-              showToast('Skipped night action', 'info');
-            }
-          });
-        });
-      }
-    }
-
-    if (state.gamePhase === 'voting') {
-      container.querySelectorAll('#vote-target-list .target-item').forEach(item => {
-        item.addEventListener('click', () => {
-          state.selectedTarget = item.dataset.target;
-          renderChatBox();
-        });
-      });
-
-      const skipBtn = document.getElementById('btn-vote-skip');
-      if (skipBtn) {
-        skipBtn.addEventListener('click', () => {
-          state.selectedTarget = 'skip';
-          renderChatBox();
-        });
-      }
-
-      const confirmBtn = document.getElementById('btn-confirm-vote');
-      if (confirmBtn) {
-        confirmBtn.addEventListener('click', () => {
-          if (!state.selectedTarget) return;
-          state.votesCast = (state.votesCast || 0) + 1;
-          renderChatBox();
-          state.socket.emit('vote', { targetId: state.selectedTarget }, (response) => {
-            if (response.success) {
-              state.hasVoted = true;
-              renderGameContent('voting');
-              showToast('Vote cast', 'success');
-            } else {
-              state.votesCast = Math.max(0, (state.votesCast || 1) - 1);
-              renderChatBox();
-              showToast(response.error || 'Vote failed', 'error');
-            }
-          });
-        });
-      }
-    }
   }
 
   function renderChatBox() {
@@ -1780,7 +1651,7 @@
         return `
           <div class="${classes}">
             <div class="chat-message-meta">${sender}</div>
-            <div class="chat-message-text">${message.text}</div>
+            <div class="chat-message-text">${formatChatMessageHtml(message)}</div>
           </div>`;
       }).join('')
       : '<div class="chat-empty">No messages yet.</div>';
@@ -1836,7 +1707,6 @@
       });
     }
 
-    bindLocalActionPanelHandlers(panel);
   }
 
   function renderGameContent(phase) {
@@ -1859,7 +1729,112 @@
   }
 
   function renderNightPhase(container) {
-    container.innerHTML = '<div id="phase-chat-panel"></div>';
+    const player = state.playerData;
+    if (!player) return;
+
+    if (player.role === 'Villager') {
+      container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">You have no abilities. Wait for dawn...</p></div><div id="phase-chat-panel"></div>';
+      renderChatBox();
+      return;
+    }
+
+    if (state.hasActed) {
+      container.innerHTML = '<div class="action-confirmed"><div class="confirmed-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><p class="confirmed-text">ACTION SUBMITTED</p><p class="confirmed-detail">Waiting for others...</p></div><div id="phase-chat-panel"></div>';
+      renderChatBox();
+      return;
+    }
+
+    const targets = getTargetPlayers();
+    const isAssassin = player.faction === 'Assassin';
+    const actionClass = isAssassin ? 'assassin-action' : '';
+    const targetClass = isAssassin ? 'assassin-target' : '';
+
+    let actionsHTML = '';
+    if (player.role === 'Sheriff') {
+      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'shoot' ? 'selected' : ''}" data-action="shoot">Shoot</button><button class="action-btn ${state.selectedAction === 'search' ? 'selected' : ''}" data-action="search">Search</button></div>`;
+    } else if (player.role === 'Medic') {
+      state.selectedAction = 'protect';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">Protect</button></div>';
+    } else if (player.role === 'Assassin') {
+      state.selectedAction = 'kill';
+      actionsHTML = `<div class="action-buttons"><button class="action-btn selected ${actionClass}" data-action="kill">Kill</button></div>`;
+    }
+
+    let actionDesc = '';
+    if (player.role === 'Sheriff') actionDesc = 'Choose to shoot or investigate a player';
+    else if (player.role === 'Medic') actionDesc = 'Choose a player to protect tonight';
+    else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
+
+    container.innerHTML = `
+      <div class="action-panel">
+        <div class="action-title">YOUR NIGHT ACTION</div>
+        <div class="action-subtitle">${actionDesc}</div>
+        ${actionsHTML}
+        <div class="target-label">SELECT TARGET</div>
+        <div class="target-list chat-target-list" id="target-list">
+          ${targets.map(t => {
+            const isRestricted = player.role === 'Medic' && t.id === player.lastMedicTarget;
+            return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar')}<span class="target-name">${t.name}</span></div>`;
+          }).join('')}
+        </div>
+        <div class="chat-local-actions">
+          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || !state.selectedTarget ? 'disabled' : ''}>Confirm</button>
+          <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>
+        </div>
+      </div>
+      <div id="phase-chat-panel"></div>`;
+
+    container.querySelectorAll('.action-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.classList.remove('action-activate');
+        void btn.offsetWidth;
+        btn.classList.add('action-activate');
+        state.selectedAction = btn.dataset.action;
+        state.selectedTarget = null;
+        renderNightPhase(container);
+      });
+    });
+
+    container.querySelectorAll('#target-list .target-item').forEach(item => {
+      item.addEventListener('click', () => {
+        if (item.dataset.restricted === 'true') {
+          showToast('You cannot protect the same player two nights in a row', 'error');
+          return;
+        }
+        state.selectedTarget = item.dataset.target;
+        renderNightPhase(container);
+      });
+    });
+
+    const confirmBtn = document.getElementById('btn-confirm-action');
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', () => {
+        if (!state.selectedAction || !state.selectedTarget) return;
+        state.socket.emit('night-action', { action: state.selectedAction, targetId: state.selectedTarget }, (response) => {
+          if (response.success) {
+            state.hasActed = true;
+            renderNightPhase(container);
+            showToast('Action submitted', 'success');
+          } else {
+            showToast(response.error || 'Action failed', 'error');
+          }
+        });
+      });
+    }
+
+    const skipBtn = document.getElementById('btn-skip-night');
+    if (skipBtn) {
+      skipBtn.addEventListener('click', () => {
+        state.socket.emit('skip-night', (response) => {
+          if (response.success) {
+            state.hasActed = true;
+            renderNightPhase(container);
+            showToast('Skipped night action', 'info');
+          }
+        });
+      });
+    }
+
     renderChatBox();
   }
 
@@ -1882,7 +1857,64 @@
   }
 
   function renderVotingPhase(container) {
-    container.innerHTML = '<div id="phase-chat-panel"></div>';
+    if (state.hasVoted) {
+      container.innerHTML = '<div class="action-confirmed"><div class="confirmed-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><p class="confirmed-text">VOTE SUBMITTED</p><p class="confirmed-detail">Waiting for others...</p></div><div id="phase-chat-panel"></div>';
+      renderChatBox();
+      return;
+    }
+
+    const targets = getVoteTargets();
+    const aliveCount = state.totalAlive || state.roomData?.aliveCount || '?';
+    container.innerHTML = `
+      <div class="voting-panel">
+        <div class="action-title">CAST YOUR VOTE</div>
+        <div class="action-subtitle">${state.votesCast} / ${aliveCount} votes cast</div>
+        <div class="target-label">SELECT PLAYER</div>
+        <div class="target-list chat-target-list" id="vote-target-list">
+          ${targets.map(t => `<div class="target-item ${state.selectedTarget === t.id ? 'selected' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar')}<span class="target-name">${t.name}</span></div>`).join('')}
+        </div>
+        <div class="chat-local-actions">
+          <button class="skip-vote-btn ${state.selectedTarget === 'skip' ? 'selected' : ''}" id="btn-vote-skip">Skip Vote</button>
+          <button class="btn btn-primary confirm-action" id="btn-confirm-vote" ${!state.selectedTarget ? 'disabled' : ''}>Confirm Vote</button>
+        </div>
+      </div>
+      <div id="phase-chat-panel"></div>`;
+
+    container.querySelectorAll('#vote-target-list .target-item').forEach(item => {
+      item.addEventListener('click', () => {
+        state.selectedTarget = item.dataset.target;
+        renderVotingPhase(container);
+      });
+    });
+
+    const skipBtn = document.getElementById('btn-vote-skip');
+    if (skipBtn) {
+      skipBtn.addEventListener('click', () => {
+        state.selectedTarget = 'skip';
+        renderVotingPhase(container);
+      });
+    }
+
+    const confirmBtn = document.getElementById('btn-confirm-vote');
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', () => {
+        if (!state.selectedTarget) return;
+        state.votesCast = (state.votesCast || 0) + 1;
+        renderVotingPhase(container);
+        state.socket.emit('vote', { targetId: state.selectedTarget }, (response) => {
+          if (response.success) {
+            state.hasVoted = true;
+            renderVotingPhase(container);
+            showToast('Vote cast', 'success');
+          } else {
+            state.votesCast = Math.max(0, (state.votesCast || 1) - 1);
+            renderVotingPhase(container);
+            showToast(response.error || 'Vote failed', 'error');
+          }
+        });
+      });
+    }
+
     renderChatBox();
   }
 
