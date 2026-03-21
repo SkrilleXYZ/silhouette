@@ -128,7 +128,7 @@ io.on('connection', (socket) => {
     if (action === 'shoot') publicNightMessage = 'Sheriff has used their gun.';
     else if (action === 'search') publicNightMessage = 'Sheriff is investigating someone.';
     else if (action === 'protect') publicNightMessage = 'Medic has protected someone.';
-    else if (action === 'kill') publicNightMessage = 'An Agent has moved through the shadows.';
+    else if (action === 'kill') publicNightMessage = 'An Assassin has moved through the shadows.';
     if (publicNightMessage) {
       const chatMessage = game.appendToPhaseSummary(mapping.code, publicNightMessage);
       if (chatMessage) io.to(mapping.code).emit('chat-message-updated', { message: chatMessage });
@@ -322,12 +322,6 @@ function resolveNightPhase(code) {
       messages.forEach((message) => {
         io.to(playerId).emit('private-chat-message', { message });
       });
-    }
-  }
-
-  if (result.searchResults) {
-    for (const [playerId, searchData] of Object.entries(result.searchResults)) {
-      io.to(playerId).emit('search-result', searchData);
     }
   }
 

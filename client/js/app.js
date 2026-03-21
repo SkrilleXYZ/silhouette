@@ -125,10 +125,6 @@
       renderChatBox();
     });
 
-    state.socket.on('search-result', (result) => {
-      state.searchResult = result;
-    });
-
     state.socket.on('timer-start', ({ phase, duration }) => {
       startTimer(duration);
     });
@@ -501,7 +497,7 @@
     } else if (player.role === 'Medic') {
       state.selectedAction = 'protect';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">🛡️ PROTECT</button></div>';
-    } else if (player.role === 'Agent') {
+    } else if (player.role === 'Assassin') {
       state.selectedAction = 'kill';
       actionsHTML = `<div class="action-buttons"><button class="action-btn selected ${actionClass}" data-action="kill">🗡️ KILL</button></div>`;
     }
@@ -509,7 +505,7 @@
     let actionDesc = '';
     if (player.role === 'Sheriff') actionDesc = 'Choose to shoot or investigate a player';
     else if (player.role === 'Medic') actionDesc = 'Choose a player to protect tonight';
-    else if (player.role === 'Agent') actionDesc = 'Choose a crew member to eliminate';
+    else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
 
     // For medic: find the last protected player name to show restriction
     let medicNote = '';
@@ -738,7 +734,7 @@
     } else if (player.role === 'Medic') {
       state.selectedAction = 'protect';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">🛡️ PROTECT</button></div>';
-    } else if (player.role === 'Agent') {
+    } else if (player.role === 'Assassin') {
       state.selectedAction = 'kill';
       actionsHTML = `<div class="action-buttons"><button class="action-btn selected ${actionClass}" data-action="kill">🗡️ KILL</button></div>`;
     }
@@ -746,7 +742,7 @@
     let actionDesc = '';
     if (player.role === 'Sheriff') actionDesc = 'Choose to shoot or investigate a player';
     else if (player.role === 'Medic') actionDesc = 'Choose a player to protect tonight';
-    else if (player.role === 'Agent') actionDesc = 'Choose a crew member to eliminate';
+    else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
 
     container.innerHTML = `
       <div class="action-panel">
@@ -946,7 +942,7 @@
       Sheriff: 'You uphold justice from the shadows. Shoot or investigate.',
       Medic: 'You protect the innocent. Cannot protect the same player twice in a row.',
       Villager: 'Trust your instincts. Find the assassins among you.',
-      Agent: 'Eliminate the crew. Stay hidden. Strike silently.',
+      Assassin: 'Eliminate the crew. Stay hidden. Strike silently.',
     };
     desc.textContent = descriptions[player.role] || '';
 
@@ -963,7 +959,7 @@
     return state.roomData.players.filter(p => {
       if (!p.alive) return false;
       if (p.id === state.playerId) return state.playerData.role === 'Medic';
-      if (state.playerData.role === 'Agent') {
+      if (state.playerData.role === 'Assassin') {
         const isTeammate = state.playerData.teammates?.some(t => t.id === p.id);
         if (isTeammate) return false;
       }
@@ -1253,7 +1249,7 @@
     } else if (player.role === 'Medic') {
       state.selectedAction = 'protect';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">🛡️ PROTECT</button></div>';
-    } else if (player.role === 'Agent') {
+    } else if (player.role === 'Assassin') {
       state.selectedAction = 'kill';
       actionsHTML = `<div class="action-buttons"><button class="action-btn selected ${actionClass}" data-action="kill">🗡️ KILL</button></div>`;
     }
@@ -1261,7 +1257,7 @@
     let actionDesc = '';
     if (player.role === 'Sheriff') actionDesc = 'Choose to shoot or investigate a player';
     else if (player.role === 'Medic') actionDesc = 'Choose a player to protect tonight';
-    else if (player.role === 'Agent') actionDesc = 'Choose a crew member to eliminate';
+    else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
 
     container.innerHTML = `
       <div class="action-panel">
@@ -1454,7 +1450,7 @@
       } else if (player.role === 'Medic') {
         state.selectedAction = 'protect';
         actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">Protect</button></div>';
-      } else if (player.role === 'Agent') {
+      } else if (player.role === 'Assassin') {
         state.selectedAction = 'kill';
         actionsHTML = `<div class="action-buttons"><button class="action-btn selected ${actionClass}" data-action="kill">Kill</button></div>`;
       }
@@ -1462,22 +1458,26 @@
       let actionDesc = '';
       if (player.role === 'Sheriff') actionDesc = 'Choose to shoot or investigate a player';
       else if (player.role === 'Medic') actionDesc = 'Choose a player to protect tonight';
-      else if (player.role === 'Agent') actionDesc = 'Choose a crew member to eliminate';
+      else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
 
       return `
         <div class="chat-local-panel">
-          <div class="chat-local-title">Your Night Action</div>
-          <div class="chat-local-copy">${actionDesc}</div>
+          <div class="chat-local-header">
+            <div class="chat-local-title">Your Night Action</div>
+            <div class="chat-local-copy">${actionDesc}</div>
+          </div>
           ${actionsHTML}
           <div class="target-label">Select Target</div>
-          <div class="target-list" id="target-list">
+          <div class="target-list chat-target-list" id="target-list">
             ${targets.map(t => {
               const isRestricted = player.role === 'Medic' && t.id === player.lastMedicTarget;
               return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}><div class="target-dot"></div><span class="target-name">${t.name}</span></div>`;
             }).join('')}
           </div>
-          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || !state.selectedTarget ? 'disabled' : ''}>Confirm</button>
-          <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>
+          <div class="chat-local-actions">
+            <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || !state.selectedTarget ? 'disabled' : ''}>Confirm</button>
+            <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>
+          </div>
         </div>`;
     }
 
@@ -1490,13 +1490,17 @@
       const aliveCount = state.totalAlive || state.roomData?.aliveCount || '?';
       return `
         <div class="chat-local-panel">
-          <div class="chat-local-title">Your Vote</div>
-          <div class="chat-local-copy">${state.votesCast} / ${aliveCount} votes cast</div>
-          <div class="target-list" id="vote-target-list">
+          <div class="chat-local-header">
+            <div class="chat-local-title">Your Vote</div>
+            <div class="chat-local-copy">${state.votesCast} / ${aliveCount} votes cast</div>
+          </div>
+          <div class="target-list chat-target-list" id="vote-target-list">
             ${targets.map(t => `<div class="target-item ${state.selectedTarget === t.id ? 'selected' : ''}" data-target="${t.id}"><div class="target-dot"></div><span class="target-name">${t.name}</span></div>`).join('')}
           </div>
-          <button class="skip-vote-btn ${state.selectedTarget === 'skip' ? 'selected' : ''}" id="btn-vote-skip">Skip Vote</button>
-          <button class="btn btn-primary confirm-action" id="btn-confirm-vote" ${!state.selectedTarget ? 'disabled' : ''}>Confirm Vote</button>
+          <div class="chat-local-actions">
+            <button class="skip-vote-btn ${state.selectedTarget === 'skip' ? 'selected' : ''}" id="btn-vote-skip">Skip Vote</button>
+            <button class="btn btn-primary confirm-action" id="btn-confirm-vote" ${!state.selectedTarget ? 'disabled' : ''}>Confirm Vote</button>
+          </div>
         </div>`;
     }
 

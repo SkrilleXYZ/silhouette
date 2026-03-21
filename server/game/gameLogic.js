@@ -146,7 +146,7 @@ class GameLogic {
 
     for (let i = 0; i < assassinCount; i++) {
       const player = room.players.get(shuffled[index]);
-      player.role = 'Agent';
+      player.role = 'Assassin';
       player.faction = 'Assassin';
       index++;
     }
@@ -185,7 +185,6 @@ class GameLogic {
     room.morningMessages = [];
     room.chatMessages = [];
     room.currentPhaseSummaryId = null;
-    room.anonymousVotes = false;
     room.lastMedicTarget = null;
 
     this.beginPhaseSummary(code, 'Night 1 has begun. Chat is locked until morning.');
@@ -241,8 +240,8 @@ class GameLogic {
       if (targetId === room.lastMedicTarget) {
         return { error: 'You cannot protect the same player two nights in a row' };
       }
-    } else if (player.role === 'Agent') {
-      if (action !== 'kill') return { error: 'Invalid action for Agent' };
+    } else if (player.role === 'Assassin') {
+      if (action !== 'kill') return { error: 'Invalid action for Assassin' };
       if (target.faction === 'Assassin') return { error: 'Cannot kill teammates' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
     } else {
@@ -311,15 +310,10 @@ class GameLogic {
       const player = room.players.get(playerId);
       if (!player) continue;
 
-      if (action.action === 'kill' && player.role === 'Agent' && action.targetId) {
+      if (action.action === 'kill' && player.role === 'Assassin' && action.targetId) {
         if (!protected_.has(action.targetId)) {
           killed.add(action.targetId);
         } else {
-          messages.push({
-            type: 'protected',
-            text: 'Someone was saved by the Medic during the night.',
-            public: true
-          });
           if (!privateMessages[action.targetId]) {
             privateMessages[action.targetId] = [
               this.createPrivateSystemMessage(code, 'You were protected by the Medic during the night.')
@@ -337,11 +331,6 @@ class GameLogic {
         if (!protected_.has(action.targetId)) {
           killed.add(action.targetId);
         } else {
-          messages.push({
-            type: 'protected',
-            text: 'Someone was saved by the Medic during the night.',
-            public: true
-          });
           if (!privateMessages[action.targetId]) {
             privateMessages[action.targetId] = [
               this.createPrivateSystemMessage(code, 'You were protected by the Medic during the night.')
@@ -356,6 +345,10 @@ class GameLogic {
           role: target.role,
           faction: target.faction
         };
+        if (!privateMessages[playerId]) privateMessages[playerId] = [];
+        privateMessages[playerId].push(
+          this.createPrivateSystemMessage(code, `Your investigation found that ${target.name} is the ${target.role}.`)
+        );
       }
     }
 

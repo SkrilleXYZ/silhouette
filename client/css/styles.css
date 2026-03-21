@@ -668,18 +668,47 @@ body {
 
 .btn-start { width: 100%; }
 
+.room-settings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.room-settings-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.room-settings-kicker {
+  font-size: 0.68rem;
+  letter-spacing: 2px;
+  color: var(--fg-dim);
+}
+
+.room-settings-subtitle {
+  font-size: 0.74rem;
+  color: var(--fg-muted);
+}
+
 .room-setting-toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  padding: 14px 16px;
-  margin-bottom: 14px;
-  background: var(--bg-card);
+  padding: 0;
+  margin-bottom: 0;
+  background: transparent;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   cursor: pointer;
+  padding: 14px 16px;
 }
 
 .room-setting-copy {
@@ -846,11 +875,11 @@ body {
   color: var(--fg);
 }
 
-.role-card { margin-bottom: 16px; perspective: 1000px; }
+.role-card { margin-bottom: 10px; perspective: 1000px; }
 
 .role-card-inner {
   position: relative;
-  padding: 20px;
+  padding: 14px 16px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -888,14 +917,14 @@ body {
 
 .role-name {
   font-family: 'Cinzel', serif;
-  font-size: 1.4rem;
+  font-size: 1.18rem;
   font-weight: 700;
-  letter-spacing: 4px;
+  letter-spacing: 3px;
 }
 
 .role-divider {
   width: 40px; height: 1px;
-  margin: 12px auto;
+  margin: 8px auto;
   opacity: 0.3;
 }
 
@@ -903,14 +932,14 @@ body {
 .role-card.assassin .role-divider { background: var(--assassin); }
 
 .role-description {
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   color: var(--fg-muted);
   font-style: italic;
 }
 
 .role-teammates {
-  margin-top: 12px;
-  padding-top: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
   border-top: 1px solid var(--border);
 }
 
@@ -1176,7 +1205,7 @@ body {
 .message-text { font-size: 0.85rem; line-height: 1.5; }
 
 .phase-chat-panel {
-  margin-top: 12px;
+  margin-top: 6px;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -1188,27 +1217,82 @@ body {
 }
 
 .chat-local-panel {
-  padding: 12px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--border);
   background: hsl(220,25%,13%);
 }
 
+.chat-local-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
 .chat-local-title {
   font-family: 'Cinzel', serif;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   letter-spacing: 2px;
-  margin-bottom: 6px;
 }
 
 .chat-local-copy {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--fg-muted);
-  margin-bottom: 12px;
+}
+
+.chat-local-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.chat-local-actions .confirm-action,
+.chat-local-actions .chat-local-skip,
+.chat-local-actions .skip-vote-btn {
+  margin-top: 0;
+  width: 100%;
+}
+
+.chat-target-list {
+  max-height: 120px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.chat-local-panel .action-buttons {
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.chat-local-panel .action-btn {
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+}
+
+.chat-local-panel .target-label {
+  margin-bottom: 6px;
+  font-size: 0.68rem;
+}
+
+.chat-local-panel .target-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.chat-local-panel .target-item {
+  min-height: 40px;
+  padding: 8px 10px;
+  gap: 8px;
+}
+
+.chat-local-panel .target-name {
+  font-size: 0.78rem;
 }
 
 .chat-local-skip {
   width: 100%;
-  margin-top: 8px;
 }
 
 #game-content > .phase-chat-panel:first-child {
