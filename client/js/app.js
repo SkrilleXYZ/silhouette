@@ -18,6 +18,7 @@
     timerValue: 0,
     timerDuration: 60,
     searchResult: null,
+    privateChatMessages: [],
     hasActed: false,
     hasVoted: false,
     votesCast: 0,
@@ -66,6 +67,7 @@
       state.votesCast = 0;
       state.totalAlive = 0;
       state.searchResult = null;
+      state.privateChatMessages = [];
       state.allPlayersWithRoles = [];
       showScreen('game');
       hideNav();
@@ -103,6 +105,12 @@
     state.socket.on('chat-message', ({ message }) => {
       state.chatMessages.push(message);
       if (state.chatMessages.length > 150) state.chatMessages = state.chatMessages.slice(-150);
+      renderChatBox();
+    });
+
+    state.socket.on('private-chat-message', ({ message }) => {
+      state.privateChatMessages.push(message);
+      if (state.privateChatMessages.length > 50) state.privateChatMessages = state.privateChatMessages.slice(-50);
       renderChatBox();
     });
 
@@ -144,6 +152,7 @@
       state.votesCast = 0;
       state.totalAlive = 0;
       state.searchResult = null;
+      state.privateChatMessages = [];
       state.selectedAction = null;
       state.selectedTarget = null;
       state.morningMessages = [];
@@ -1414,9 +1423,7 @@
       if (player.role === 'Villager') {
         return '<div class="chat-local-panel"><div class="chat-local-title">Night</div><div class="chat-local-copy">You have no abilities tonight. Watch the chat and wait for dawn.</div></div>';
       }
-      if (state.hasActed) {
-        return '<div class="chat-local-panel"><div class="chat-local-title">Action Locked</div><div class="chat-local-copy">Your night action is submitted. You can still follow the chat while others finish.</div></div>';
-      }
+      if (state.hasActed) return '';
 
       const targets = getTargetPlayers();
       const isAssassin = player.faction === 'Assassin';
@@ -1573,7 +1580,8 @@
 
     const mode = getChatMode();
     const canChat = mode === 'morning' || mode === 'voting';
-    const messages = state.chatMessages || [];
+    const messages = [...(state.chatMessages || []), ...(state.privateChatMessages || [])]
+      .sort((a, b) => a.createdAt - b.createdAt);
 
     panel.className = `phase-chat-panel ${mode === 'morning' ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}`;
 
@@ -1586,7 +1594,7 @@
     const items = messages.length
       ? messages.map((message) => {
         const isSelf = message.senderId === state.playerId;
-        const classes = `chat-message ${message.type === 'system' ? 'system' : ''}${isSelf ? ' self' : ''}`;
+        const classes = `chat-message ${message.type === 'system' ? 'system' : ''}${message.private ? ' private' : ''}${isSelf ? ' self' : ''}`;
         const sender = message.type === 'system' ? 'SYSTEM' : message.senderName;
         return `
           <div class="${classes}">

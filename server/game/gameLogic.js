@@ -282,6 +282,7 @@ class GameLogic {
     const killed = new Set();
     const protected_ = new Set();
     const searchResults = {};
+    const privateMessages = {};
 
     // Track who the medic protected this night
     let medicTargetThisNight = null;
@@ -316,6 +317,11 @@ class GameLogic {
             text: 'Someone was saved by the Medic during the night.',
             public: true
           });
+          if (!privateMessages[action.targetId]) {
+            privateMessages[action.targetId] = [
+              this.createPrivateSystemMessage(code, 'You were protected by the Medic during the night.')
+            ];
+          }
         }
       }
     }
@@ -333,6 +339,11 @@ class GameLogic {
             text: 'Someone was saved by the Medic during the night.',
             public: true
           });
+          if (!privateMessages[action.targetId]) {
+            privateMessages[action.targetId] = [
+              this.createPrivateSystemMessage(code, 'You were protected by the Medic during the night.')
+            ];
+          }
         }
       } else if (action.action === 'search' && action.targetId) {
         const target = room.players.get(action.targetId);
@@ -385,7 +396,7 @@ class GameLogic {
       room.winner = winCheck;
     }
 
-    return { room, messages, searchResults, winner: room.winner };
+    return { room, messages, searchResults, privateMessages, winner: room.winner };
   }
 
   submitVote(code, voterId, targetId) {
@@ -586,20 +597,33 @@ class GameLogic {
     const room = this.rooms.get(code);
     if (!room || !text) return null;
 
-    const message = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      type: 'system',
-      senderId: null,
-      senderName: 'SYSTEM',
-      text,
-      createdAt: Date.now(),
-      phase: room.state,
-    };
+    const message = this.createChatMessage('system', 'SYSTEM', text, null, room.state);
 
     room.chatMessages.push(message);
     if (room.chatMessages.length > 150) room.chatMessages = room.chatMessages.slice(-150);
     room.lastAction = Date.now();
     return message;
+  }
+
+  createPrivateSystemMessage(code, text) {
+    const room = this.rooms.get(code);
+    if (!room || !text) return null;
+    return {
+      ...this.createChatMessage('system', 'SYSTEM', text, null, room.state),
+      private: true,
+    };
+  }
+
+  createChatMessage(type, senderName, text, senderId = null, phase = null) {
+    return {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      type,
+      senderId,
+      senderName,
+      text,
+      createdAt: Date.now(),
+      phase,
+    };
   }
 
   addChatMessage(code, playerId, text) {
