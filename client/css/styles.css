@@ -590,8 +590,10 @@ body {
   width: 84px;
   height: 84px;
   flex-shrink: 0;
-  object-fit: contain;
+  object-fit: cover;
+  object-position: center 28%;
   display: block;
+  border-radius: 50%;
 }
 
 .player-name {
@@ -1584,9 +1586,11 @@ body {
 .target-avatar {
   width: 40px;
   height: 40px;
-  object-fit: contain;
+  object-fit: cover;
+  object-position: center 28%;
   display: block;
   flex-shrink: 0;
+  border-radius: 50%;
 }
 
 .chat-local-panel .target-name {
