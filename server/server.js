@@ -95,14 +95,14 @@ io.on('connection', (socket) => {
     callback({ success: true });
   });
 
-  socket.on('update-room-settings', ({ anonymousVotes }, callback) => {
+  socket.on('update-room-settings', ({ anonymousVotes, anonymousEjects }, callback) => {
     const mapping = socketMap.get(socket.id);
     if (!mapping) {
       if (callback) callback({ success: false, error: 'Not in a room' });
       return;
     }
 
-    const result = game.updateRoomSettings(mapping.code, socket.id, { anonymousVotes });
+    const result = game.updateRoomSettings(mapping.code, socket.id, { anonymousVotes, anonymousEjects });
     if (result.error) {
       if (callback) callback({ success: false, error: result.error });
       return;

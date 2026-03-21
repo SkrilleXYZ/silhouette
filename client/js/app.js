@@ -295,6 +295,11 @@
       anonymousVotesToggle.checked = !!data.anonymousVotes;
       anonymousVotesToggle.disabled = !(state.isHost || state.playerId === data.hostId);
     }
+    const anonymousEjectsToggle = document.getElementById('toggle-anonymous-ejects');
+    if (anonymousEjectsToggle) {
+      anonymousEjectsToggle.checked = !!data.anonymousEjects;
+      anonymousEjectsToggle.disabled = !(state.isHost || state.playerId === data.hostId);
+    }
 
     const list = document.getElementById('players-list');
     list.innerHTML = '';
@@ -1159,6 +1164,15 @@
         if (!response.success) {
           showToast(response.error || 'Could not update room settings', 'error');
           event.target.checked = !!state.roomData?.anonymousVotes;
+        }
+      });
+    });
+
+    document.getElementById('toggle-anonymous-ejects').addEventListener('change', (event) => {
+      state.socket.emit('update-room-settings', { anonymousEjects: event.target.checked }, (response) => {
+        if (!response.success) {
+          showToast(response.error || 'Could not update room settings', 'error');
+          event.target.checked = !!state.roomData?.anonymousEjects;
         }
       });
     });

@@ -36,6 +36,7 @@ class GameLogic {
       chatMessages: [],
       currentPhaseSummaryId: null,
       anonymousVotes: false,
+      anonymousEjects: false,
       playerOrder: [],
       lastAction: Date.now(),
       lastMedicTarget: null,
@@ -356,9 +357,12 @@ class GameLogic {
       const deadPlayer = room.players.get(deadId);
       if (deadPlayer) {
         deadPlayer.alive = false;
+        const deathText = room.anonymousEjects
+          ? `${deadPlayer.name} was found dead.`
+          : `${deadPlayer.name} was found dead. They were a ${deadPlayer.role}.`;
         messages.push({
           type: 'death',
-          text: `${deadPlayer.name} was found dead. They were a ${deadPlayer.role}.`,
+          text: deathText,
           playerId: deadId,
           role: deadPlayer.role,
           faction: deadPlayer.faction,
@@ -419,6 +423,9 @@ class GameLogic {
 
     if (typeof settings.anonymousVotes === 'boolean') {
       room.anonymousVotes = settings.anonymousVotes;
+    }
+    if (typeof settings.anonymousEjects === 'boolean') {
+      room.anonymousEjects = settings.anonymousEjects;
     }
 
     room.lastAction = Date.now();
@@ -487,9 +494,12 @@ class GameLogic {
     } else {
       const player = room.players.get(eliminated);
       player.alive = false;
+      const eliminationText = room.anonymousEjects
+        ? `${player.name} was eliminated by vote.`
+        : `${player.name} was eliminated by vote. They were a ${player.role}.`;
       message = {
         type: 'eliminated',
-        text: `${player.name} was eliminated by vote. They were a ${player.role}.`,
+        text: eliminationText,
         playerId: eliminated,
         role: player.role,
         faction: player.faction,
@@ -585,6 +595,7 @@ class GameLogic {
       aliveCount: players.filter(p => p.alive).length,
       chatMessages: room.chatMessages.slice(-150),
       anonymousVotes: room.anonymousVotes,
+      anonymousEjects: room.anonymousEjects,
     };
   }
 
