@@ -75,10 +75,24 @@
     return source.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % LOBBY_AVATAR_IMAGES.length;
   }
 
+  function handleAvatarLoadError(img) {
+    if (!img) return;
+    const attemptedIndex = Number.parseInt(img.dataset.avatarIndex || '0', 10) || 0;
+    const fallbackOffset = Number.parseInt(img.dataset.avatarFallbacks || '0', 10) || 0;
+    if (fallbackOffset >= LOBBY_AVATAR_IMAGES.length - 1) return;
+
+    const nextOffset = fallbackOffset + 1;
+    const nextIndex = (attemptedIndex + nextOffset) % LOBBY_AVATAR_IMAGES.length;
+    img.dataset.avatarFallbacks = String(nextOffset);
+    img.src = getLobbyAvatarSrc(nextIndex);
+  }
+
+  window.handleAvatarLoadError = handleAvatarLoadError;
+
   function renderAvatarMarkup(key, className = 'player-avatar', avatarIndex = null) {
     const resolvedIndex = Number.isInteger(avatarIndex) ? avatarIndex : getAvatarIndex(key);
     const avatarSrc = getLobbyAvatarSrc(resolvedIndex);
-    return `<img class="${className}" src="${avatarSrc}" alt="" />`;
+    return `<img class="${className}" src="${avatarSrc}" alt="" data-avatar-index="${resolvedIndex}" data-avatar-fallbacks="0" onerror="window.handleAvatarLoadError && window.handleAvatarLoadError(this)" />`;
   }
 
   function getPlayerChatStyle(message) {
