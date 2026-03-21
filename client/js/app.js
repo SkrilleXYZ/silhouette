@@ -30,6 +30,57 @@
     playerListOpen: false,
   };
 
+  const MAX_ROOM_PLAYERS = 16;
+  const LOBBY_AVATAR_PRESETS = [
+    { skin: '#f3d3b4', hair: '#7b4b2a', shirt: '#d8ccb6', accent: '#4a3327' },
+    { skin: '#f0c6a8', hair: '#d95d2f', shirt: '#2f8a57', accent: '#284a78' },
+    { skin: '#f3d1b3', hair: '#29476a', shirt: '#3f7ec5', accent: '#35514f' },
+    { skin: '#8f5a36', hair: '#6b3f28', shirt: '#e0b32c', accent: '#2f6b7d' },
+    { skin: '#f5d0a6', hair: '#d7a437', shirt: '#cf3f32', accent: '#6a7d8e' },
+    { skin: '#8a5634', hair: '#2d2621', shirt: '#98a8b8', accent: '#47627d' },
+    { skin: '#f2c9a9', hair: '#8b4f34', shirt: '#d7a13b', accent: '#4b5a8d' },
+    { skin: '#f1dab8', hair: '#dbcfbf', shirt: '#7f53a7', accent: '#5a3c28' },
+    { skin: '#f3d2b2', hair: '#1d2029', shirt: '#2e6a48', accent: '#3f536a' },
+    { skin: '#f5d5b7', hair: '#815432', shirt: '#f1f2f4', accent: '#5782b8' },
+    { skin: '#8d5936', hair: '#232120', shirt: '#2f6fc0', accent: '#244566' },
+    { skin: '#f3cfb2', hair: '#a45a3d', shirt: '#d8d0c6', accent: '#4d4033' },
+    { skin: '#f1d1b7', hair: '#202126', shirt: '#32343d', accent: '#4b6581' },
+    { skin: '#9d6038', hair: '#4c3328', shirt: '#ba6834', accent: '#7a5039' },
+    { skin: '#f3d9b7', hair: '#d1ab54', shirt: '#4c87ce', accent: '#355d89' },
+    { skin: '#f2cfb0', hair: '#342925', shirt: '#2f8b57', accent: '#3d5b80' },
+  ];
+
+  function getLobbyAvatarPreset(index) {
+    return LOBBY_AVATAR_PRESETS[index % LOBBY_AVATAR_PRESETS.length];
+  }
+
+  function buildLobbyAvatarSvg({ skin, hair, shirt, accent }) {
+    return `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 72" shape-rendering="crispEdges">
+        <rect width="64" height="72" fill="transparent"/>
+        <rect x="24" y="12" width="16" height="4" fill="${hair}"/>
+        <rect x="18" y="16" width="28" height="4" fill="${hair}"/>
+        <rect x="16" y="20" width="32" height="4" fill="${hair}"/>
+        <rect x="14" y="24" width="8" height="12" fill="${hair}"/>
+        <rect x="42" y="24" width="8" height="12" fill="${hair}"/>
+        <rect x="18" y="24" width="28" height="24" rx="4" fill="${skin}"/>
+        <rect x="24" y="30" width="6" height="10" fill="#121212"/>
+        <rect x="34" y="30" width="6" height="10" fill="#121212"/>
+        <rect x="28" y="42" width="8" height="2" fill="#d38d74"/>
+        <rect x="18" y="48" width="28" height="4" fill="${shirt}"/>
+        <rect x="14" y="52" width="36" height="14" rx="4" fill="${shirt}"/>
+        <rect x="10" y="52" width="6" height="12" rx="3" fill="${skin}"/>
+        <rect x="48" y="52" width="6" height="12" rx="3" fill="${skin}"/>
+        <rect x="22" y="66" width="8" height="6" fill="${accent}"/>
+        <rect x="34" y="66" width="8" height="6" fill="${accent}"/>
+      </svg>
+    `.trim();
+  }
+
+  function getLobbyAvatarDataUri(index) {
+    return `url("data:image/svg+xml;utf8,${encodeURIComponent(buildLobbyAvatarSvg(getLobbyAvatarPreset(index)))}")`;
+  }
+
   function connectSocket() {
     state.socket = io(window.location.origin, {
       transports: ['websocket', 'polling'],
@@ -289,7 +340,7 @@
     document.getElementById('room-code-text').textContent = data.code;
     const gameRoomCode = document.getElementById('game-room-code');
     if (gameRoomCode) gameRoomCode.textContent = data.code;
-    document.getElementById('player-count').textContent = `${data.playerCount} / 15`;
+    document.getElementById('player-count').textContent = `${data.playerCount} / ${MAX_ROOM_PLAYERS}`;
     const anonymousVotesToggle = document.getElementById('toggle-anonymous-votes');
     if (anonymousVotesToggle) {
       anonymousVotesToggle.checked = !!data.anonymousVotes;
@@ -304,18 +355,17 @@
     const list = document.getElementById('players-list');
     list.innerHTML = '';
 
-    data.players.forEach((player) => {
+    data.players.forEach((player, index) => {
       const div = document.createElement('div');
       div.className = `player-item${player.id === state.playerId ? ' is-self' : ''}`;
-      const initial = player.name.charAt(0).toUpperCase();
-      const colors = ['hsl(195,60%,30%)', 'hsl(220,50%,30%)', 'hsl(260,40%,30%)', 'hsl(340,40%,30%)', 'hsl(160,40%,25%)'];
-      const colorIdx = player.name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length;
 
       div.innerHTML = `
-        <div class="player-avatar" style="background:${colors[colorIdx]}">${initial}</div>
+        <div class="player-avatar" style="background-image:${getLobbyAvatarDataUri(index)}"></div>
         <span class="player-name">${player.name}</span>
-        ${player.id === state.playerId ? '<span class="player-you">YOU</span>' : ''}
-        ${player.isHost ? '<span class="player-crown"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg></span>' : ''}
+        <div class="player-badges">
+          ${player.id === state.playerId ? '<span class="player-you">YOU</span>' : ''}
+          ${player.isHost ? '<span class="player-crown"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg></span>' : ''}
+        </div>
       `;
       list.appendChild(div);
     });

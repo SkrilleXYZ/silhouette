@@ -556,22 +556,24 @@ body {
 .players-list {
   flex: 1;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
   padding-bottom: 16px;
 }
 
 .player-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 8px;
+  padding: 12px 8px 10px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   transition: var(--transition);
   animation: playerJoin 0.4s ease;
+  min-height: 142px;
 }
 
 .player-item.is-self {
@@ -585,27 +587,35 @@ body {
 }
 
 .player-avatar {
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  background: var(--accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Cinzel', serif;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--fg);
+  width: 72px;
+  height: 84px;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  background-size: contain;
   flex-shrink: 0;
 }
 
 .player-name {
-  flex: 1;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.2px;
+  text-align: center;
+  line-height: 1.2;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.player-crown { color: var(--neutral); display: flex; align-items: center; }
+.player-badges {
+  min-height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.player-crown { color: var(--neutral); display: flex; align-items: center; justify-content: center; }
 .player-crown svg { width: 18px; height: 18px; filter: drop-shadow(0 0 4px var(--neutral)); }
 
 .player-you {
@@ -614,6 +624,21 @@ body {
   letter-spacing: 1px;
   text-transform: uppercase;
   font-weight: 600;
+}
+
+@media (max-width: 420px) {
+  .players-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .player-item {
+    min-height: 134px;
+  }
+
+  .player-avatar {
+    width: 64px;
+    height: 78px;
+  }
 }
 
 .room-footer {

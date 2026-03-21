@@ -59,7 +59,7 @@ class GameLogic {
     const room = this.rooms.get(code);
     if (!room) return { error: 'Room not found' };
     if (room.state !== 'lobby') return { error: 'Game already in progress' };
-    if (room.players.size >= 15) return { error: 'Room is full' };
+    if (room.players.size >= 16) return { error: 'Room is full' };
 
     for (const [, player] of room.players) {
       if (player.name.toLowerCase() === playerName.toLowerCase()) {
