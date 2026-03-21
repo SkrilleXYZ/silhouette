@@ -33,6 +33,7 @@ class GameLogic {
       votingTimer: null,
       nightTimer: null,
       morningMessages: [],
+      chatMessages: [],
       playerOrder: [],
       lastAction: Date.now(),
       lastMedicTarget: null,
@@ -180,7 +181,10 @@ class GameLogic {
     room.nightCount = 1;
     room.nightActions = {};
     room.morningMessages = [];
+    room.chatMessages = [];
     room.lastMedicTarget = null;
+
+    this.addSystemChatMessage(code, 'Night 1 has begun. Chat is locked until morning.');
 
     return { room };
   }
@@ -205,6 +209,7 @@ class GameLogic {
     room.winner = null;
     room.nightCount = 0;
     room.morningMessages = [];
+    room.chatMessages = [];
     room.playerOrder = [];
     room.lastAction = Date.now();
     room.lastMedicTarget = null;
@@ -362,6 +367,12 @@ class GameLogic {
     }
 
     room.morningMessages = messages;
+    this.addSystemChatMessage(code, `Morning ${room.nightCount} begins.`);
+    messages.forEach((msg) => {
+      if (msg.public) this.addSystemChatMessage(code, msg.text);
+    });
+    const alivePlayers = Array.from(room.players.values()).filter(p => p.alive).map(p => p.name);
+    this.addSystemChatMessage(code, `Alive: ${alivePlayers.join(', ') || 'No one'}.`);
     room.searchResults = searchResults;
     room.nightActions = {};
     room.state = 'morning';
@@ -467,6 +478,7 @@ class GameLogic {
 
     room.eliminatedToday = eliminated;
     room.votes = {};
+    this.addSystemChatMessage(code, message.text);
 
     const winCheck = this.checkWinCondition(code);
     if (winCheck) {
@@ -476,6 +488,7 @@ class GameLogic {
       room.state = 'night';
       room.nightCount++;
       room.nightActions = {};
+      this.addSystemChatMessage(code, `Night ${room.nightCount} begins. Chat is locked until morning.`);
     }
 
     return {
@@ -547,8 +560,60 @@ class GameLogic {
       state: room.state,
       nightCount: room.nightCount,
       playerCount: room.players.size,
-      aliveCount: players.filter(p => p.alive).length
+      aliveCount: players.filter(p => p.alive).length,
+      chatMessages: room.chatMessages.slice(-150),
     };
+  }
+
+  addSystemChatMessage(code, text) {
+    const room = this.rooms.get(code);
+    if (!room || !text) return null;
+
+    const message = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      type: 'system',
+      senderId: null,
+      senderName: 'SYSTEM',
+      text,
+      createdAt: Date.now(),
+      phase: room.state,
+    };
+
+    room.chatMessages.push(message);
+    if (room.chatMessages.length > 150) room.chatMessages = room.chatMessages.slice(-150);
+    room.lastAction = Date.now();
+    return message;
+  }
+
+  addChatMessage(code, playerId, text) {
+    const room = this.rooms.get(code);
+    if (!room) return { error: 'Room not found' };
+    if (room.state !== 'morning' && room.state !== 'voting') {
+      return { error: 'Chat is only available during morning and voting' };
+    }
+
+    const player = room.players.get(playerId);
+    if (!player) return { error: 'Player not found' };
+
+    const cleanText = String(text || '').trim().replace(/\s+/g, ' ');
+    if (!cleanText) return { error: 'Message cannot be empty' };
+    if (cleanText.length > 280) return { error: 'Message is too long' };
+
+    const message = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      type: 'player',
+      senderId: playerId,
+      senderName: player.name,
+      text: cleanText,
+      createdAt: Date.now(),
+      phase: room.state,
+    };
+
+    room.chatMessages.push(message);
+    if (room.chatMessages.length > 150) room.chatMessages = room.chatMessages.slice(-150);
+    room.lastAction = Date.now();
+
+    return { success: true, message };
   }
 
   getPlayerData(code, playerId) {

@@ -23,6 +23,7 @@
     votesCast: 0,
     totalAlive: 0,
     morningMessages: [],
+    chatMessages: [],
     gamePhase: null,
     allPlayersWithRoles: [],
     playerListOpen: false,
@@ -44,9 +45,11 @@
 
     state.socket.on('room-updated', (roomData) => {
       state.roomData = roomData;
+       state.chatMessages = roomData.chatMessages || state.chatMessages;
       if (state.currentScreen === 'room') renderRoom();
       updateAliveCount();
       renderGamePlayerList();
+      renderChatBox();
     });
 
     state.socket.on('host-changed', ({ newHostId }) => {
@@ -57,6 +60,7 @@
     state.socket.on('game-started', ({ player, room }) => {
       state.playerData = player;
       state.roomData = room;
+      state.chatMessages = room.chatMessages || [];
       state.hasActed = false;
       state.hasVoted = false;
       state.votesCast = 0;
@@ -67,10 +71,12 @@
       hideNav();
       updateRoleCard();
       renderGamePlayerList();
+      renderChatBox();
     });
 
     state.socket.on('phase-changed', ({ phase, nightCount, messages, room }) => {
       state.roomData = room;
+      state.chatMessages = room?.chatMessages || state.chatMessages;
       state.gamePhase = phase;
       state.hasActed = false;
       state.hasVoted = false;
@@ -83,6 +89,7 @@
       renderGameContent(phase);
       updateAliveCount();
       renderGamePlayerList();
+      renderChatBox();
     });
 
     state.socket.on('player-updated', ({ player }) => {
@@ -90,6 +97,13 @@
       state.hasActed = player.hasSubmittedAction;
       state.hasVoted = player.hasVoted;
       renderGamePlayerList();
+      renderChatBox();
+    });
+
+    state.socket.on('chat-message', ({ message }) => {
+      state.chatMessages.push(message);
+      if (state.chatMessages.length > 150) state.chatMessages = state.chatMessages.slice(-150);
+      renderChatBox();
     });
 
     state.socket.on('search-result', (result) => {
@@ -109,9 +123,11 @@
 
     state.socket.on('vote-result', ({ message, eliminated, room }) => {
       state.roomData = room;
+      state.chatMessages = room?.chatMessages || state.chatMessages;
       renderVoteResult(message);
       updateAliveCount();
       renderGamePlayerList();
+      renderChatBox();
     });
 
     state.socket.on('game-over', ({ winner, players }) => {
@@ -131,6 +147,7 @@
       state.selectedAction = null;
       state.selectedTarget = null;
       state.morningMessages = [];
+      state.chatMessages = room.chatMessages || [];
       state.gamePhase = null;
       state.allPlayersWithRoles = [];
       state.playerListOpen = false;
@@ -328,6 +345,83 @@
   function updateAliveCount() {
     const el = document.getElementById('alive-count-text');
     if (el && state.roomData) el.textContent = `${state.roomData.aliveCount} alive`;
+  }
+
+  function getChatMode() {
+    if (state.gamePhase === 'morning') return 'morning';
+    if (state.gamePhase === 'voting') return 'voting';
+    if (state.gamePhase === 'night') return 'night';
+    return 'hidden';
+  }
+
+  function renderChatBox() {
+    const panel = document.getElementById('phase-chat-panel');
+    if (!panel) return;
+
+    const mode = getChatMode();
+    const canChat = mode === 'morning' || mode === 'voting';
+    const messages = state.chatMessages || [];
+
+    panel.className = `phase-chat-panel ${mode === 'morning' ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}`;
+
+    if (mode === 'hidden') {
+      panel.innerHTML = '';
+      return;
+    }
+
+    const items = messages.length
+      ? messages.map((message) => {
+        const isSelf = message.senderId === state.playerId;
+        const classes = `chat-message ${message.type === 'system' ? 'system' : ''}${isSelf ? ' self' : ''}`;
+        const sender = message.type === 'system' ? 'SYSTEM' : message.senderName;
+        return `
+          <div class="${classes}">
+            <div class="chat-message-meta">${sender}</div>
+            <div class="chat-message-text">${message.text}</div>
+          </div>`;
+      }).join('')
+      : '<div class="chat-empty">No messages yet.</div>';
+
+    panel.innerHTML = `
+      <div class="chat-panel-header">
+        <div>
+          <div class="chat-panel-title">Room Chat</div>
+          <div class="chat-panel-subtitle">${canChat ? 'Chat is open for discussion.' : 'Chat is visible but locked until morning.'}</div>
+        </div>
+      </div>
+      <div class="chat-messages" id="chat-messages">${items}</div>
+      <form class="chat-input-row" id="chat-form">
+        <input
+          id="chat-input"
+          class="chat-input"
+          type="text"
+          maxlength="280"
+          placeholder="${canChat ? 'Type a message...' : 'Chat is locked at night'}"
+          ${canChat ? '' : 'disabled'}
+        />
+        <button class="btn btn-primary chat-send-btn" type="submit" ${canChat ? '' : 'disabled'}>Send</button>
+      </form>`;
+
+    const chatMessages = document.getElementById('chat-messages');
+    if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    const chatForm = document.getElementById('chat-form');
+    if (chatForm && canChat) {
+      chatForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const input = document.getElementById('chat-input');
+        const text = input ? input.value.trim() : '';
+        if (!text) return;
+
+        state.socket.emit('send-chat-message', { text }, (response) => {
+          if (response.success) {
+            if (input) input.value = '';
+          } else {
+            showToast(response.error || 'Message failed to send', 'error');
+          }
+        });
+      });
+    }
   }
 
   function renderGameContent(phase) {
@@ -579,6 +673,222 @@
         updateRoleCard();
         updateAliveCount();
         renderGamePlayerList();
+      }
+    });
+  }
+
+  function renderNightPhase(container) {
+    const player = state.playerData;
+    if (!player) return;
+
+    if (player.role === 'Villager') {
+      container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">You have no abilities. Wait for dawn...</p></div><div id="phase-chat-panel"></div>';
+      renderChatBox();
+      return;
+    }
+
+    if (state.hasActed) {
+      container.innerHTML = '<div class="action-confirmed"><div class="confirmed-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><p class="confirmed-text">ACTION SUBMITTED</p><p class="confirmed-detail">Waiting for others...</p></div><div id="phase-chat-panel"></div>';
+      renderChatBox();
+      return;
+    }
+
+    const targets = getTargetPlayers();
+    const isAssassin = player.faction === 'Assassin';
+    const actionClass = isAssassin ? 'assassin-action' : '';
+    const targetClass = isAssassin ? 'assassin-target' : '';
+
+    let actionsHTML = '';
+    if (player.role === 'Sheriff') {
+      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'shoot' ? 'selected' : ''}" data-action="shoot">🔫 SHOOT</button><button class="action-btn ${state.selectedAction === 'search' ? 'selected' : ''}" data-action="search">🔍 SEARCH</button></div>`;
+    } else if (player.role === 'Medic') {
+      state.selectedAction = 'protect';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">🛡️ PROTECT</button></div>';
+    } else if (player.role === 'Agent') {
+      state.selectedAction = 'kill';
+      actionsHTML = `<div class="action-buttons"><button class="action-btn selected ${actionClass}" data-action="kill">🗡️ KILL</button></div>`;
+    }
+
+    let actionDesc = '';
+    if (player.role === 'Sheriff') actionDesc = 'Choose to shoot or investigate a player';
+    else if (player.role === 'Medic') actionDesc = 'Choose a player to protect tonight';
+    else if (player.role === 'Agent') actionDesc = 'Choose a crew member to eliminate';
+
+    container.innerHTML = `
+      <div class="action-panel">
+        <div class="action-title">NIGHT ACTION</div>
+        <div class="action-subtitle">${actionDesc}</div>
+        ${actionsHTML}
+        <div class="target-label">SELECT TARGET</div>
+        <div class="target-list" id="target-list">
+          ${targets.map(t => {
+            const isRestricted = player.role === 'Medic' && t.id === player.lastMedicTarget;
+            return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}><div class="target-dot"></div><span class="target-name">${t.name}</span></div>`;
+          }).join('')}
+        </div>
+        <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || !state.selectedTarget ? 'disabled' : ''}>CONFIRM</button>
+        <button class="btn btn-ghost" id="btn-skip-night" style="margin-top:8px; width:100%;">SKIP (Do nothing)</button>
+      </div>
+      <div id="phase-chat-panel"></div>`;
+
+    container.querySelectorAll('.action-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.selectedAction = btn.dataset.action;
+        state.selectedTarget = null;
+        renderNightPhase(container);
+      });
+    });
+
+    container.querySelectorAll('.target-item').forEach(item => {
+      item.addEventListener('click', () => {
+        if (item.dataset.restricted === 'true') {
+          showToast('You cannot protect the same player two nights in a row', 'error');
+          return;
+        }
+        state.selectedTarget = item.dataset.target;
+        renderNightPhase(container);
+      });
+    });
+
+    const confirmBtn = document.getElementById('btn-confirm-action');
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', () => {
+        if (!state.selectedAction || !state.selectedTarget) return;
+        state.socket.emit('night-action', { action: state.selectedAction, targetId: state.selectedTarget }, (response) => {
+          if (response.success) {
+            state.hasActed = true;
+            renderNightPhase(container);
+            showToast('Action submitted', 'success');
+          } else {
+            showToast(response.error || 'Action failed', 'error');
+          }
+        });
+      });
+    }
+
+    const skipBtn = document.getElementById('btn-skip-night');
+    if (skipBtn) {
+      skipBtn.addEventListener('click', () => {
+        state.socket.emit('skip-night', (response) => {
+          if (response.success) {
+            state.hasActed = true;
+            renderNightPhase(container);
+            showToast('Skipped night action', 'info');
+          }
+        });
+      });
+    }
+
+    renderChatBox();
+  }
+
+  function renderMorningPhase(container, messagesContainer) {
+    container.style.display = 'flex';
+    messagesContainer.style.display = 'none';
+    container.innerHTML = `
+      <div class="morning-chat-intro">
+        <div class="action-title">MORNING DISCUSSION</div>
+        <div class="action-subtitle">System messages below summarize the night and show who is alive. Use the chat to discuss before voting.</div>
+      </div>
+      <div id="phase-chat-panel"></div>`;
+
+    renderChatBox();
+
+    state.socket.emit('request-player-data', (response) => {
+      if (response.success) {
+        state.playerData = response.player;
+        state.roomData = response.room;
+        state.chatMessages = response.room?.chatMessages || state.chatMessages;
+        updateRoleCard();
+        updateAliveCount();
+        renderGamePlayerList();
+        renderChatBox();
+      }
+    });
+  }
+
+  function renderVotingPhase(container) {
+    if (state.hasVoted) {
+      container.innerHTML = '<div class="action-confirmed"><div class="confirmed-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><p class="confirmed-text">VOTE SUBMITTED</p><p class="confirmed-detail">Waiting for others...</p></div><div id="phase-chat-panel"></div>';
+      renderChatBox();
+      return;
+    }
+
+    const targets = getVoteTargets();
+    const aliveCount = state.totalAlive || state.roomData?.aliveCount || '?';
+
+    container.innerHTML = `
+      <div class="voting-panel">
+        <div class="action-title">TOWN VOTE</div>
+        <div class="action-subtitle">Vote to eliminate a suspect</div>
+        <div class="vote-count-bar"><span id="votes-cast-count" class="vote-cast-count">${state.votesCast} / ${aliveCount} votes cast</span></div>
+        <div class="target-list" id="vote-target-list">
+          ${targets.map(t => `<div class="target-item ${state.selectedTarget === t.id ? 'selected' : ''}" data-target="${t.id}"><div class="target-dot"></div><span class="target-name">${t.name}</span></div>`).join('')}
+        </div>
+        <button class="skip-vote-btn ${state.selectedTarget === 'skip' ? 'selected' : ''}" id="btn-vote-skip">⏭ SKIP VOTE</button>
+        <button class="btn btn-primary confirm-action" id="btn-confirm-vote" ${!state.selectedTarget ? 'disabled' : ''}>CONFIRM VOTE</button>
+      </div>
+      <div id="phase-chat-panel"></div>`;
+
+    container.querySelectorAll('.target-item').forEach(item => {
+      item.addEventListener('click', () => {
+        state.selectedTarget = item.dataset.target;
+        renderVotingPhase(container);
+      });
+    });
+
+    const skipBtn = document.getElementById('btn-vote-skip');
+    if (skipBtn) {
+      skipBtn.addEventListener('click', () => {
+        state.selectedTarget = 'skip';
+        renderVotingPhase(container);
+      });
+    }
+
+    const confirmBtn = document.getElementById('btn-confirm-vote');
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', () => {
+        if (!state.selectedTarget) return;
+        state.votesCast = (state.votesCast || 0) + 1;
+        renderVotingPhase(container);
+        state.socket.emit('vote', { targetId: state.selectedTarget }, (response) => {
+          if (response.success) {
+            state.hasVoted = true;
+            renderVotingPhase(container);
+            showToast('Vote cast', 'success');
+          } else {
+            state.votesCast = Math.max(0, (state.votesCast || 1) - 1);
+            renderVotingPhase(container);
+            showToast(response.error || 'Vote failed', 'error');
+          }
+        });
+      });
+    }
+
+    renderChatBox();
+  }
+
+  function renderVoteResult(message) {
+    const content = document.getElementById('game-content');
+    const messages = document.getElementById('game-messages');
+    content.style.display = 'flex';
+    messages.style.display = 'none';
+
+    let icon = '🗳️';
+    if (message.type === 'eliminated') icon = '⚖️';
+
+    content.innerHTML = `<div class="vote-result-panel"><div style="font-size:2rem; margin-bottom:12px;">${icon}</div><div class="vote-result-text">${message.text}</div><div class="vote-result-detail">Transitioning to next phase...</div></div><div id="phase-chat-panel"></div>`;
+    renderChatBox();
+
+    state.socket.emit('request-player-data', (response) => {
+      if (response.success) {
+        state.playerData = response.player;
+        state.roomData = response.room;
+        state.chatMessages = response.room?.chatMessages || state.chatMessages;
+        updateRoleCard();
+        updateAliveCount();
+        renderGamePlayerList();
+        renderChatBox();
       }
     });
   }

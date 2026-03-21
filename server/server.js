@@ -169,6 +169,23 @@ io.on('connection', (socket) => {
     callback({ success: true, player: playerData, room: roomData });
   });
 
+  socket.on('send-chat-message', ({ text }, callback) => {
+    const mapping = socketMap.get(socket.id);
+    if (!mapping) {
+      if (callback) callback({ success: false, error: 'Not in a room' });
+      return;
+    }
+
+    const result = game.addChatMessage(mapping.code, socket.id, text);
+    if (result.error) {
+      if (callback) callback({ success: false, error: result.error });
+      return;
+    }
+
+    io.to(mapping.code).emit('chat-message', { message: result.message });
+    if (callback) callback({ success: true, message: result.message });
+  });
+
   socket.on('disconnect', () => {
     console.log(`Disconnected: ${socket.id}`);
     const mapping = socketMap.get(socket.id);
