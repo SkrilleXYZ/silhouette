@@ -1069,6 +1069,7 @@ body {
 }
 
 .action-btn {
+  position: relative;
   flex: 1;
   padding: 10px;
   background: var(--bg-elevated);
@@ -1080,24 +1081,149 @@ body {
   font-weight: 600;
   letter-spacing: 1px;
   cursor: pointer;
-  transition: var(--transition);
+  overflow: hidden;
+  transform: translateY(0) scale(1);
+  transition: transform 0.16s ease, border-color 0.16s ease, color 0.16s ease, background 0.16s ease, box-shadow 0.2s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
+.action-btn::before {
+  content: '';
+  position: absolute;
+  inset: -30% auto -30% -120%;
+  width: 60%;
+  background: linear-gradient(115deg, transparent, rgba(255,255,255,0.22), transparent);
+  transform: skewX(-18deg);
+  opacity: 0;
+}
+
+.action-btn::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  border: 1px solid transparent;
+  opacity: 0;
+  transform: scale(0.96);
+}
+
 .action-btn:hover { border-color: var(--fg-dim); color: var(--fg); }
+
+.action-btn:active {
+  transform: translateY(1px) scale(0.985);
+}
 
 .action-btn.selected {
   border-color: var(--crew);
   color: var(--crew);
   background: var(--crew-dim);
-  box-shadow: 0 0 12px var(--crew-glow);
+  box-shadow: 0 0 12px var(--crew-glow), inset 0 0 0 1px rgba(255,255,255,0.06);
 }
 
 .action-btn.selected.assassin-action {
   border-color: var(--assassin);
   color: var(--assassin);
   background: var(--assassin-dim);
-  box-shadow: 0 0 12px var(--assassin-glow);
+  box-shadow: 0 0 12px var(--assassin-glow), inset 0 0 0 1px rgba(255,255,255,0.04);
+}
+
+.action-btn[data-action="shoot"].selected {
+  border-color: hsl(20, 100%, 62%);
+  color: hsl(34, 100%, 82%);
+  background: linear-gradient(135deg, hsl(20,72%,24%), hsl(8,74%,18%));
+  box-shadow: 0 0 18px hsla(18, 100%, 58%, 0.35);
+}
+
+.action-btn[data-action="shoot"].selected::after {
+  border-color: hsla(35, 100%, 78%, 0.32);
+  animation: shootRing 0.9s ease-out infinite;
+}
+
+.action-btn[data-action="search"].selected {
+  border-color: hsl(188, 92%, 58%);
+  color: hsl(188, 100%, 85%);
+  background: linear-gradient(135deg, hsl(198,70%,24%), hsl(214,68%,18%));
+  box-shadow: 0 0 18px hsla(188, 92%, 58%, 0.28);
+}
+
+.action-btn[data-action="search"].selected::before {
+  background: linear-gradient(115deg, transparent, rgba(125, 240, 255, 0.4), transparent);
+  animation: searchSweep 1.15s linear infinite;
+}
+
+.action-btn[data-action="protect"].selected {
+  border-color: hsl(156, 78%, 52%);
+  color: hsl(154, 90%, 84%);
+  background: radial-gradient(circle at 50% 0%, rgba(116,255,198,0.16), transparent 45%), linear-gradient(135deg, hsl(160,58%,21%), hsl(175,60%,16%));
+  box-shadow: 0 0 18px hsla(156, 78%, 52%, 0.28);
+}
+
+.action-btn[data-action="protect"].selected::after {
+  border-color: hsla(156, 90%, 78%, 0.3);
+  animation: protectPulse 1.3s ease-in-out infinite;
+}
+
+.action-btn[data-action="kill"].selected,
+.action-btn[data-action="kill"].selected.assassin-action {
+  border-color: hsl(0, 78%, 52%);
+  color: hsl(0, 100%, 83%);
+  background: linear-gradient(135deg, hsl(356,68%,20%), hsl(0,66%,12%));
+  box-shadow: 0 0 18px hsla(0, 80%, 48%, 0.34);
+}
+
+.action-btn[data-action="kill"].selected::before {
+  background: linear-gradient(115deg, transparent, rgba(255, 92, 92, 0.42), transparent);
+  animation: killSlash 0.95s ease-in-out infinite;
+}
+
+.action-btn.selected::before {
+  opacity: 1;
+  animation: actionSweep 1.8s ease-in-out infinite;
+}
+
+.action-btn.selected::after {
+  opacity: 1;
+  transform: scale(1);
+  border-color: rgba(255,255,255,0.1);
+}
+
+.action-btn.action-activate {
+  animation: actionClickPulse 0.42s ease;
+}
+
+@keyframes actionSweep {
+  0% { left: -120%; }
+  55% { left: 140%; }
+  100% { left: 140%; }
+}
+
+@keyframes actionClickPulse {
+  0% { transform: translateY(0) scale(1); }
+  35% { transform: translateY(-1px) scale(1.03); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes shootRing {
+  0% { opacity: 0.7; transform: scale(0.94); }
+  100% { opacity: 0; transform: scale(1.06); }
+}
+
+@keyframes searchSweep {
+  0% { left: -120%; opacity: 0.2; }
+  45% { opacity: 1; }
+  100% { left: 140%; opacity: 0.2; }
+}
+
+@keyframes protectPulse {
+  0%, 100% { opacity: 0.35; box-shadow: inset 0 0 0 0 rgba(115,255,197,0.18); }
+  50% { opacity: 1; box-shadow: inset 0 0 18px 0 rgba(115,255,197,0.14); }
+}
+
+@keyframes killSlash {
+  0% { left: -120%; opacity: 0.15; }
+  18% { opacity: 1; }
+  52% { left: 80%; opacity: 0.8; }
+  100% { left: 140%; opacity: 0.15; }
 }
 
 .target-list {

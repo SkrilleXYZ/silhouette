@@ -34,29 +34,69 @@
 
   const MAX_ROOM_PLAYERS = 16;
   const LOBBY_AVATAR_PRESETS = [
-    { skin: '#f3d3b4', hair: '#7b4b2a', shirt: '#d8ccb6', accent: '#4a3327' },
-    { skin: '#f0c6a8', hair: '#d95d2f', shirt: '#2f8a57', accent: '#284a78' },
-    { skin: '#f3d1b3', hair: '#29476a', shirt: '#3f7ec5', accent: '#35514f' },
-    { skin: '#8f5a36', hair: '#6b3f28', shirt: '#e0b32c', accent: '#2f6b7d' },
-    { skin: '#f5d0a6', hair: '#d7a437', shirt: '#cf3f32', accent: '#6a7d8e' },
-    { skin: '#8a5634', hair: '#2d2621', shirt: '#98a8b8', accent: '#47627d' },
-    { skin: '#f2c9a9', hair: '#8b4f34', shirt: '#d7a13b', accent: '#4b5a8d' },
-    { skin: '#f1dab8', hair: '#dbcfbf', shirt: '#7f53a7', accent: '#5a3c28' },
-    { skin: '#f3d2b2', hair: '#1d2029', shirt: '#2e6a48', accent: '#3f536a' },
-    { skin: '#f5d5b7', hair: '#815432', shirt: '#f1f2f4', accent: '#5782b8' },
-    { skin: '#8d5936', hair: '#232120', shirt: '#2f6fc0', accent: '#244566' },
-    { skin: '#f3cfb2', hair: '#a45a3d', shirt: '#d8d0c6', accent: '#4d4033' },
-    { skin: '#f1d1b7', hair: '#202126', shirt: '#32343d', accent: '#4b6581' },
-    { skin: '#9d6038', hair: '#4c3328', shirt: '#ba6834', accent: '#7a5039' },
-    { skin: '#f3d9b7', hair: '#d1ab54', shirt: '#4c87ce', accent: '#355d89' },
-    { skin: '#f2cfb0', hair: '#342925', shirt: '#2f8b57', accent: '#3d5b80' },
+    { skin: '#f3d3b4', hair: '#7b4b2a', shirt: '#d8ccb6', accent: '#4a3327', pose: 'wave' },
+    { skin: '#f0c6a8', hair: '#d95d2f', shirt: '#2f8a57', accent: '#284a78', pose: 'lean' },
+    { skin: '#f3d1b3', hair: '#29476a', shirt: '#3f7ec5', accent: '#35514f', pose: 'hands-up' },
+    { skin: '#8f5a36', hair: '#6b3f28', shirt: '#e0b32c', accent: '#2f6b7d', pose: 'wave' },
+    { skin: '#f5d0a6', hair: '#d7a437', shirt: '#cf3f32', accent: '#6a7d8e', pose: 'step-left' },
+    { skin: '#8a5634', hair: '#2d2621', shirt: '#98a8b8', accent: '#47627d', pose: 'hands-up' },
+    { skin: '#f2c9a9', hair: '#8b4f34', shirt: '#d7a13b', accent: '#4b5a8d', pose: 'lean' },
+    { skin: '#f1dab8', hair: '#dbcfbf', shirt: '#7f53a7', accent: '#5a3c28', pose: 'step-right' },
+    { skin: '#f3d2b2', hair: '#1d2029', shirt: '#2e6a48', accent: '#3f536a', pose: 'wave' },
+    { skin: '#f5d5b7', hair: '#815432', shirt: '#f1f2f4', accent: '#5782b8', pose: 'step-left' },
+    { skin: '#8d5936', hair: '#232120', shirt: '#2f6fc0', accent: '#244566', pose: 'lean' },
+    { skin: '#f3cfb2', hair: '#a45a3d', shirt: '#d8d0c6', accent: '#4d4033', pose: 'hands-up' },
+    { skin: '#f1d1b7', hair: '#202126', shirt: '#32343d', accent: '#4b6581', pose: 'step-right' },
+    { skin: '#9d6038', hair: '#4c3328', shirt: '#ba6834', accent: '#7a5039', pose: 'wave' },
+    { skin: '#f3d9b7', hair: '#d1ab54', shirt: '#4c87ce', accent: '#355d89', pose: 'hands-up' },
+    { skin: '#f2cfb0', hair: '#342925', shirt: '#2f8b57', accent: '#3d5b80', pose: 'lean' },
   ];
 
   function getLobbyAvatarPreset(index) {
     return LOBBY_AVATAR_PRESETS[index % LOBBY_AVATAR_PRESETS.length];
   }
 
-  function buildLobbyAvatarSvg({ skin, hair, shirt, accent }) {
+  function buildLobbyAvatarSvg({ skin, hair, shirt, accent, pose = 'idle' }) {
+    const poses = {
+      idle: {
+        leftArm: '<rect x="10" y="52" width="6" height="12" rx="3" fill="${skin}"/>',
+        rightArm: '<rect x="48" y="52" width="6" height="12" rx="3" fill="${skin}"/>',
+        leftLeg: '<rect x="22" y="66" width="8" height="6" fill="${accent}"/>',
+        rightLeg: '<rect x="34" y="66" width="8" height="6" fill="${accent}"/>',
+      },
+      wave: {
+        leftArm: '<rect x="8" y="46" width="6" height="16" rx="3" transform="rotate(-28 11 54)" fill="${skin}"/>',
+        rightArm: '<rect x="48" y="52" width="6" height="12" rx="3" fill="${skin}"/>',
+        leftLeg: '<rect x="22" y="66" width="8" height="6" fill="${accent}"/>',
+        rightLeg: '<rect x="34" y="66" width="8" height="6" fill="${accent}"/>',
+      },
+      lean: {
+        leftArm: '<rect x="11" y="52" width="6" height="11" rx="3" transform="rotate(10 14 57)" fill="${skin}"/>',
+        rightArm: '<rect x="47" y="50" width="6" height="13" rx="3" transform="rotate(14 50 56)" fill="${skin}"/>',
+        leftLeg: '<rect x="21" y="66" width="8" height="6" fill="${accent}"/>',
+        rightLeg: '<rect x="35" y="65" width="8" height="7" fill="${accent}"/>',
+      },
+      'hands-up': {
+        leftArm: '<rect x="11" y="46" width="6" height="15" rx="3" transform="rotate(-18 14 54)" fill="${skin}"/>',
+        rightArm: '<rect x="47" y="46" width="6" height="15" rx="3" transform="rotate(18 50 54)" fill="${skin}"/>',
+        leftLeg: '<rect x="22" y="66" width="8" height="6" fill="${accent}"/>',
+        rightLeg: '<rect x="34" y="66" width="8" height="6" fill="${accent}"/>',
+      },
+      'step-left': {
+        leftArm: '<rect x="10" y="53" width="6" height="11" rx="3" fill="${skin}"/>',
+        rightArm: '<rect x="48" y="51" width="6" height="13" rx="3" fill="${skin}"/>',
+        leftLeg: '<rect x="20" y="65" width="8" height="7" fill="${accent}"/>',
+        rightLeg: '<rect x="35" y="66" width="8" height="6" fill="${accent}"/>',
+      },
+      'step-right': {
+        leftArm: '<rect x="10" y="51" width="6" height="13" rx="3" fill="${skin}"/>',
+        rightArm: '<rect x="48" y="53" width="6" height="11" rx="3" fill="${skin}"/>',
+        leftLeg: '<rect x="22" y="66" width="8" height="6" fill="${accent}"/>',
+        rightLeg: '<rect x="36" y="65" width="8" height="7" fill="${accent}"/>',
+      },
+    };
+
+    const activePose = poses[pose] || poses.idle;
     return `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 72">
         <rect width="64" height="72" fill="transparent"/>
@@ -71,10 +111,10 @@
         <rect x="28" y="42" width="8" height="2" fill="#d38d74"/>
         <rect x="18" y="48" width="28" height="4" fill="${shirt}"/>
         <rect x="14" y="52" width="36" height="14" rx="4" fill="${shirt}"/>
-        <rect x="10" y="52" width="6" height="12" rx="3" fill="${skin}"/>
-        <rect x="48" y="52" width="6" height="12" rx="3" fill="${skin}"/>
-        <rect x="22" y="66" width="8" height="6" fill="${accent}"/>
-        <rect x="34" y="66" width="8" height="6" fill="${accent}"/>
+        ${activePose.leftArm.replace(/\$\{skin\}/g, skin)}
+        ${activePose.rightArm.replace(/\$\{skin\}/g, skin)}
+        ${activePose.leftLeg.replace(/\$\{accent\}/g, accent)}
+        ${activePose.rightLeg.replace(/\$\{accent\}/g, accent)}
       </svg>
     `.trim();
   }
@@ -1595,6 +1635,9 @@
     if (state.gamePhase === 'night') {
       container.querySelectorAll('.action-btn').forEach(btn => {
         btn.addEventListener('click', () => {
+          btn.classList.remove('action-activate');
+          void btn.offsetWidth;
+          btn.classList.add('action-activate');
           state.selectedAction = btn.dataset.action;
           state.selectedTarget = null;
           renderChatBox();
