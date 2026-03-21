@@ -1,7 +1,7 @@
 class GameLogic {
   constructor() {
     this.rooms = new Map();
-    this.avatarCount = 5;
+    this.avatarCount = 29;
   }
 
   assignAvatarIndex(room) {

@@ -33,13 +33,38 @@
   };
 
   const MAX_ROOM_PLAYERS = 16;
-  const LOBBY_AVATAR_IMAGES = [
-    './assets/avatars/avatar%201.png',
-    './assets/avatars/avatar%202.png',
-    './assets/avatars/avatar%203.png',
-    './assets/avatars/avatar%204.png',
-    './assets/avatars/avatar%205.png',
+  const LOBBY_AVATAR_FILES = [
+    'Avatar 1.png',
+    'Avatar 2.png',
+    'Avatar 3.png',
+    'Avatar 4.png',
+    'Avatar 5.png',
+    'Avatar_11-removebg-preview.png',
+    'Avatar_13-removebg-preview.png',
+    'Avatar_14-removebg-preview.png',
+    'Avatar_16-removebg-preview.png',
+    'Avatar_17-removebg-preview.png',
+    'Avatar_18-removebg-preview.png',
+    'Avatar_19-removebg-preview.png',
+    'Avatar_20-removebg-preview.png',
+    'Avatar_21-removebg-preview.png',
+    'Avatar_22-removebg-preview.png',
+    'Avatar_23-removebg-preview.png',
+    'Avatar_24-removebg-preview.png',
+    'Avatar_26-removebg-preview.png',
+    'Avatar_28-removebg-preview.png',
+    'Avatar_29-removebg-preview.png',
+    'Avatar_30-removebg-preview.png',
+    'Avatar_32-removebg-preview.png',
+    'Avatar_33-removebg-preview.png',
+    'Avatar_34-removebg-preview.png',
+    'Avatar_35-removebg-preview.png',
+    'Avatar_6-removebg-preview.png',
+    'Avatar_7-removebg-preview.png',
+    'Avatar_8-removebg-preview.png',
+    'Avatar_9-removebg-preview.png',
   ];
+  const LOBBY_AVATAR_IMAGES = LOBBY_AVATAR_FILES.map((fileName) => `./assets/avatars/${encodeURIComponent(fileName)}`);
 
   function getLobbyAvatarSrc(index) {
     return LOBBY_AVATAR_IMAGES[index % LOBBY_AVATAR_IMAGES.length];
