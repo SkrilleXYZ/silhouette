@@ -33,103 +33,25 @@
   };
 
   const MAX_ROOM_PLAYERS = 16;
-  const LOBBY_AVATAR_PRESETS = [
-    { skin: '#f3d3b4', hair: '#7b4b2a', shirt: '#d8ccb6', accent: '#4a3327', pose: 'wave' },
-    { skin: '#f0c6a8', hair: '#d95d2f', shirt: '#2f8a57', accent: '#284a78', pose: 'lean' },
-    { skin: '#f3d1b3', hair: '#29476a', shirt: '#3f7ec5', accent: '#35514f', pose: 'hands-up' },
-    { skin: '#8f5a36', hair: '#6b3f28', shirt: '#e0b32c', accent: '#2f6b7d', pose: 'wave' },
-    { skin: '#f5d0a6', hair: '#d7a437', shirt: '#cf3f32', accent: '#6a7d8e', pose: 'step-left' },
-    { skin: '#8a5634', hair: '#2d2621', shirt: '#98a8b8', accent: '#47627d', pose: 'hands-up' },
-    { skin: '#f2c9a9', hair: '#8b4f34', shirt: '#d7a13b', accent: '#4b5a8d', pose: 'lean' },
-    { skin: '#f1dab8', hair: '#dbcfbf', shirt: '#7f53a7', accent: '#5a3c28', pose: 'step-right' },
-    { skin: '#f3d2b2', hair: '#1d2029', shirt: '#2e6a48', accent: '#3f536a', pose: 'wave' },
-    { skin: '#f5d5b7', hair: '#815432', shirt: '#f1f2f4', accent: '#5782b8', pose: 'step-left' },
-    { skin: '#8d5936', hair: '#232120', shirt: '#2f6fc0', accent: '#244566', pose: 'lean' },
-    { skin: '#f3cfb2', hair: '#a45a3d', shirt: '#d8d0c6', accent: '#4d4033', pose: 'hands-up' },
-    { skin: '#f1d1b7', hair: '#202126', shirt: '#32343d', accent: '#4b6581', pose: 'step-right' },
-    { skin: '#9d6038', hair: '#4c3328', shirt: '#ba6834', accent: '#7a5039', pose: 'wave' },
-    { skin: '#f3d9b7', hair: '#d1ab54', shirt: '#4c87ce', accent: '#355d89', pose: 'hands-up' },
-    { skin: '#f2cfb0', hair: '#342925', shirt: '#2f8b57', accent: '#3d5b80', pose: 'lean' },
+  const LOBBY_AVATAR_IMAGES = [
+    './assets/avatars/avatar%201.png',
+    './assets/avatars/avatar%202.png',
+    './assets/avatars/avatar%203.png',
+    './assets/avatars/avatar%204.png',
+    './assets/avatars/avatar%205.png',
   ];
 
-  function getLobbyAvatarPreset(index) {
-    return LOBBY_AVATAR_PRESETS[index % LOBBY_AVATAR_PRESETS.length];
-  }
-
-  function buildLobbyAvatarSvg({ skin, hair, shirt, accent, pose = 'idle' }) {
-    const poses = {
-      idle: {
-        leftArm: '<rect x="8" y="43" width="7" height="14" rx="3" fill="${skin}"/>',
-        rightArm: '<rect x="49" y="43" width="7" height="14" rx="3" fill="${skin}"/>',
-        shoulder: '<rect x="14" y="42" width="36" height="18" rx="8" fill="${shirt}"/>',
-        chest: '<rect x="18" y="36" width="28" height="18" rx="6" fill="${shirt}"/>',
-      },
-      wave: {
-        leftArm: '<rect x="6" y="34" width="7" height="18" rx="3" transform="rotate(-22 10 43)" fill="${skin}"/>',
-        rightArm: '<rect x="49" y="44" width="7" height="13" rx="3" fill="${skin}"/>',
-        shoulder: '<rect x="14" y="42" width="36" height="18" rx="8" fill="${shirt}"/>',
-        chest: '<rect x="18" y="36" width="28" height="18" rx="6" fill="${shirt}"/>',
-      },
-      lean: {
-        leftArm: '<rect x="10" y="45" width="7" height="12" rx="3" transform="rotate(10 13 51)" fill="${skin}"/>',
-        rightArm: '<rect x="47" y="42" width="7" height="15" rx="3" transform="rotate(12 50 49)" fill="${skin}"/>',
-        shoulder: '<rect x="13" y="43" width="38" height="17" rx="8" fill="${shirt}"/>',
-        chest: '<rect x="19" y="36" width="27" height="18" rx="6" fill="${shirt}"/>',
-      },
-      'hands-up': {
-        leftArm: '<rect x="10" y="36" width="7" height="18" rx="3" transform="rotate(-18 13 45)" fill="${skin}"/>',
-        rightArm: '<rect x="47" y="36" width="7" height="18" rx="3" transform="rotate(18 50 45)" fill="${skin}"/>',
-        shoulder: '<rect x="14" y="43" width="36" height="17" rx="8" fill="${shirt}"/>',
-        chest: '<rect x="18" y="36" width="28" height="18" rx="6" fill="${shirt}"/>',
-      },
-      'step-left': {
-        leftArm: '<rect x="9" y="44" width="7" height="14" rx="3" fill="${skin}"/>',
-        rightArm: '<rect x="49" y="43" width="7" height="14" rx="3" fill="${skin}"/>',
-        shoulder: '<rect x="12" y="43" width="38" height="18" rx="8" fill="${shirt}"/>',
-        chest: '<rect x="17" y="36" width="28" height="19" rx="6" fill="${shirt}"/>',
-      },
-      'step-right': {
-        leftArm: '<rect x="9" y="43" width="7" height="14" rx="3" fill="${skin}"/>',
-        rightArm: '<rect x="48" y="44" width="7" height="14" rx="3" fill="${skin}"/>',
-        shoulder: '<rect x="14" y="43" width="38" height="18" rx="8" fill="${shirt}"/>',
-        chest: '<rect x="19" y="36" width="27" height="19" rx="6" fill="${shirt}"/>',
-      },
-    };
-
-    const activePose = poses[pose] || poses.idle;
-    return `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-        <rect width="64" height="64" fill="transparent"/>
-        <ellipse cx="32" cy="58" rx="24" ry="6" fill="rgba(0,0,0,0.08)"/>
-        ${activePose.shoulder.replace(/\$\{shirt\}/g, shirt)}
-        ${activePose.chest.replace(/\$\{shirt\}/g, shirt)}
-        <rect x="27" y="34" width="10" height="6" rx="2" fill="${skin}"/>
-        <rect x="18" y="12" width="28" height="26" rx="10" fill="${skin}"/>
-        <rect x="15" y="10" width="34" height="8" rx="4" fill="${hair}"/>
-        <rect x="13" y="16" width="38" height="8" rx="4" fill="${hair}"/>
-        <rect x="12" y="22" width="10" height="12" rx="4" fill="${hair}"/>
-        <rect x="42" y="22" width="10" height="12" rx="4" fill="${hair}"/>
-        <rect x="24" y="22" width="6" height="11" rx="2" fill="#121212"/>
-        <rect x="34" y="22" width="6" height="11" rx="2" fill="#121212"/>
-        <rect x="27" y="33" width="10" height="2" rx="1" fill="#d38d74"/>
-        ${activePose.leftArm.replace(/\$\{skin\}/g, skin)}
-        ${activePose.rightArm.replace(/\$\{skin\}/g, skin)}
-        <rect x="18" y="41" width="28" height="3" fill="${accent}" opacity="0.35"/>
-      </svg>
-    `.trim();
-  }
-
-  function getLobbyAvatarDataUri(index) {
-    return `data:image/svg+xml;utf8,${encodeURIComponent(buildLobbyAvatarSvg(getLobbyAvatarPreset(index)))}`;
+  function getLobbyAvatarSrc(index) {
+    return LOBBY_AVATAR_IMAGES[index % LOBBY_AVATAR_IMAGES.length];
   }
 
   function getAvatarIndex(key, fallback = 0) {
     const source = String(key || fallback);
-    return source.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % LOBBY_AVATAR_PRESETS.length;
+    return source.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % LOBBY_AVATAR_IMAGES.length;
   }
 
   function renderAvatarMarkup(key, className = 'player-avatar') {
-    const avatarSrc = getLobbyAvatarDataUri(getAvatarIndex(key));
+    const avatarSrc = getLobbyAvatarSrc(getAvatarIndex(key));
     return `<img class="${className}" src="${avatarSrc}" alt="" />`;
   }
 
