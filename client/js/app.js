@@ -1635,7 +1635,9 @@
     const items = messages.length
       ? messages.map((message) => {
         const isSelf = message.senderId === state.playerId;
-        const classes = `chat-message ${message.type === 'system' ? 'system' : ''}${message.private ? ' private' : ''}${isSelf ? ' self' : ''}`;
+        const phaseClass = message.type === 'system' && message.phase ? ` phase-${message.phase}` : '';
+        const summaryClass = message.type === 'system' && message.summaryTitle ? ' phase-summary' : '';
+        const classes = `chat-message ${message.type === 'system' ? 'system' : ''}${phaseClass}${summaryClass}${message.private ? ' private' : ''}${isSelf ? ' self' : ''}`;
         const sender = message.type === 'system' ? 'SYSTEM' : message.senderName;
         return `
           <div class="${classes}">
