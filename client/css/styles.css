@@ -1590,7 +1590,7 @@ body {
 
 .action-panel .target-item,
 .voting-panel .target-item {
-  min-height: 72px;
+  min-height: 82px;
   padding: 8px 8px 7px;
   gap: 5px;
   flex-direction: column;
@@ -1623,8 +1623,8 @@ body {
 }
 
 .target-avatar {
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
   object-fit: cover;
   object-position: center 28%;
   display: block;
@@ -2330,4 +2330,124 @@ body {
   font-size: 0.65rem;
   color: hsl(45,80%,55%);
   font-style: italic;
+}
+
+@media (max-width: 640px) {
+  .game-container {
+    padding: 12px 12px calc(164px + env(safe-area-inset-bottom));
+  }
+
+  .game-header {
+    margin-bottom: 10px;
+  }
+
+  .role-card {
+    margin-bottom: 8px;
+  }
+
+  .role-card-inner {
+    padding: 12px 14px;
+  }
+
+  .role-name {
+    font-size: 0.92rem;
+    letter-spacing: 3px;
+  }
+
+  .role-description {
+    font-size: 0.72rem;
+  }
+
+  .game-content {
+    gap: 10px;
+    padding-bottom: 0;
+  }
+
+  .action-panel,
+  .voting-panel {
+    padding: 12px;
+  }
+
+  .action-title {
+    font-size: 0.78rem;
+    letter-spacing: 1.5px;
+  }
+
+  .action-subtitle {
+    font-size: 0.7rem;
+    margin-bottom: 12px;
+  }
+
+  .action-buttons {
+    margin-bottom: 12px;
+  }
+
+  .action-btn {
+    min-height: 44px;
+    padding: 8px 10px;
+  }
+
+  .target-label {
+    margin-bottom: 6px;
+  }
+
+  .action-panel .target-list.chat-target-list,
+  .voting-panel .target-list.chat-target-list {
+    gap: 6px;
+  }
+
+  .action-panel .target-item,
+  .voting-panel .target-item {
+    min-height: 68px;
+    padding: 7px 6px 6px;
+    gap: 4px;
+  }
+
+  .target-avatar {
+    width: 42px;
+    height: 42px;
+  }
+
+  .action-panel .target-name,
+  .voting-panel .target-name {
+    font-size: 0.66rem;
+    line-height: 1.05;
+  }
+
+  .chat-local-actions {
+    gap: 6px;
+    padding-top: 8px;
+  }
+
+  .phase-chat-panel.chat-docked-mode:not(.chat-overlay-open) {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(54px + env(safe-area-inset-bottom));
+    z-index: 15;
+    margin-top: 0;
+    border-radius: 18px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.28);
+  }
+
+  .chat-dock-toggle {
+    padding: 10px 12px;
+  }
+
+  .game-status-bar {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: env(safe-area-inset-bottom);
+    z-index: 14;
+    padding: 10px 0 6px;
+    background: linear-gradient(180deg, rgba(8,10,16,0.1), rgba(8,10,16,0.96) 36%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .alive-count,
+  .action-status {
+    font-size: 0.72rem;
+  }
 }
