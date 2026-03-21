@@ -17,6 +17,7 @@
     timerInterval: null,
     timerValue: 0,
     timerDuration: 60,
+    timerEndsAt: 0,
     searchResult: null,
     privateChatMessages: [],
     hasActed: false,
@@ -28,6 +29,7 @@
     gamePhase: null,
     allPlayersWithRoles: [],
     playerListOpen: false,
+    chatOverlayOpen: false,
   };
 
   const MAX_ROOM_PLAYERS = 16;
@@ -78,7 +80,17 @@
   }
 
   function getLobbyAvatarDataUri(index) {
-    return `url("data:image/svg+xml;utf8,${encodeURIComponent(buildLobbyAvatarSvg(getLobbyAvatarPreset(index)))}")`;
+    return `data:image/svg+xml;utf8,${encodeURIComponent(buildLobbyAvatarSvg(getLobbyAvatarPreset(index)))}`;
+  }
+
+  function getAvatarIndex(key, fallback = 0) {
+    const source = String(key || fallback);
+    return source.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % LOBBY_AVATAR_PRESETS.length;
+  }
+
+  function renderAvatarMarkup(key, className = 'player-avatar') {
+    const avatarSrc = getLobbyAvatarDataUri(getAvatarIndex(key));
+    return `<img class="${className}" src="${avatarSrc}" alt="" />`;
   }
 
   function connectSocket() {
@@ -131,6 +143,7 @@
       state.roomData = room;
       state.chatMessages = room?.chatMessages || state.chatMessages;
       state.gamePhase = phase;
+      state.chatOverlayOpen = false;
       state.hasActed = false;
       state.hasVoted = false;
       state.votesCast = 0;
@@ -176,8 +189,8 @@
       renderChatBox();
     });
 
-    state.socket.on('timer-start', ({ phase, duration }) => {
-      startTimer(duration);
+    state.socket.on('timer-start', ({ phase, duration, endsAt }) => {
+      startTimer(duration, endsAt);
     });
 
     state.socket.on('vote-update', ({ votesCast, totalAlive }) => {
@@ -191,6 +204,7 @@
       state.roomData = room;
       state.chatMessages = room?.chatMessages || state.chatMessages;
       state.gamePhase = 'vote-result';
+      state.chatOverlayOpen = false;
       renderVoteResult(message);
       updateAliveCount();
       renderGamePlayerList();
@@ -217,6 +231,7 @@
       state.morningMessages = [];
       state.chatMessages = room.chatMessages || [];
       state.gamePhase = null;
+      state.chatOverlayOpen = false;
       state.allPlayersWithRoles = [];
       state.playerListOpen = false;
       clearTimerInterval();
@@ -252,19 +267,17 @@
     setTimeout(() => toast.classList.remove('show'), 3000);
   }
 
-  function startTimer(duration) {
+  function startTimer(duration, endsAt) {
     clearTimerInterval();
-    state.timerValue = duration;
     state.timerDuration = duration;
-    updateTimerDisplay();
+    state.timerEndsAt = endsAt || (Date.now() + duration * 1000);
+    syncTimerValue();
     state.timerInterval = setInterval(() => {
-      state.timerValue--;
+      syncTimerValue();
       if (state.timerValue <= 0) {
-        state.timerValue = 0;
         clearTimerInterval();
       }
-      updateTimerDisplay();
-    }, 1000);
+    }, 250);
   }
 
   function clearTimerInterval() {
@@ -272,6 +285,11 @@
       clearInterval(state.timerInterval);
       state.timerInterval = null;
     }
+  }
+
+  function syncTimerValue() {
+    state.timerValue = Math.max(0, Math.ceil((state.timerEndsAt - Date.now()) / 1000));
+    updateTimerDisplay();
   }
 
   function updateTimerDisplay() {
@@ -355,12 +373,12 @@
     const list = document.getElementById('players-list');
     list.innerHTML = '';
 
-    data.players.forEach((player, index) => {
+    data.players.forEach((player) => {
       const div = document.createElement('div');
       div.className = `player-item${player.id === state.playerId ? ' is-self' : ''}`;
 
       div.innerHTML = `
-        <div class="player-avatar" style="background-image:${getLobbyAvatarDataUri(index)}"></div>
+        ${renderAvatarMarkup(player.id || player.name, 'player-avatar')}
         <span class="player-name">${player.name}</span>
         <div class="player-badges">
           ${player.id === state.playerId ? '<span class="player-you">YOU</span>' : ''}
@@ -440,6 +458,8 @@
 
     const mode = getChatMode();
     const canChat = mode === 'morning' || mode === 'voting';
+    const isDockedMode = mode === 'night' || mode === 'voting' || mode === 'readonly';
+    const isOverlayOpen = mode === 'morning' || state.chatOverlayOpen;
     const subtitle = canChat
       ? 'Chat is open for discussion.'
       : mode === 'readonly'
@@ -1535,7 +1555,7 @@
           <div class="target-list chat-target-list" id="target-list">
             ${targets.map(t => {
               const isRestricted = player.role === 'Medic' && t.id === player.lastMedicTarget;
-              return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}><div class="target-dot"></div><span class="target-name">${t.name}</span></div>`;
+              return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar')}<span class="target-name">${t.name}</span></div>`;
             }).join('')}
           </div>
           <div class="chat-local-actions">
@@ -1559,7 +1579,7 @@
             <div class="chat-local-copy">${state.votesCast} / ${aliveCount} votes cast</div>
           </div>
           <div class="target-list chat-target-list" id="vote-target-list">
-            ${targets.map(t => `<div class="target-item ${state.selectedTarget === t.id ? 'selected' : ''}" data-target="${t.id}"><div class="target-dot"></div><span class="target-name">${t.name}</span></div>`).join('')}
+            ${targets.map(t => `<div class="target-item ${state.selectedTarget === t.id ? 'selected' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar')}<span class="target-name">${t.name}</span></div>`).join('')}
           </div>
           <div class="chat-local-actions">
             <button class="skip-vote-btn ${state.selectedTarget === 'skip' ? 'selected' : ''}" id="btn-vote-skip">Skip Vote</button>
@@ -1674,10 +1694,33 @@
     const messages = [...(state.chatMessages || []), ...(state.privateChatMessages || [])]
       .sort((a, b) => a.createdAt - b.createdAt);
 
-    panel.className = `phase-chat-panel ${mode === 'morning' ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}`;
+    panel.className = `phase-chat-panel ${mode === 'morning' ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isOverlayOpen && isDockedMode ? ' chat-overlay-open' : ''}`;
 
     if (mode === 'hidden') {
       panel.innerHTML = '';
+      return;
+    }
+
+    if (isDockedMode && !isOverlayOpen) {
+      panel.innerHTML = `
+        <button class="chat-dock-toggle" id="chat-open-btn" type="button">
+          <span class="chat-dock-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </span>
+          <span class="chat-dock-copy">
+            <span class="chat-dock-title">Open Chat</span>
+            <span class="chat-dock-subtitle">${canChat ? 'Discussion and actions' : 'View updates'}</span>
+          </span>
+        </button>`;
+      const openBtn = document.getElementById('chat-open-btn');
+      if (openBtn) {
+        openBtn.addEventListener('click', () => {
+          state.chatOverlayOpen = true;
+          renderChatBox();
+        });
+      }
       return;
     }
 
@@ -1704,6 +1747,7 @@
           <div class="chat-panel-title">Room Chat</div>
           <div class="chat-panel-subtitle">${subtitle}</div>
         </div>
+        ${isDockedMode ? '<button class="chat-close-btn" id="chat-close-btn" type="button">Close</button>' : ''}
       </div>
       <div class="chat-messages" id="chat-messages">${items}</div>
       <form class="chat-input-row" id="chat-form">
@@ -1720,6 +1764,14 @@
 
     const chatMessages = document.getElementById('chat-messages');
     if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    const closeBtn = document.getElementById('chat-close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        state.chatOverlayOpen = false;
+        renderChatBox();
+      });
+    }
 
     const chatForm = document.getElementById('chat-form');
     if (chatForm && canChat) {

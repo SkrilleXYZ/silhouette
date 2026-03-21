@@ -262,8 +262,14 @@ const nightTimers = new Map();
 const votingTimers = new Map();
 const morningTimers = new Map();
 
+function emitTimerStart(code, phase, duration, endsAt = Date.now() + duration * 1000) {
+  io.to(code).emit('timer-start', { phase, duration, endsAt });
+  return endsAt;
+}
+
 function startNightTimer(code) {
   clearAllTimers(code);
+  const endsAt = Date.now() + 60000;
   const timer = setTimeout(() => {
     const room = game.getRoom(code);
     if (!room || room.state !== 'night') return;
@@ -275,13 +281,14 @@ function startNightTimer(code) {
       }
     }
     resolveNightPhase(code);
-  }, 60000);
+  }, Math.max(0, endsAt - Date.now()));
   nightTimers.set(code, timer);
-  io.to(code).emit('timer-start', { phase: 'night', duration: 60 });
+  emitTimerStart(code, 'night', 60, endsAt);
 }
 
 function startVotingTimer(code) {
   clearAllTimers(code);
+  const endsAt = Date.now() + 60000;
   const timer = setTimeout(() => {
     const room = game.getRoom(code);
     if (!room || room.state !== 'voting') return;
@@ -292,9 +299,9 @@ function startVotingTimer(code) {
       }
     }
     resolveVotingPhase(code);
-  }, 60000);
+  }, Math.max(0, endsAt - Date.now()));
   votingTimers.set(code, timer);
-  io.to(code).emit('timer-start', { phase: 'voting', duration: 60 });
+  emitTimerStart(code, 'voting', 60, endsAt);
 }
 
 function clearAllTimers(code) {
@@ -341,6 +348,7 @@ function resolveNightPhase(code) {
     clearAllTimers(code);
   } else {
     // Morning phase: 2 minutes (120 seconds)
+    const endsAt = Date.now() + 120000;
     const timer = setTimeout(() => {
       game.startVoting(code);
       io.to(code).emit('phase-changed', {
@@ -349,9 +357,9 @@ function resolveNightPhase(code) {
         room: game.getRoomPublicData(code)
       });
       startVotingTimer(code);
-    }, 120000);
+    }, Math.max(0, endsAt - Date.now()));
     morningTimers.set(code, timer);
-    io.to(code).emit('timer-start', { phase: 'morning', duration: 120 });
+    emitTimerStart(code, 'morning', 120, endsAt);
   }
 }
 
@@ -375,6 +383,7 @@ function resolveVotingPhase(code) {
     });
     clearAllTimers(code);
   } else {
+    const endsAt = Date.now() + 8000;
     setTimeout(() => {
       const room = game.getRoom(code);
       if (!room || room.state !== 'night') return;
@@ -384,8 +393,8 @@ function resolveVotingPhase(code) {
         room: game.getRoomPublicData(code)
       });
       startNightTimer(code);
-    }, 8000);
-    io.to(code).emit('timer-start', { phase: 'vote-result', duration: 8 });
+    }, Math.max(0, endsAt - Date.now()));
+    emitTimerStart(code, 'vote-result', 8, endsAt);
   }
 }
 
