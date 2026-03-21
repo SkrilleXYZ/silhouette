@@ -591,7 +591,6 @@ body {
   height: 84px;
   flex-shrink: 0;
   object-fit: contain;
-  image-rendering: pixelated;
   display: block;
 }
 
@@ -1422,7 +1421,6 @@ body {
   width: 34px;
   height: 42px;
   object-fit: contain;
-  image-rendering: pixelated;
   display: block;
   flex-shrink: 0;
 }
