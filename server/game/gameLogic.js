@@ -87,6 +87,7 @@ class GameLogic {
       currentPhaseSummaryId: null,
       anonymousVotes: false,
       anonymousEjects: false,
+      hiddenRoleList: false,
       playerOrder: [],
       lastAction: Date.now(),
       lastMedicTarget: null,
@@ -478,6 +479,9 @@ class GameLogic {
     if (typeof settings.anonymousEjects === 'boolean') {
       room.anonymousEjects = settings.anonymousEjects;
     }
+    if (typeof settings.hiddenRoleList === 'boolean') {
+      room.hiddenRoleList = settings.hiddenRoleList;
+    }
 
     room.lastAction = Date.now();
     return { success: true, room };
@@ -648,6 +652,7 @@ class GameLogic {
       chatMessages: room.chatMessages.slice(-150),
       anonymousVotes: room.anonymousVotes,
       anonymousEjects: room.anonymousEjects,
+      hiddenRoleList: room.hiddenRoleList,
     };
   }
 

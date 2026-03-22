@@ -99,14 +99,14 @@ io.on('connection', (socket) => {
     callback({ success: true });
   });
 
-  socket.on('update-room-settings', ({ anonymousVotes, anonymousEjects }, callback) => {
+  socket.on('update-room-settings', ({ anonymousVotes, anonymousEjects, hiddenRoleList }, callback) => {
     const mapping = socketMap.get(socket.id);
     if (!mapping) {
       if (callback) callback({ success: false, error: 'Not in a room' });
       return;
     }
 
-    const result = game.updateRoomSettings(mapping.code, socket.id, { anonymousVotes, anonymousEjects });
+    const result = game.updateRoomSettings(mapping.code, socket.id, { anonymousVotes, anonymousEjects, hiddenRoleList });
     if (result.error) {
       if (callback) callback({ success: false, error: result.error });
       return;
@@ -128,8 +128,11 @@ io.on('connection', (socket) => {
       callback({ success: false, error: result.error });
       return;
     }
+    const room = game.getRoom(mapping.code);
     let publicNightMessage = null;
-    if (action === 'shoot') publicNightMessage = 'Sheriff has used their gun.';
+    if (room?.hiddenRoleList) {
+      publicNightMessage = 'A player used their ability.';
+    } else if (action === 'shoot') publicNightMessage = 'Sheriff has used their gun.';
     else if (action === 'search') publicNightMessage = 'Sheriff is investigating someone.';
     else if (action === 'protect') publicNightMessage = 'Medic has protected someone.';
     else if (action === 'kill') publicNightMessage = 'An Assassin has moved through the shadows.';

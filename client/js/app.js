@@ -11,6 +11,7 @@
     isHost: false,
     joinMode: null,
     selectedAvatarIndex: 0,
+    profileConfirmed: false,
     playerData: null,
     roomData: null,
     selectedAction: null,
@@ -105,6 +106,7 @@
     return {
       name: '',
       avatarIndex: Math.floor(Math.random() * LOBBY_AVATAR_IMAGES.length),
+      confirmed: false,
     };
   }
 
@@ -118,6 +120,7 @@
       return {
         name: normalizeProfileName(parsed.name || ''),
         avatarIndex,
+        confirmed: !!parsed.confirmed,
       };
     } catch (error) {
       return fallback;
@@ -128,6 +131,7 @@
     const profile = {
       name: normalizeProfileName(state.username),
       avatarIndex: Number.isInteger(state.selectedAvatarIndex) ? state.selectedAvatarIndex : 0,
+      confirmed: !!state.profileConfirmed,
     };
     window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
   }
@@ -136,10 +140,18 @@
     const nameInput = document.getElementById('profile-name-input');
     const preview = document.getElementById('profile-avatar-preview');
     const grid = document.getElementById('profile-avatar-grid');
-    if (!nameInput || !preview || !grid) return;
+    const compact = document.getElementById('profile-panel-compact');
+    const body = document.getElementById('profile-panel-body');
+    const compactName = document.getElementById('profile-compact-name');
+    const editButton = document.getElementById('btn-edit-profile');
+    const confirmButton = document.getElementById('btn-confirm-profile');
+    if (!nameInput || !preview || !grid || !compact || !body || !compactName || !editButton || !confirmButton) return;
 
     nameInput.value = state.username || '';
     preview.innerHTML = renderAvatarMarkup('profile-preview', 'player-avatar', state.selectedAvatarIndex);
+    compactName.textContent = state.username || 'Choose your profile';
+    compact.style.display = state.profileConfirmed ? 'flex' : 'none';
+    body.style.display = state.profileConfirmed ? 'none' : 'flex';
     grid.innerHTML = LOBBY_AVATAR_IMAGES.map((_, index) => `
       <button class="profile-avatar-option ${index === state.selectedAvatarIndex ? 'selected' : ''}" type="button" data-avatar-option="${index}">
         ${renderAvatarMarkup(`profile-option-${index}`, 'player-avatar', index)}
@@ -153,6 +165,21 @@
         renderProfilePanel();
       });
     });
+
+    confirmButton.onclick = () => {
+      const profile = validateProfile();
+      if (!profile) return;
+      state.profileConfirmed = true;
+      saveProfile();
+      renderProfilePanel();
+    };
+
+    editButton.onclick = () => {
+      state.profileConfirmed = false;
+      saveProfile();
+      renderProfilePanel();
+      nameInput.focus();
+    };
   }
 
   function validateProfile({ requireCode = false } = {}) {
@@ -468,6 +495,11 @@
     if (anonymousEjectsToggle) {
       anonymousEjectsToggle.checked = !!data.anonymousEjects;
       anonymousEjectsToggle.disabled = !(state.isHost || state.playerId === data.hostId);
+    }
+    const hiddenRoleListToggle = document.getElementById('toggle-hidden-role-list');
+    if (hiddenRoleListToggle) {
+      hiddenRoleListToggle.checked = !!data.hiddenRoleList;
+      hiddenRoleListToggle.disabled = !(state.isHost || state.playerId === data.hostId);
     }
 
     const list = document.getElementById('players-list');
@@ -1277,6 +1309,11 @@
 
     if (createRoomBtn) {
       createRoomBtn.addEventListener('click', () => {
+        if (!state.profileConfirmed) {
+          const errorEl = document.getElementById('profile-error');
+          if (errorEl) errorEl.textContent = 'Confirm your profile first';
+          return;
+        }
         const profile = validateProfile();
         if (!profile) return;
         state.socket.emit('create-room', { username: profile.username, avatarIndex: profile.avatarIndex }, (response) => {
@@ -1297,6 +1334,11 @@
 
     if (joinRoomBtn) {
       joinRoomBtn.addEventListener('click', () => {
+        if (!state.profileConfirmed) {
+          const errorEl = document.getElementById('profile-error');
+          if (errorEl) errorEl.textContent = 'Confirm your profile first';
+          return;
+        }
         const profile = validateProfile({ requireCode: true });
         if (!profile) return;
         state.socket.emit('join-room', { code: profile.code, username: profile.username, avatarIndex: profile.avatarIndex }, (response) => {
@@ -1364,6 +1406,15 @@
       });
     });
 
+    document.getElementById('toggle-hidden-role-list').addEventListener('change', (event) => {
+      state.socket.emit('update-room-settings', { hiddenRoleList: event.target.checked }, (response) => {
+        if (!response.success) {
+          showToast(response.error || 'Could not update room settings', 'error');
+          event.target.checked = !!state.roomData?.hiddenRoleList;
+        }
+      });
+    });
+
     document.getElementById('btn-back-home').addEventListener('click', () => {
       state.roomCode = null;
       state.roomData = null;
@@ -1394,6 +1445,7 @@
     const profile = loadProfile();
     state.username = profile.name;
     state.selectedAvatarIndex = profile.avatarIndex;
+    state.profileConfirmed = profile.confirmed;
     connectSocket();
     initEventListeners();
     renderProfilePanel();

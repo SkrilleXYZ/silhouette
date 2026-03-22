@@ -269,7 +269,7 @@ body {
 }
 
 .profile-panel,
-.join-room-card {
+.join-room-inline {
   width: 100%;
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -286,8 +286,7 @@ body {
   margin-bottom: 14px;
 }
 
-.profile-title,
-.join-room-title {
+.profile-title {
   font-family: 'Cinzel', serif;
   font-size: 1rem;
   letter-spacing: 3px;
@@ -320,6 +319,34 @@ body {
 .profile-name-group {
   max-width: none;
   margin-bottom: 18px;
+}
+
+.profile-panel-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-panel-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-compact-copy {
+  min-width: 0;
+}
+
+.profile-compact-name {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  margin-bottom: 4px;
+}
+
+.profile-compact-subtitle {
+  color: var(--fg-muted);
+  font-size: 0.75rem;
 }
 
 .profile-avatar-section {
@@ -369,14 +396,31 @@ body {
 }
 
 .profile-avatar-option .player-avatar {
-  width: 52px;
-  height: 52px;
+  width: 62px;
+  height: 62px;
 }
 
-.join-room-row {
+.home-room-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+
+.create-room-btn,
+.join-room-inline {
+  min-height: 92px;
+}
+
+.create-room-btn {
+  width: 100%;
+}
+
+.join-room-inline {
   display: flex;
   align-items: stretch;
   gap: 12px;
+  padding: 14px;
 }
 
 .join-code-home-group {
@@ -385,8 +429,18 @@ body {
   margin-bottom: 0;
 }
 
-.join-room-btn {
-  min-width: 106px;
+.join-code-input {
+  text-align: left;
+}
+
+.join-room-arrow-btn {
+  min-width: 72px;
+  padding: 0;
+}
+
+.join-room-arrow-btn .btn-icon {
+  width: 22px;
+  height: 22px;
 }
 
 .home-footer {
@@ -611,6 +665,18 @@ body {
   text-align: left;
 }
 
+.profile-confirm-btn,
+.profile-edit-btn {
+  width: 100%;
+  margin-top: 14px;
+}
+
+.profile-edit-btn {
+  width: auto;
+  min-width: 92px;
+  padding: 12px 18px;
+}
+
 .room-container { padding-bottom: 0; }
 
 .room-header {
@@ -765,6 +831,28 @@ body {
   .player-avatar {
     width: 72px;
     height: 72px;
+  }
+
+  .profile-avatar-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .home-room-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .create-room-btn,
+  .join-room-inline {
+    min-height: 76px;
+  }
+
+  .join-room-inline {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .join-room-arrow-btn {
+    min-width: 62px;
   }
 }
 
