@@ -106,21 +106,45 @@
                 <button class="btn btn-primary profile-confirm-btn" id="btn-confirm-profile" type="button">Confirm Profile</button>
               </div>
             </div>
-            <div class="home-room-actions">
-              <button class="btn btn-primary btn-large create-room-btn" id="btn-create-room">
+            <button class="btn btn-primary btn-large" id="btn-online">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+              <span>ONLINE</span>
+            </button>
+          </div>
+          <div class="home-footer"><p>v0.1.0 — Early Access</p></div>
+        </div>
+      </section>
+
+
+      <!-- ONLINE -->
+      <section id="screen-online" class="screen">
+        <div class="screen-container">
+          <button class="btn-back" id="btn-back-online">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            <span>Back</span>
+          </button>
+          <div class="online-container">
+            <h2 class="screen-title">ONLINE PLAY</h2>
+            <p class="screen-subtitle">Create or join a room</p>
+            <div class="online-buttons">
+              <button class="btn btn-primary btn-large" id="btn-create-room">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
                   <circle cx="12" cy="12" r="10"/>
                   <line x1="12" y1="8" x2="12" y2="16"/>
                   <line x1="8" y1="12" x2="16" y2="12"/>
                 </svg>
-                <span>Create Room</span>
+                <span>CREATE ROOM</span>
               </button>
-              <div class="join-room-inline">
-                <div class="input-group join-code-home-group">
+              <div class="online-join-row">
+                <div class="input-group online-code-group">
                   <input type="text" id="home-room-code-input" class="text-input join-code-input" placeholder="Room code..." maxlength="6" autocomplete="off" style="text-transform: uppercase;">
                   <div class="input-line"></div>
                 </div>
-                <button class="btn btn-accent join-room-arrow-btn" id="btn-join-room" type="button" aria-label="Join room">
+                <button class="btn btn-accent online-join-btn" id="btn-join-room" type="button" aria-label="Join room">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
                     <polyline points="9 18 15 12 9 6"></polyline>
                   </svg>
@@ -128,10 +152,8 @@
               </div>
             </div>
           </div>
-          <div class="home-footer"><p>v0.1.0 — Early Access</p></div>
         </div>
       </section>
-
 
       <!-- ROOM/LOBBY -->
       <section id="screen-room" class="screen">

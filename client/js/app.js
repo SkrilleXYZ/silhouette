@@ -1287,9 +1287,26 @@
     });
 
     const profileNameInput = document.getElementById('profile-name-input');
+    const onlineBtn = document.getElementById('btn-online');
+    const backOnlineBtn = document.getElementById('btn-back-online');
     const homeRoomCodeInput = document.getElementById('home-room-code-input');
     const createRoomBtn = document.getElementById('btn-create-room');
     const joinRoomBtn = document.getElementById('btn-join-room');
+
+    if (onlineBtn) {
+      onlineBtn.addEventListener('click', () => {
+        if (!state.profileConfirmed) {
+          const errorEl = document.getElementById('profile-error');
+          if (errorEl) errorEl.textContent = 'Confirm your profile first';
+          return;
+        }
+        showScreen('online');
+      });
+    }
+
+    if (backOnlineBtn) {
+      backOnlineBtn.addEventListener('click', () => showScreen('home'));
+    }
 
     if (profileNameInput) {
       profileNameInput.addEventListener('input', () => {
