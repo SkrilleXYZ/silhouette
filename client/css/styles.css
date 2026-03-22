@@ -1832,16 +1832,21 @@ body {
 
 .phase-chat-panel.chat-overlay-open {
   position: fixed;
-  left: var(--chat-overlay-left, 10px);
-  right: auto;
-  top: var(--chat-overlay-top, 140px);
-  bottom: calc(14px + env(safe-area-inset-bottom));
-  width: var(--chat-overlay-width, min(420px, calc(100vw - 20px)));
-  max-height: calc(100dvh - var(--chat-overlay-top, 140px) - 14px - env(safe-area-inset-bottom));
+  inset: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100dvh;
+  min-height: 100dvh;
+  max-height: 100dvh;
   transform-origin: center bottom;
   z-index: 40;
   margin: 0;
-  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0;
   border: 1px solid var(--border);
   background:
     linear-gradient(180deg, rgba(18, 18, 18, 0.94), rgba(8, 8, 8, 0.97)),
@@ -1867,8 +1872,22 @@ body {
   flex: 0 0 auto;
   margin-top: 0;
   position: relative;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
   background: hsl(0, 0%, 11%);
+  border-top: 1px solid rgba(255,255,255,0.08);
   pointer-events: auto;
+}
+
+.phase-chat-panel.chat-overlay-open .chat-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.phase-chat-panel.chat-overlay-open .chat-send-btn {
+  flex: 0 0 auto;
 }
 
 @keyframes chatSheetRise {
@@ -3152,14 +3171,6 @@ body {
   }
 
   .phase-chat-panel.chat-overlay-open {
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100vw !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    max-height: 100dvh !important;
     display: flex !important;
     flex-direction: column !important;
     border-radius: 0;
@@ -3175,7 +3186,7 @@ body {
 
   .phase-chat-panel.chat-overlay-open .chat-input-row {
     margin-top: 0;
-    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
   }
 
   .phase-chat-panel.chat-docked-mode:not(.chat-overlay-open) {
@@ -3214,14 +3225,6 @@ body {
 
 @media (min-width: 641px) and (max-width: 768px) {
   .phase-chat-panel.chat-overlay-open {
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100vw !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    max-height: 100dvh !important;
     display: flex !important;
     flex-direction: column !important;
     border-radius: 0;
@@ -3237,6 +3240,6 @@ body {
 
   .phase-chat-panel.chat-overlay-open .chat-input-row {
     margin-top: 0;
-    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
   }
 }
