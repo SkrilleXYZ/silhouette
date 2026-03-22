@@ -1850,6 +1850,7 @@ body {
   -webkit-backdrop-filter: blur(18px);
   box-shadow: 0 24px 54px rgba(0,0,0,0.46);
   animation: chatSheetRise 0.28s cubic-bezier(.2,.85,.2,1);
+  overflow: hidden;
 }
 
 .phase-chat-panel.chat-overlay-open .chat-messages {
@@ -1865,6 +1866,7 @@ body {
   bottom: 0;
   z-index: 2;
   background: hsl(0, 0%, 11%);
+  pointer-events: auto;
 }
 
 @keyframes chatSheetRise {
