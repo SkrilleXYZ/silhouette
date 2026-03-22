@@ -42,7 +42,7 @@
   const MAX_ROOM_PLAYERS = 16;
   const PROFILE_STORAGE_KEY = 'silhouette.profile';
   const ROLE_REVEAL_ITEM_HEIGHT = 72;
-  const AVATAR_ASSET_VERSION = '20260324b';
+  const AVATAR_ASSET_VERSION = '20260324c';
   const ROLE_DEFINITIONS = {
     Sheriff: {
       faction: 'Crew',
