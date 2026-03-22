@@ -199,26 +199,31 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  width: min(100%, 480px);
+  margin: 0 auto;
   min-height: calc(100vh - 80px);
   min-height: calc(100dvh - 80px);
-  padding: 40px 24px;
+  min-height: calc(100svh - 80px);
+  padding: clamp(20px, 4svh, 40px) clamp(16px, 5vw, 24px);
   text-align: center;
+  gap: clamp(18px, 3svh, 32px);
 }
 
 .logo-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 48px;
+  width: 100%;
+  margin-bottom: 0;
 }
 
 .logo-silhouette {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 180px;
-  height: 180px;
-  margin-bottom: 24px;
+  width: clamp(120px, 34vw, 180px);
+  height: clamp(120px, 34vw, 180px);
+  margin-bottom: clamp(14px, 2svh, 24px);
   animation: logoBreath 4s ease-in-out infinite;
 }
 
@@ -236,9 +241,9 @@ body {
 
 .game-title {
   font-family: 'Cinzel', serif;
-  font-size: 2.5rem;
+  font-size: clamp(1.9rem, 6.4vw, 2.5rem);
   font-weight: 700;
-  letter-spacing: 12px;
+  letter-spacing: clamp(6px, 2vw, 12px);
   color: var(--fg);
   margin-bottom: 8px;
   text-shadow: 0 0 34px rgba(115, 16, 24, 0.26);
@@ -246,8 +251,8 @@ body {
 
 .game-subtitle {
   font-family: 'Cinzel', serif;
-  font-size: 0.7rem;
-  letter-spacing: 4px;
+  font-size: clamp(0.58rem, 1.8vw, 0.7rem);
+  letter-spacing: clamp(2px, 0.8vw, 4px);
   color: var(--fg-muted);
   text-transform: uppercase;
   font-weight: 400;
@@ -263,7 +268,7 @@ body {
 .home-buttons {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: clamp(12px, 2svh, 16px);
   width: 100%;
   max-width: 360px;
 }
@@ -363,7 +368,7 @@ body {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
-  max-height: 268px;
+  max-height: clamp(184px, 30svh, 268px);
   overflow-y: auto;
   padding-right: 2px;
 }
@@ -440,7 +445,8 @@ body {
 }
 
 .home-footer {
-  margin-top: 48px;
+  margin-top: auto;
+  padding-top: clamp(12px, 3svh, 24px);
   color: var(--fg-dim);
   font-size: 0.75rem;
   letter-spacing: 1px;
@@ -2696,6 +2702,70 @@ body {
 @media (max-width: 360px) {
   .game-title { font-size: 2rem; letter-spacing: 8px; }
   .game-subtitle { font-size: 0.6rem; letter-spacing: 3px; }
+}
+
+@media (max-height: 760px) {
+  .home-container {
+    justify-content: flex-start;
+  }
+
+  .profile-panel {
+    padding: 16px;
+  }
+
+  .profile-avatar-option {
+    min-height: 70px;
+    padding: 6px;
+  }
+
+  .profile-avatar-option .player-avatar {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+@media (max-height: 680px) {
+  .home-container {
+    gap: 14px;
+    padding-top: 16px;
+    padding-bottom: 12px;
+  }
+
+  .logo-silhouette {
+    width: 108px;
+    height: 108px;
+    margin-bottom: 10px;
+  }
+
+  .title-divider {
+    margin-top: 12px;
+  }
+
+  .profile-panel {
+    padding: 14px;
+  }
+
+  .profile-panel-header {
+    margin-bottom: 10px;
+  }
+
+  .profile-name-group {
+    margin-bottom: 14px;
+  }
+
+  .profile-avatar-grid {
+    max-height: 156px;
+    gap: 8px;
+  }
+
+  .profile-avatar-option {
+    min-height: 62px;
+  }
+
+  .profile-avatar-option .player-avatar {
+    width: 48px;
+    height: 48px;
+  }
 }
 
 @media (max-width: 560px) {
