@@ -405,6 +405,7 @@ body {
 .online-join-row {
   display: flex;
   align-items: stretch;
+  flex-wrap: nowrap;
   gap: 16px;
   width: 100%;
   max-width: 300px;
@@ -707,7 +708,13 @@ body {
   margin-bottom: clamp(4px, 1.5svh, 8px);
 }
 
-.room-title-area { display: flex; align-items: center; gap: 12px; }
+.room-title-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
 
 .room-title {
   font-family: 'Cinzel', serif;
@@ -737,6 +744,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
   padding: 12px 0;
   font-family: 'Cinzel', serif;
   font-size: 0.7rem;
@@ -879,6 +888,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 10px;
   padding: clamp(10px, 2svh, 12px) clamp(12px, 4vw, 16px);
   background: var(--bg-card);
@@ -893,7 +903,14 @@ body {
   text-transform: uppercase;
 }
 
-.room-code-value { display: flex; align-items: center; gap: 8px; }
+.room-code-value {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
 
 #room-code-text {
   font-family: 'Cinzel', serif;
@@ -902,6 +919,7 @@ body {
   letter-spacing: clamp(3px, 1.4vw, 6px);
   color: var(--crew);
   text-shadow: 0 0 10px var(--crew-glow);
+  white-space: nowrap;
 }
 
 .btn-copy {
@@ -2719,6 +2737,36 @@ body {
 @media (max-width: 360px) {
   .game-title { font-size: 2rem; letter-spacing: 8px; }
   .game-subtitle { font-size: 0.6rem; letter-spacing: 3px; }
+
+  .room-header {
+    align-items: flex-start;
+  }
+
+  .room-title-area {
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .room-code-display {
+    align-items: flex-start;
+  }
+
+  .room-code-value {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  #room-code-text {
+    letter-spacing: 2px;
+  }
+
+  .online-join-row {
+    gap: 10px;
+  }
+
+  .online-join-btn {
+    min-width: 68px;
+  }
 }
 
 @media (max-height: 760px) {
