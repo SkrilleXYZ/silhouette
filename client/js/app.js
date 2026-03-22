@@ -735,7 +735,11 @@
     const icon = document.getElementById('phase-icon');
     const name = document.getElementById('phase-name');
     const count = document.getElementById('phase-count');
+    const gameContainer = document.querySelector('#screen-game .game-container');
     icon.className = 'phase-icon';
+    if (gameContainer) {
+      gameContainer.classList.toggle('morning-chat-focus', phase === 'morning');
+    }
 
     switch (phase) {
       case 'night':

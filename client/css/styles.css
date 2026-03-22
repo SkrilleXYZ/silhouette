@@ -1274,6 +1274,29 @@ body {
   pointer-events: none;
 }
 
+.game-container.morning-chat-focus {
+  padding-top: 0;
+}
+
+.game-container.morning-chat-focus > .game-header,
+.game-container.morning-chat-focus > .role-card,
+.game-container.morning-chat-focus > .game-status-bar {
+  display: none;
+}
+
+.game-container.morning-chat-focus .game-content {
+  flex: 1 1 auto;
+  gap: 0;
+  padding-bottom: 0;
+}
+
+.game-container.morning-chat-focus #game-content > .phase-chat-panel:first-child,
+.game-container.morning-chat-focus .phase-chat-panel.chat-expanded {
+  margin-top: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .role-reveal-overlay {
   position: absolute;
   inset: 0;
@@ -2109,7 +2132,7 @@ body {
   align-self: flex-start;
   max-width: 100%;
   flex-shrink: 0;
-  padding: 10px 12px;
+  padding: 8px 10px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -2142,7 +2165,7 @@ body {
   overflow: hidden;
   border-width: 1px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-  padding: 14px 16px;
+  padding: 11px 13px;
 }
 
 .chat-message.system.phase-summary::before,
@@ -2213,10 +2236,10 @@ body {
 }
 
 .chat-message-meta {
-  font-size: 0.65rem;
+  font-size: 0.58rem;
   letter-spacing: 1px;
   color: var(--fg-dim);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   position: relative;
   z-index: 1;
   font-weight: 800;
@@ -2228,8 +2251,8 @@ body {
 }
 
 .chat-message-text {
-  font-size: 0.9rem;
-  line-height: 1.55;
+  font-size: 0.78rem;
+  line-height: 1.38;
   color: var(--fg);
   word-break: break-word;
   white-space: pre-line;
@@ -3067,19 +3090,19 @@ body {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 4px;
     align-content: center;
-    grid-auto-rows: minmax(54px, auto);
+    grid-auto-rows: minmax(68px, auto);
   }
 
   .action-panel .target-item,
   .voting-panel .target-item {
-    min-height: 54px;
-    padding: 6px 3px 5px;
-    gap: 2px;
+    min-height: 68px;
+    padding: 8px 2px 7px;
+    gap: 3px;
   }
 
   .target-avatar {
-    width: 28px;
-    height: 28px;
+    width: 34px;
+    height: 34px;
   }
 
   .action-panel .target-name,
@@ -3093,6 +3116,14 @@ body {
     margin-top: auto;
     padding-top: 6px;
     padding-bottom: 4px;
+  }
+
+  .chat-local-actions .confirm-action,
+  .chat-local-actions .chat-local-skip,
+  .chat-local-actions .skip-vote-btn {
+    min-height: 38px;
+    padding: 8px 8px;
+    font-size: 0.68rem;
   }
 
   .phase-chat-panel.chat-docked-mode {
