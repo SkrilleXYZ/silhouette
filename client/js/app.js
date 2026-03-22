@@ -35,6 +35,8 @@
     roleRevealActive: false,
     roleRevealEndsAt: 0,
     roleRevealTimeout: null,
+    toastTimeout: null,
+    connectionToastVisible: false,
   };
 
   const MAX_ROOM_PLAYERS = 16;
@@ -253,10 +255,14 @@
 
     state.socket.on('connect', () => {
       console.log('Connected to server:', state.socket.id);
+      state.connectionToastVisible = false;
     });
 
-    state.socket.on('disconnect', () => {
-      console.log('Disconnected from server');
+    state.socket.on('disconnect', (reason) => {
+      console.log('Disconnected from server:', reason);
+      if (reason === 'io client disconnect') return;
+      if (state.connectionToastVisible) return;
+      state.connectionToastVisible = true;
       showToast('Connection lost. Reconnecting...', 'error');
     });
 
@@ -419,10 +425,18 @@
       toast.className = 'toast';
       document.body.appendChild(toast);
     }
+    if (state.toastTimeout) {
+      clearTimeout(state.toastTimeout);
+      state.toastTimeout = null;
+    }
+    toast.classList.remove('show');
     toast.textContent = message;
     toast.className = `toast ${type}`;
     requestAnimationFrame(() => toast.classList.add('show'));
-    setTimeout(() => toast.classList.remove('show'), 3000);
+    state.toastTimeout = setTimeout(() => {
+      toast.classList.remove('show');
+      state.toastTimeout = null;
+    }, 3000);
   }
 
   function startTimer(duration, endsAt) {
@@ -816,9 +830,10 @@
 
     const mode = getChatMode();
     const canChat = mode === 'morning' || mode === 'voting';
-    const isExpandedMode = mode === 'morning';
+    const isMorningFullscreen = mode === 'morning' && state.chatOverlayOpen;
+    const isExpandedMode = mode === 'morning' && !isMorningFullscreen;
     const isDockedMode = mode !== 'hidden' && !isExpandedMode;
-    const isOverlayOpen = isExpandedMode || state.chatOverlayOpen;
+    const isOverlayOpen = state.chatOverlayOpen;
     const subtitle = canChat
       ? 'Chat is open for discussion.'
       : mode === 'readonly'
@@ -1986,7 +2001,10 @@
           <div class="chat-panel-title">Room Chat</div>
           <div class="chat-panel-subtitle">${subtitle}</div>
         </div>
-        ${isDockedMode ? '<button class="chat-close-btn" id="chat-close-btn" type="button">Close</button>' : ''}
+        <div class="chat-header-actions">
+          ${mode === 'morning' && !isOverlayOpen ? '<button class="chat-fullscreen-btn" id="chat-fullscreen-btn" type="button">Fullscreen</button>' : ''}
+          ${isDockedMode ? '<button class="chat-close-btn" id="chat-close-btn" type="button">Close</button>' : ''}
+        </div>
       </div>
       <div class="chat-messages" id="chat-messages">${items}</div>
       <form class="chat-input-row" id="chat-form">
@@ -2003,6 +2021,14 @@
 
     const chatMessages = document.getElementById('chat-messages');
     if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    const fullscreenBtn = document.getElementById('chat-fullscreen-btn');
+    if (fullscreenBtn) {
+      fullscreenBtn.addEventListener('click', () => {
+        state.chatOverlayOpen = true;
+        renderChatBox();
+      });
+    }
 
     const closeBtn = document.getElementById('chat-close-btn');
     if (closeBtn) {

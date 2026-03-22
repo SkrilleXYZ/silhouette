@@ -2077,6 +2077,13 @@ body {
   margin-top: 4px;
 }
 
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-fullscreen-btn,
 .chat-close-btn {
   border: 1px solid hsla(0, 0%, 100%, 0.12);
   background: hsl(0, 0%, 16%);
