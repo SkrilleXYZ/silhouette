@@ -841,7 +841,7 @@
         : 'Chat is visible but locked until morning.';
     const messages = state.chatMessages || [];
 
-    panel.className = `phase-chat-panel ${mode === 'morning' ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}`;
+    panel.className = `phase-chat-panel ${isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isOverlayOpen && isDockedMode ? ' chat-overlay-open' : ''}`;
 
     if (mode === 'hidden') {
       panel.innerHTML = '';
@@ -1930,7 +1930,7 @@
     const messages = [...(state.chatMessages || []), ...(state.privateChatMessages || [])]
       .sort((a, b) => a.createdAt - b.createdAt);
 
-    panel.className = `phase-chat-panel ${isExpandedMode ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isOverlayOpen && isDockedMode ? ' chat-overlay-open' : ''}`;
+    panel.className = `phase-chat-panel ${isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isOverlayOpen && isDockedMode ? ' chat-overlay-open' : ''}`;
     if (gameContainer) {
       gameContainer.classList.toggle('chat-overlay-active', !!(isDockedMode && isOverlayOpen));
     }
