@@ -280,23 +280,16 @@ body {
 
 .profile-panel-header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 14px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
 }
 
 .profile-title {
   font-family: 'Cinzel', serif;
   font-size: 1rem;
   letter-spacing: 3px;
-  margin-bottom: 6px;
-}
-
-.profile-subtitle {
-  color: var(--fg-muted);
-  font-size: 0.8rem;
-  line-height: 1.45;
+  margin-bottom: 0;
 }
 
 .profile-preview {
@@ -329,12 +322,14 @@ body {
 .profile-panel-compact {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
 }
 
 .profile-compact-copy {
+  flex: 1;
   min-width: 0;
+  text-align: center;
 }
 
 .profile-compact-name {
@@ -409,18 +404,19 @@ body {
 
 .create-room-btn,
 .join-room-inline {
-  min-height: 92px;
+  min-height: 64px;
 }
 
 .create-room-btn {
   width: 100%;
+  padding: 14px 18px;
 }
 
 .join-room-inline {
   display: flex;
   align-items: stretch;
-  gap: 12px;
-  padding: 14px;
+  gap: 10px;
+  padding: 10px;
 }
 
 .join-code-home-group {
@@ -429,18 +425,23 @@ body {
   margin-bottom: 0;
 }
 
+.join-code-home-group .text-input {
+  padding: 12px 16px;
+  height: 100%;
+}
+
 .join-code-input {
-  text-align: left;
+  text-align: center;
 }
 
 .join-room-arrow-btn {
-  min-width: 72px;
-  padding: 0;
+  min-width: 52px;
+  padding: 0 14px;
 }
 
 .join-room-arrow-btn .btn-icon {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
 }
 
 .home-footer {
@@ -675,6 +676,8 @@ body {
   width: auto;
   min-width: 92px;
   padding: 12px 18px;
+  margin-top: 0;
+  margin-left: auto;
 }
 
 .room-container { padding-bottom: 0; }
