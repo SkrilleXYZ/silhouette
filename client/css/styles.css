@@ -1854,17 +1854,19 @@ body {
 }
 
 .phase-chat-panel.chat-overlay-open .chat-messages {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-height: 0;
+}
+
+.phase-chat-panel.chat-overlay-open .chat-panel-header {
+  flex: 0 0 auto;
 }
 
 .phase-chat-panel.chat-overlay-open .chat-input-row {
   display: flex;
-  flex-shrink: 0;
-  margin-top: auto;
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
+  flex: 0 0 auto;
+  margin-top: 0;
+  position: relative;
   background: hsl(0, 0%, 11%);
   pointer-events: auto;
 }
