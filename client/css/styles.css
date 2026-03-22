@@ -2625,6 +2625,170 @@ body {
   .game-subtitle { font-size: 0.6rem; letter-spacing: 3px; }
 }
 
+@media (max-width: 560px) {
+  .game-container {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+
+  .game-header {
+    margin-bottom: 10px;
+  }
+
+  .game-phase-indicator {
+    gap: 8px;
+  }
+
+  .phase-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .phase-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .phase-name {
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+  }
+
+  .phase-count {
+    font-size: 0.66rem;
+  }
+
+  .game-timer {
+    width: 40px;
+    height: 40px;
+  }
+
+  .timer-text {
+    font-size: 0.74rem;
+  }
+
+  .role-card {
+    margin-bottom: 6px;
+  }
+
+  .role-card-inner {
+    padding: 10px 12px;
+  }
+
+  .role-faction {
+    font-size: 0.58rem;
+    letter-spacing: 2px;
+    margin-bottom: 2px;
+  }
+
+  .role-name {
+    font-size: 0.98rem;
+    letter-spacing: 2px;
+  }
+
+  .role-divider {
+    margin: 6px auto;
+  }
+
+  .role-description {
+    font-size: 0.68rem;
+    line-height: 1.35;
+  }
+
+  .game-content {
+    gap: 8px;
+    padding-bottom: 6px;
+  }
+
+  .action-panel,
+  .voting-panel {
+    padding: 12px;
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+
+  .action-title {
+    font-size: 0.76rem;
+    letter-spacing: 1.4px;
+  }
+
+  .action-subtitle {
+    font-size: 0.7rem;
+    margin-bottom: 10px;
+  }
+
+  .action-buttons {
+    margin-bottom: 10px;
+  }
+
+  .action-btn {
+    min-height: 46px;
+    padding: 9px 10px;
+    font-size: 0.72rem;
+  }
+
+  .action-panel .target-list.chat-target-list,
+  .voting-panel .target-list.chat-target-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: min(34vh, 260px);
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+
+  .action-panel .target-item,
+  .voting-panel .target-item {
+    min-height: 62px;
+    padding: 10px 12px;
+    gap: 10px;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    text-align: left;
+  }
+
+  .action-panel .target-dot,
+  .voting-panel .target-dot {
+    flex-shrink: 0;
+  }
+
+  .target-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .action-panel .target-name,
+  .voting-panel .target-name {
+    font-size: 0.78rem;
+    line-height: 1.2;
+    text-align: left;
+    display: block;
+    -webkit-line-clamp: unset;
+    overflow: visible;
+  }
+
+  .chat-local-actions {
+    position: sticky;
+    bottom: 0;
+    background: linear-gradient(180deg, rgba(9, 9, 9, 0), rgba(9, 9, 9, 0.96) 26%);
+    padding-top: 10px;
+    margin-top: 10px;
+  }
+
+  .chat-local-actions .confirm-action,
+  .chat-local-actions .chat-local-skip,
+  .chat-local-actions .skip-vote-btn {
+    min-height: 48px;
+  }
+
+  .phase-chat-panel.chat-docked-mode:not(.chat-overlay-open) {
+    left: 10px;
+    right: 10px;
+    bottom: calc(52px + env(safe-area-inset-bottom));
+  }
+}
+
 @media (min-width: 768px) {
   .nav-tabs {
     top: 0; bottom: auto;
