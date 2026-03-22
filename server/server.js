@@ -141,13 +141,7 @@ io.on('connection', (socket) => {
       return;
     }
     const room = game.getRoom(mapping.code);
-    let publicNightMessage = null;
-    if (room?.hiddenRoleList) {
-      publicNightMessage = 'A player used their ability.';
-    } else if (action === 'shoot') publicNightMessage = 'Sheriff has used their gun.';
-    else if (action === 'search') publicNightMessage = 'Sheriff is investigating someone.';
-    else if (action === 'protect') publicNightMessage = 'Medic has protected someone.';
-    else if (action === 'kill') publicNightMessage = 'An Assassin has moved through the shadows.';
+    const publicNightMessage = game.getNightActionSummaryLine(mapping.code, action);
     if (publicNightMessage) {
       const chatMessage = game.appendToPhaseSummary(mapping.code, publicNightMessage);
       if (chatMessage) io.to(mapping.code).emit('chat-message-updated', { message: chatMessage });
@@ -348,6 +342,13 @@ function resolveNightPhase(code) {
   const result = game.resolveNight(code);
   if (!result) return;
 
+  io.to(code).emit('phase-changed', {
+    phase: result.winner ? 'ended' : 'morning',
+    nightCount: result.room.nightCount,
+    messages: result.messages,
+    room: game.getRoomPublicData(code)
+  });
+
   if (result.privateMessages) {
     for (const [playerId, messages] of Object.entries(result.privateMessages)) {
       messages.forEach((message) => {
@@ -355,13 +356,6 @@ function resolveNightPhase(code) {
       });
     }
   }
-
-  io.to(code).emit('phase-changed', {
-    phase: result.winner ? 'ended' : 'morning',
-    nightCount: result.room.nightCount,
-    messages: result.messages,
-    room: game.getRoomPublicData(code)
-  });
 
   if (result.winner) {
     const allPlayers = game.getAllPlayersWithRoles(code);

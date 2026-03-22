@@ -368,6 +368,9 @@ class GameLogic {
       room.lastMedicTarget = null;
     }
 
+    const nightSummaryLines = this.getNightActionSummaryLines(code);
+    nightSummaryLines.forEach((line) => this.appendToPhaseSummary(code, line));
+
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       if (!player) continue;
@@ -675,6 +678,41 @@ class GameLogic {
     if (room.chatMessages.length > 150) room.chatMessages = room.chatMessages.slice(-150);
     room.lastAction = Date.now();
     return message;
+  }
+
+  getNightActionSummaryLine(code, action) {
+    const room = this.rooms.get(code);
+    if (!room || !action) return null;
+
+    if (room.hiddenRoleList) {
+      if (action === 'skip') return null;
+      return 'A player used their ability.';
+    }
+
+    if (action === 'shoot') return 'Sheriff has used their gun.';
+    if (action === 'search') return 'Sheriff is investigating someone.';
+    if (action === 'protect') return 'Medic has protected someone.';
+    if (action === 'kill') return 'An Assassin has moved through the shadows.';
+    return null;
+  }
+
+  getNightActionSummaryLines(code) {
+    const room = this.rooms.get(code);
+    if (!room) return [];
+
+    const lines = [];
+    const seen = new Set();
+
+    for (const { action } of Object.values(room.nightActions)) {
+      const line = this.getNightActionSummaryLine(code, action);
+      if (!line || seen.has(line)) continue;
+      seen.add(line);
+      lines.push(line);
+    }
+
+    const currentSummary = room.chatMessages.find((entry) => entry.id === room.currentPhaseSummaryId);
+    const existingLines = new Set(currentSummary?.summaryLines || []);
+    return lines.filter((line) => !existingLines.has(line));
   }
 
   beginPhaseSummary(code, title, lines = []) {
