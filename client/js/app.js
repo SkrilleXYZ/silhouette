@@ -67,7 +67,6 @@
   };
   const LOBBY_AVATAR_FILES = [
     'Avatar 1.png',
-    'Avatar 10.png',
     'Avatar 11.png',
     'Avatar 12.png',
     'Avatar 13.png',
