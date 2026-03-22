@@ -791,6 +791,12 @@ body {
   border-radius: 50%;
 }
 
+.player-avatar.avatar-load-failed,
+.target-avatar.avatar-load-failed {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
 .player-name {
   font-size: 0.75rem;
   font-weight: 500;

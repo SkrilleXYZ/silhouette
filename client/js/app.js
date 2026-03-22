@@ -103,14 +103,18 @@
 
   function handleAvatarLoadError(img) {
     if (!img) return;
-    const attemptedIndex = Number.parseInt(img.dataset.avatarIndex || '0', 10) || 0;
     const fallbackOffset = Number.parseInt(img.dataset.avatarFallbacks || '0', 10) || 0;
-    if (fallbackOffset >= LOBBY_AVATAR_IMAGES.length - 1) return;
+    const originalSrc = img.dataset.avatarSrc || img.getAttribute('src') || '';
+    if (!originalSrc) return;
 
-    const nextOffset = fallbackOffset + 1;
-    const nextIndex = (attemptedIndex + nextOffset) % LOBBY_AVATAR_IMAGES.length;
-    img.dataset.avatarFallbacks = String(nextOffset);
-    img.src = getLobbyAvatarSrc(nextIndex);
+    if (fallbackOffset === 0) {
+      img.dataset.avatarFallbacks = '1';
+      img.src = `${originalSrc}${originalSrc.includes('?') ? '&' : '?'}retry=1`;
+      return;
+    }
+
+    img.removeAttribute('onerror');
+    img.classList.add('avatar-load-failed');
   }
 
   window.handleAvatarLoadError = handleAvatarLoadError;
@@ -118,7 +122,7 @@
   function renderAvatarMarkup(key, className = 'player-avatar', avatarIndex = null) {
     const resolvedIndex = Number.isInteger(avatarIndex) ? avatarIndex : getAvatarIndex(key);
     const avatarSrc = getLobbyAvatarSrc(resolvedIndex);
-    return `<img class="${className}" src="${avatarSrc}" alt="" data-avatar-index="${resolvedIndex}" data-avatar-fallbacks="0" onerror="window.handleAvatarLoadError && window.handleAvatarLoadError(this)" />`;
+    return `<img class="${className}" src="${avatarSrc}" alt="" data-avatar-index="${resolvedIndex}" data-avatar-src="${avatarSrc}" data-avatar-fallbacks="0" onerror="window.handleAvatarLoadError && window.handleAvatarLoadError(this)" />`;
   }
 
   function normalizeProfileName(name) {
