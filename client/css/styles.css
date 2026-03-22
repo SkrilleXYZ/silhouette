@@ -2643,6 +2643,8 @@ body {
 
 @media (max-width: 560px) {
   .game-container {
+    height: auto;
+    min-height: calc(100svh - 80px);
     padding: 12px 14px;
     gap: 8px;
     padding-bottom: calc(126px + env(safe-area-inset-bottom));
@@ -2713,6 +2715,7 @@ body {
   }
 
   .game-content {
+    flex: 1 1 auto;
     gap: 8px;
     padding-bottom: 8px;
     overflow-y: auto;
@@ -2736,27 +2739,29 @@ body {
 
   .phase-chat-panel.chat-expanded {
     flex: 1 1 auto;
-    min-height: clamp(420px, 62vh, 720px);
+    min-height: clamp(240px, 34vh, 360px);
   }
 
   .phase-chat-panel.chat-expanded .chat-messages {
     flex: 1 1 auto;
     min-height: 0;
+    max-height: 32vh;
+    overflow-y: auto;
   }
 
   .phase-chat-panel.chat-expanded .chat-panel-header {
-    padding: 10px 12px;
+    padding: 8px 10px;
   }
 
   .phase-chat-panel.chat-expanded .chat-input-row {
-    padding: 10px;
+    padding: 8px;
   }
 
   .action-panel,
   .voting-panel {
     padding: 12px;
     flex: 1 0 auto;
-    min-height: clamp(420px, 58vh, 620px);
+    min-height: clamp(220px, 30vh, 320px);
     justify-content: flex-start;
   }
 
@@ -2987,6 +2992,8 @@ body {
 
 @media (max-width: 640px) {
   .game-container {
+    height: auto;
+    min-height: calc(100svh - 80px);
     padding: 12px 12px calc(164px + env(safe-area-inset-bottom));
   }
 
@@ -2999,12 +3006,12 @@ body {
   }
 
   .role-card-inner {
-    padding: 12px 14px;
+    padding: 10px 12px;
   }
 
   .role-name {
-    font-size: 0.92rem;
-    letter-spacing: 3px;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
   }
 
   .role-description {
@@ -3012,6 +3019,7 @@ body {
   }
 
   .game-content {
+    flex: 1 1 auto;
     gap: 10px;
     padding-bottom: 0;
   }
@@ -3019,6 +3027,7 @@ body {
   .action-panel,
   .voting-panel {
     padding: 12px;
+    min-height: clamp(240px, 34vh, 360px);
   }
 
   .action-title {
@@ -3070,6 +3079,20 @@ body {
   .chat-local-actions {
     gap: 6px;
     padding-top: 8px;
+  }
+
+  .phase-chat-panel .chat-panel-header {
+    padding: 9px 10px;
+  }
+
+  .phase-chat-panel .chat-input-row {
+    padding: 8px;
+  }
+
+  .phase-chat-panel .chat-messages {
+    min-height: 0;
+    max-height: 34vh;
+    overflow-y: auto;
   }
 
   .phase-chat-panel.chat-docked-mode:not(.chat-overlay-open) {

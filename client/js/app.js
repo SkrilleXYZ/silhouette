@@ -1902,8 +1902,9 @@
 
     const mode = getChatMode();
     const canChat = mode === 'morning' || mode === 'voting';
-    const isDockedMode = mode === 'night' || mode === 'voting' || mode === 'readonly';
-    const isOverlayOpen = mode === 'morning' || state.chatOverlayOpen;
+    const isExpandedMode = mode === 'morning' || mode === 'voting';
+    const isDockedMode = mode === 'night' || mode === 'readonly';
+    const isOverlayOpen = isExpandedMode || state.chatOverlayOpen;
     const subtitle = canChat
       ? 'Chat is open for discussion.'
       : mode === 'readonly'
