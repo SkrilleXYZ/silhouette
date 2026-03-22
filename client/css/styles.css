@@ -1852,6 +1852,21 @@ body {
   animation: chatSheetRise 0.28s cubic-bezier(.2,.85,.2,1);
 }
 
+.phase-chat-panel.chat-overlay-open .chat-messages {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.phase-chat-panel.chat-overlay-open .chat-input-row {
+  display: flex;
+  flex-shrink: 0;
+  margin-top: auto;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: hsl(0, 0%, 11%);
+}
+
 @keyframes chatSheetRise {
   from {
     opacity: 0;
@@ -3145,7 +3160,7 @@ body {
     flex-direction: column !important;
     border-radius: 0;
     margin: 0;
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: 0;
   }
 
   .phase-chat-panel.chat-overlay-open .chat-messages {
@@ -3207,7 +3222,7 @@ body {
     flex-direction: column !important;
     border-radius: 0;
     margin: 0;
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: 0;
   }
 
   .phase-chat-panel.chat-overlay-open .chat-messages {
