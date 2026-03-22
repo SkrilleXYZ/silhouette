@@ -537,8 +537,11 @@
     overlay.setAttribute('aria-hidden', 'false');
     panel.classList.remove('settled');
 
-    result.className = `role-reveal-result ${roleInfo.faction.toLowerCase()}`;
-    result.innerHTML = `<strong>${player.role}</strong>${roleInfo.revealText}`;
+    result.className = 'role-reveal-result pending';
+    result.innerHTML = '<strong>Shadows decide...</strong>The reel is still spinning.';
+    result.dataset.role = player.role;
+    result.dataset.revealText = roleInfo.revealText;
+    result.dataset.faction = roleInfo.faction.toLowerCase();
 
     reel.innerHTML = sequence.map((role, index) => renderRoleRevealItem(role, index === selectedIndex)).join('');
     reel.style.transition = 'none';
@@ -555,6 +558,8 @@
       clearTimeout(state.roleRevealTimeout);
     }
     state.roleRevealTimeout = setTimeout(() => {
+      result.className = `role-reveal-result ${roleInfo.faction.toLowerCase()}`;
+      result.innerHTML = `<strong>${player.role}</strong>${roleInfo.revealText}`;
       panel.classList.add('settled');
     }, spinDuration);
   }
@@ -562,6 +567,7 @@
   function stopRoleReveal(settle) {
     const overlay = document.getElementById('role-reveal-overlay');
     const panel = document.getElementById('role-reveal-panel');
+    const result = document.getElementById('role-reveal-result');
     const gameContainer = document.querySelector('#screen-game .game-container');
 
     if (state.roleRevealTimeout) {
@@ -575,6 +581,10 @@
     if (!overlay || !panel || !gameContainer) return;
 
     if (settle) {
+      if (result?.dataset?.role) {
+        result.className = `role-reveal-result ${result.dataset.faction || ''}`.trim();
+        result.innerHTML = `<strong>${result.dataset.role}</strong>${result.dataset.revealText || ''}`;
+      }
       panel.classList.add('settled');
       window.setTimeout(() => {
         overlay.classList.remove('active');
