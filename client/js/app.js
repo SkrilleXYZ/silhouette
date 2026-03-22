@@ -404,6 +404,11 @@
 
   function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
+    const overlay = document.getElementById('chat-fullscreen-overlay');
+    if (overlay && screenId !== 'game') {
+      overlay.classList.remove('active');
+      overlay.innerHTML = '';
+    }
     const screen = document.getElementById(`screen-${screenId}`);
     if (screen) {
       screen.classList.add('active');
@@ -1907,6 +1912,59 @@
     return '';
   }
 
+  function getRenderableChatMessages() {
+    return [...(state.chatMessages || []), ...(state.privateChatMessages || [])]
+      .sort((a, b) => a.createdAt - b.createdAt);
+  }
+
+  function getChatItemsMarkup(messages) {
+    return messages.length
+      ? messages.map((message) => {
+        const isSelf = message.senderId === state.playerId;
+        const phaseClass = message.type === 'system' && message.phase ? ` phase-${message.phase}` : '';
+        const summaryClass = message.type === 'system' && message.summaryTitle ? ' phase-summary' : '';
+        const classes = `chat-message ${message.type === 'system' ? 'system' : 'player'}${phaseClass}${summaryClass}${message.private ? ' private' : ''}${isSelf ? ' self' : ''}`;
+        const sender = message.type === 'system' ? 'SYSTEM' : message.senderName;
+        const style = getPlayerChatStyle(message);
+        return `
+          <div class="${classes}"${style ? ` style="${style}"` : ''}>
+            <div class="chat-message-meta">${sender}</div>
+            <div class="chat-message-text">${formatChatMessageHtml(message)}</div>
+          </div>`;
+      }).join('')
+      : '<div class="chat-empty">No messages yet.</div>';
+  }
+
+  function bindChatComposer(form, canChat) {
+    if (!form || !canChat) return;
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const input = form.querySelector('.chat-input');
+      const text = input ? input.value.trim() : '';
+      if (!text) return;
+
+      state.socket.emit('send-chat-message', { text }, (response) => {
+        if (response.success) {
+          if (input) input.value = '';
+        } else {
+          showToast(response.error || 'Message failed to send', 'error');
+        }
+      });
+    });
+  }
+
+  function ensureChatOverlay() {
+    let overlay = document.getElementById('chat-fullscreen-overlay');
+    if (overlay) return overlay;
+
+    overlay = document.createElement('div');
+    overlay.id = 'chat-fullscreen-overlay';
+    overlay.className = 'chat-fullscreen-overlay';
+    document.body.appendChild(overlay);
+    return overlay;
+  }
+
   function renderChatBox() {
     const panel = document.getElementById('phase-chat-panel');
     if (!panel) return;
@@ -1923,35 +1981,24 @@
         ? 'Waiting for the next phase...'
         : 'Chat is visible but locked until morning.';
     const gameContainer = document.querySelector('.game-container');
-    const messages = [...(state.chatMessages || []), ...(state.privateChatMessages || [])]
-      .sort((a, b) => a.createdAt - b.createdAt);
+    const messages = getRenderableChatMessages();
+    const overlay = ensureChatOverlay();
+    const isStandaloneOverlay = isDockedMode && isOverlayOpen;
 
-    panel.className = `phase-chat-panel ${isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isOverlayOpen && isDockedMode ? ' chat-overlay-open' : ''}`;
+    panel.className = `phase-chat-panel ${isStandaloneOverlay ? 'chat-overlay-anchor' : isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}`;
     if (gameContainer) {
-      gameContainer.classList.toggle('chat-overlay-active', !!(isDockedMode && isOverlayOpen));
+      gameContainer.classList.toggle('chat-overlay-active', isStandaloneOverlay);
     }
-    if (isDockedMode && isOverlayOpen) {
-      const roleCard = document.getElementById('role-card');
-      const containerRect = gameContainer ? gameContainer.getBoundingClientRect() : null;
-      const roleRect = roleCard ? roleCard.getBoundingClientRect() : null;
-      const overlayTop = Math.round((roleRect ? roleRect.bottom : (containerRect ? containerRect.top + 120 : 120)) + 10);
-      const overlayLeft = Math.round(containerRect ? containerRect.left : 10);
-      const overlayWidth = Math.round(containerRect ? containerRect.width : Math.min(window.innerWidth - 20, 420));
-      panel.style.setProperty('--chat-overlay-top', `${overlayTop}px`);
-      panel.style.setProperty('--chat-overlay-left', `${overlayLeft}px`);
-      panel.style.setProperty('--chat-overlay-width', `${overlayWidth}px`);
-    } else {
-      panel.style.removeProperty('--chat-overlay-top');
-      panel.style.removeProperty('--chat-overlay-left');
-      panel.style.removeProperty('--chat-overlay-width');
-    }
+    overlay.classList.toggle('active', isStandaloneOverlay);
 
     if (mode === 'hidden') {
       panel.innerHTML = '';
+      overlay.innerHTML = '';
       return;
     }
 
     if (isDockedMode && !isOverlayOpen) {
+      overlay.innerHTML = '';
       panel.innerHTML = `
         <button class="chat-dock-toggle" id="chat-open-btn" type="button">
           <span class="chat-dock-icon" aria-hidden="true">
@@ -1975,21 +2022,52 @@
     }
 
     const localPanel = getLocalActionPanelMarkup();
-    const items = messages.length
-      ? messages.map((message) => {
-        const isSelf = message.senderId === state.playerId;
-        const phaseClass = message.type === 'system' && message.phase ? ` phase-${message.phase}` : '';
-        const summaryClass = message.type === 'system' && message.summaryTitle ? ' phase-summary' : '';
-        const classes = `chat-message ${message.type === 'system' ? 'system' : 'player'}${phaseClass}${summaryClass}${message.private ? ' private' : ''}${isSelf ? ' self' : ''}`;
-        const sender = message.type === 'system' ? 'SYSTEM' : message.senderName;
-        const style = getPlayerChatStyle(message);
-        return `
-          <div class="${classes}"${style ? ` style="${style}"` : ''}>
-            <div class="chat-message-meta">${sender}</div>
-            <div class="chat-message-text">${formatChatMessageHtml(message)}</div>
-          </div>`;
-      }).join('')
-      : '<div class="chat-empty">No messages yet.</div>';
+    const items = getChatItemsMarkup(messages);
+
+    if (isStandaloneOverlay) {
+      panel.innerHTML = '';
+      overlay.innerHTML = `
+        <div class="chat-fullscreen-shell${canChat ? '' : ' chat-locked'}">
+          ${localPanel}
+          <div class="chat-panel-header">
+            <div>
+              <div class="chat-panel-title">Room Chat</div>
+              <div class="chat-panel-subtitle">${subtitle}</div>
+            </div>
+            <div class="chat-header-actions">
+              <button class="chat-close-btn" id="chat-overlay-close-btn" type="button">Close</button>
+            </div>
+          </div>
+          <div class="chat-messages" id="chat-overlay-messages">${items}</div>
+          <form class="chat-input-row" id="chat-overlay-form">
+            <input
+              id="chat-overlay-input"
+              class="chat-input"
+              type="text"
+              maxlength="280"
+              placeholder="${canChat ? 'Type a message...' : 'Chat is locked at night'}"
+              ${canChat ? '' : 'disabled'}
+            />
+            <button class="btn btn-primary chat-send-btn" type="submit" ${canChat ? '' : 'disabled'}>Send</button>
+          </form>
+        </div>`;
+
+      const overlayMessages = document.getElementById('chat-overlay-messages');
+      if (overlayMessages) overlayMessages.scrollTop = overlayMessages.scrollHeight;
+
+      const overlayCloseBtn = document.getElementById('chat-overlay-close-btn');
+      if (overlayCloseBtn) {
+        overlayCloseBtn.addEventListener('click', () => {
+          state.chatOverlayOpen = false;
+          renderChatBox();
+        });
+      }
+
+      bindChatComposer(document.getElementById('chat-overlay-form'), canChat);
+      return;
+    }
+
+    overlay.innerHTML = '';
 
     panel.innerHTML = `
       ${localPanel}
@@ -2035,24 +2113,7 @@
       });
     }
 
-    const chatForm = document.getElementById('chat-form');
-    if (chatForm && canChat) {
-      chatForm.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const input = document.getElementById('chat-input');
-        const text = input ? input.value.trim() : '';
-        if (!text) return;
-
-        state.socket.emit('send-chat-message', { text }, (response) => {
-          if (response.success) {
-            if (input) input.value = '';
-          } else {
-            showToast(response.error || 'Message failed to send', 'error');
-          }
-        });
-      });
-    }
-
+    bindChatComposer(document.getElementById('chat-form'), canChat);
   }
 
   function renderGameContent(phase) {

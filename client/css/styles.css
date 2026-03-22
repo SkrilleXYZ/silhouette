@@ -1303,7 +1303,7 @@ body {
 .game-container.chat-overlay-active > .game-header,
 .game-container.chat-overlay-active > .role-card,
 .game-container.chat-overlay-active > .game-status-bar,
-.game-container.chat-overlay-active .game-content > :not(.phase-chat-panel) {
+.game-container.chat-overlay-active .game-content > * {
   filter: blur(7px);
   opacity: 0.34;
   transform: scale(0.992);
@@ -1869,6 +1869,40 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
+}
+
+.phase-chat-panel.chat-overlay-anchor {
+  display: none;
+}
+
+.chat-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: none;
+  background:
+    linear-gradient(180deg, rgba(18, 18, 18, 0.94), rgba(8, 8, 8, 0.98)),
+    hsl(0, 0%, 8%);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.chat-fullscreen-overlay.active {
+  display: block;
+  animation: chatSheetRise 0.28s cubic-bezier(.2,.85,.2,1);
+}
+
+.chat-fullscreen-shell {
+  width: min(100%, 480px);
+  height: 100dvh;
+  min-height: 100dvh;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  box-shadow: 0 24px 54px rgba(0,0,0,0.46);
 }
 
 .phase-chat-panel.chat-docked-mode {
