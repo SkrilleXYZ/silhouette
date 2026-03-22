@@ -816,8 +816,9 @@
 
     const mode = getChatMode();
     const canChat = mode === 'morning' || mode === 'voting';
-    const isDockedMode = mode === 'night' || mode === 'voting' || mode === 'readonly';
-    const isOverlayOpen = mode === 'morning' || state.chatOverlayOpen;
+    const isExpandedMode = mode === 'morning' || mode === 'voting';
+    const isDockedMode = mode === 'night' || mode === 'readonly';
+    const isOverlayOpen = isExpandedMode || state.chatOverlayOpen;
     const subtitle = canChat
       ? 'Chat is open for discussion.'
       : mode === 'readonly'
@@ -1912,7 +1913,7 @@
     const messages = [...(state.chatMessages || []), ...(state.privateChatMessages || [])]
       .sort((a, b) => a.createdAt - b.createdAt);
 
-    panel.className = `phase-chat-panel ${mode === 'morning' ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isOverlayOpen && isDockedMode ? ' chat-overlay-open' : ''}`;
+    panel.className = `phase-chat-panel ${isExpandedMode ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isOverlayOpen && isDockedMode ? ' chat-overlay-open' : ''}`;
     if (gameContainer) {
       gameContainer.classList.toggle('chat-overlay-active', !!(isDockedMode && isOverlayOpen));
     }

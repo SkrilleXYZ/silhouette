@@ -2714,15 +2714,49 @@ body {
 
   .game-content {
     gap: 8px;
-    padding-bottom: 18px;
+    padding-bottom: 8px;
     overflow-y: auto;
+  }
+
+  .morning-chat-intro {
+    padding: 10px 12px;
+  }
+
+  .morning-chat-intro .action-title {
+    font-size: 0.72rem;
+    letter-spacing: 1.2px;
+    margin-bottom: 2px;
+  }
+
+  .morning-chat-intro .action-subtitle {
+    margin-bottom: 0;
+    font-size: 0.66rem;
+    line-height: 1.35;
+  }
+
+  .phase-chat-panel.chat-expanded {
+    flex: 1 1 auto;
+    min-height: clamp(420px, 62vh, 720px);
+  }
+
+  .phase-chat-panel.chat-expanded .chat-messages {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .phase-chat-panel.chat-expanded .chat-panel-header {
+    padding: 10px 12px;
+  }
+
+  .phase-chat-panel.chat-expanded .chat-input-row {
+    padding: 10px;
   }
 
   .action-panel,
   .voting-panel {
     padding: 12px;
     flex: 1 0 auto;
-    min-height: 0;
+    min-height: clamp(420px, 58vh, 620px);
     justify-content: flex-start;
   }
 
@@ -2752,7 +2786,7 @@ body {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
     align-content: start;
-    max-height: clamp(240px, 44vh, 380px);
+    max-height: clamp(280px, 48vh, 420px);
     overflow-y: auto;
     padding-right: 2px;
   }
