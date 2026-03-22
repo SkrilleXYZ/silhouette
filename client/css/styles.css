@@ -220,13 +220,20 @@ body {
 }
 
 .logo-silhouette {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 180px;
+  height: 180px;
   margin-bottom: 24px;
   animation: logoBreath 4s ease-in-out infinite;
 }
 
 .logo-icon {
-  width: 80px; height: 96px;
-  filter: drop-shadow(0 0 20px var(--crew-glow));
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 26px rgba(5, 5, 10, 0.7)) drop-shadow(0 0 18px rgba(150, 18, 28, 0.28));
 }
 
 @keyframes logoBreath {
