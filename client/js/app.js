@@ -816,9 +816,9 @@
 
     const mode = getChatMode();
     const canChat = mode === 'morning' || mode === 'voting';
-    const isExpandedMode = false;
-    const isDockedMode = mode !== 'hidden';
-    const isOverlayOpen = state.chatOverlayOpen;
+    const isExpandedMode = mode === 'morning';
+    const isDockedMode = mode !== 'hidden' && !isExpandedMode;
+    const isOverlayOpen = isExpandedMode || state.chatOverlayOpen;
     const subtitle = canChat
       ? 'Chat is open for discussion.'
       : mode === 'readonly'
@@ -1902,9 +1902,9 @@
 
     const mode = getChatMode();
     const canChat = mode === 'morning' || mode === 'voting';
-    const isExpandedMode = false;
-    const isDockedMode = mode !== 'hidden';
-    const isOverlayOpen = state.chatOverlayOpen;
+    const isExpandedMode = mode === 'morning';
+    const isDockedMode = mode !== 'hidden' && !isExpandedMode;
+    const isOverlayOpen = isExpandedMode || state.chatOverlayOpen;
     const subtitle = canChat
       ? 'Chat is open for discussion.'
       : mode === 'readonly'
