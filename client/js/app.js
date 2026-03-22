@@ -42,6 +42,7 @@
   const MAX_ROOM_PLAYERS = 16;
   const PROFILE_STORAGE_KEY = 'silhouette.profile';
   const ROLE_REVEAL_ITEM_HEIGHT = 72;
+  const AVATAR_ASSET_VERSION = '20260323';
   const ROLE_DEFINITIONS = {
     Sheriff: {
       faction: 'Crew',
@@ -90,7 +91,7 @@
     'Gemini_Generated_Image_w1pl7yw1pl7yw1pl-removebg-preview.png',
     'Gemini_Generated_Image_w3dr3w3dr3w3dr3w-removebg-preview.png',
   ];
-  const LOBBY_AVATAR_IMAGES = LOBBY_AVATAR_FILES.map((fileName) => `./assets/avatars/${encodeURIComponent(fileName)}`);
+  const LOBBY_AVATAR_IMAGES = LOBBY_AVATAR_FILES.map((fileName) => `./assets/avatars/${encodeURIComponent(fileName)}?v=${AVATAR_ASSET_VERSION}`);
 
   function getLobbyAvatarSrc(index) {
     return LOBBY_AVATAR_IMAGES[index % LOBBY_AVATAR_IMAGES.length];
