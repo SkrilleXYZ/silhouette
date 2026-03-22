@@ -42,7 +42,7 @@
   const MAX_ROOM_PLAYERS = 16;
   const PROFILE_STORAGE_KEY = 'silhouette.profile';
   const ROLE_REVEAL_ITEM_HEIGHT = 72;
-  const AVATAR_ASSET_VERSION = '20260323';
+  const AVATAR_ASSET_VERSION = '20260324';
   const ROLE_DEFINITIONS = {
     Sheriff: {
       faction: 'Crew',
@@ -67,29 +67,29 @@
   };
   const LOBBY_AVATAR_FILES = [
     'Avatar 1.png',
+    'Avatar 10.png',
+    'Avatar 11.png',
+    'Avatar 12.png',
+    'Avatar 13.png',
+    'Avatar 14.png',
+    'Avatar 15.png',
+    'Avatar 16.png',
+    'Avatar 17.png',
+    'Avatar 18.png',
+    'Avatar 19.png',
     'Avatar 2.png',
-    'Avatar 4.png',
+    'Avatar 20.png',
+    'Avatar 21.png',
+    'Avatar 22.png',
+    'Avatar 23.png',
+    'Avatar 24.png',
+    'Avatar 25.png',
+    'Avatar 3.png',
     'Avatar 5.png',
-    'Avatar_28-removebg-preview.png',
-    'Avatar_30-removebg-preview.png',
-    'Avatar_34-removebg-preview.png',
-    'Avatar_35-removebg-preview.png',
-    'Avatar_6-removebg-preview.png',
-    'Avatar_8-removebg-preview.png',
-    'Gemini.png',
-    'Gemini_Generated_Image_1m1qaz1m1qaz1m1q-removebg-preview.png',
-    'Gemini_Generated_Image_2fc8zk2fc8zk2fc8-removebg-preview.png',
-    'Gemini_Generated_Image_2i41yj2i41yj2i41-removebg-preview.png',
-    'Gemini_Generated_Image_78l7dj78l7dj78l7-removebg-preview (1).png',
-    'Gemini_Generated_Image_aj1xzlaj1xzlaj1x-removebg-preview (1).png',
-    'Gemini_Generated_Image_c92tluc92tluc92t-removebg-preview.png',
-    'Gemini_Generated_Image_f50otaf50otaf50o-removebg-preview.png',
-    'Gemini_Generated_Image_fxagslfxagslfxag-removebg-preview.png',
-    'Gemini_Generated_Image_jdn923jdn923jdn9-removebg-preview.png',
-    'Gemini_Generated_Image_taovjqtaovjqtaov-removebg-preview.png',
-    'Gemini_Generated_Image_vlux4kvlux4kvlux-removebg-preview.png',
-    'Gemini_Generated_Image_w1pl7yw1pl7yw1pl-removebg-preview.png',
-    'Gemini_Generated_Image_w3dr3w3dr3w3dr3w-removebg-preview.png',
+    'Avatar 6.png',
+    'Avatar 7.png',
+    'Avatar 8.png',
+    'Avatar 9.png',
   ];
   const LOBBY_AVATAR_IMAGES = LOBBY_AVATAR_FILES.map((fileName) => `./assets/avatars/${encodeURIComponent(fileName)}?v=${AVATAR_ASSET_VERSION}`);
 
