@@ -10,6 +10,7 @@
     roomCode: null,
     isHost: false,
     joinMode: null,
+    selectedAvatarIndex: 0,
     playerData: null,
     roomData: null,
     selectedAction: null,
@@ -33,6 +34,7 @@
   };
 
   const MAX_ROOM_PLAYERS = 16;
+  const PROFILE_STORAGE_KEY = 'silhouette.profile';
   const LOBBY_AVATAR_FILES = [
     'Avatar 1.png',
     'Avatar 2.png',
@@ -93,6 +95,94 @@
     const resolvedIndex = Number.isInteger(avatarIndex) ? avatarIndex : getAvatarIndex(key);
     const avatarSrc = getLobbyAvatarSrc(resolvedIndex);
     return `<img class="${className}" src="${avatarSrc}" alt="" data-avatar-index="${resolvedIndex}" data-avatar-fallbacks="0" onerror="window.handleAvatarLoadError && window.handleAvatarLoadError(this)" />`;
+  }
+
+  function normalizeProfileName(name) {
+    return String(name || '').trim().replace(/\s+/g, ' ').slice(0, 16);
+  }
+
+  function getDefaultProfile() {
+    return {
+      name: '',
+      avatarIndex: Math.floor(Math.random() * LOBBY_AVATAR_IMAGES.length),
+    };
+  }
+
+  function loadProfile() {
+    const fallback = getDefaultProfile();
+    try {
+      const raw = window.localStorage.getItem(PROFILE_STORAGE_KEY);
+      if (!raw) return fallback;
+      const parsed = JSON.parse(raw);
+      const avatarIndex = Number.isInteger(parsed.avatarIndex) ? parsed.avatarIndex % LOBBY_AVATAR_IMAGES.length : fallback.avatarIndex;
+      return {
+        name: normalizeProfileName(parsed.name || ''),
+        avatarIndex,
+      };
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  function saveProfile() {
+    const profile = {
+      name: normalizeProfileName(state.username),
+      avatarIndex: Number.isInteger(state.selectedAvatarIndex) ? state.selectedAvatarIndex : 0,
+    };
+    window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+  }
+
+  function renderProfilePanel() {
+    const nameInput = document.getElementById('profile-name-input');
+    const preview = document.getElementById('profile-avatar-preview');
+    const grid = document.getElementById('profile-avatar-grid');
+    if (!nameInput || !preview || !grid) return;
+
+    nameInput.value = state.username || '';
+    preview.innerHTML = renderAvatarMarkup('profile-preview', 'player-avatar', state.selectedAvatarIndex);
+    grid.innerHTML = LOBBY_AVATAR_IMAGES.map((_, index) => `
+      <button class="profile-avatar-option ${index === state.selectedAvatarIndex ? 'selected' : ''}" type="button" data-avatar-option="${index}">
+        ${renderAvatarMarkup(`profile-option-${index}`, 'player-avatar', index)}
+      </button>
+    `).join('');
+
+    grid.querySelectorAll('[data-avatar-option]').forEach((button) => {
+      button.addEventListener('click', () => {
+        state.selectedAvatarIndex = Number.parseInt(button.dataset.avatarOption || '0', 10) || 0;
+        saveProfile();
+        renderProfilePanel();
+      });
+    });
+  }
+
+  function validateProfile({ requireCode = false } = {}) {
+    const errorEl = document.getElementById('profile-error');
+    const nameInput = document.getElementById('profile-name-input');
+    const roomCodeInput = document.getElementById('home-room-code-input');
+    const profileName = normalizeProfileName(nameInput ? nameInput.value : state.username);
+    const roomCode = roomCodeInput ? roomCodeInput.value.trim().toUpperCase() : '';
+
+    if (errorEl) errorEl.textContent = '';
+    if (nameInput) nameInput.value = profileName;
+    if (roomCodeInput) roomCodeInput.value = roomCode;
+
+    if (profileName.length < 2) {
+      if (errorEl) errorEl.textContent = 'Name must be at least 2 characters';
+      return null;
+    }
+
+    if (requireCode && roomCode.length !== 6) {
+      if (errorEl) errorEl.textContent = 'Room code must be 6 characters';
+      return null;
+    }
+
+    state.username = profileName;
+    saveProfile();
+    return {
+      username: profileName,
+      avatarIndex: state.selectedAvatarIndex,
+      code: roomCode,
+    };
   }
 
   function getPlayerChatStyle(message) {
@@ -1164,55 +1254,33 @@
       });
     });
 
-    document.getElementById('btn-online').addEventListener('click', () => showScreen('online'));
-    document.getElementById('btn-back-online').addEventListener('click', () => showScreen('home'));
+    const profileNameInput = document.getElementById('profile-name-input');
+    const homeRoomCodeInput = document.getElementById('home-room-code-input');
+    const createRoomBtn = document.getElementById('btn-create-room');
+    const joinRoomBtn = document.getElementById('btn-join-room');
 
-    document.getElementById('btn-create-room').addEventListener('click', () => {
-      state.joinMode = 'create';
-      document.getElementById('join-code-group').style.display = 'none';
-      showScreen('username');
-    });
-
-    document.getElementById('btn-join-room').addEventListener('click', () => {
-      state.joinMode = 'join';
-      document.getElementById('join-code-group').style.display = 'block';
-      showScreen('username');
-    });
-
-    document.getElementById('btn-back-username').addEventListener('click', () => {
-      showScreen('online');
-      document.getElementById('input-username').value = '';
-      document.getElementById('input-room-code').value = '';
-      document.getElementById('username-error').textContent = '';
-    });
-
-    const usernameInput = document.getElementById('input-username');
-    const roomCodeInput = document.getElementById('input-room-code');
-    const proceedBtn = document.getElementById('btn-proceed');
-
-    function validateInputs() {
-      const name = usernameInput.value.trim();
-      const code = roomCodeInput.value.trim();
-      proceedBtn.disabled = !(name.length >= 2 && (state.joinMode === 'create' || code.length === 6));
+    if (profileNameInput) {
+      profileNameInput.addEventListener('input', () => {
+        state.username = normalizeProfileName(profileNameInput.value);
+        saveProfile();
+      });
     }
 
-    usernameInput.addEventListener('input', validateInputs);
-    roomCodeInput.addEventListener('input', validateInputs);
+    if (homeRoomCodeInput) {
+      homeRoomCodeInput.addEventListener('input', () => {
+        homeRoomCodeInput.value = homeRoomCodeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+      });
+      homeRoomCodeInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') joinRoomBtn.click();
+      });
+    }
 
-    proceedBtn.addEventListener('click', () => {
-      const username = usernameInput.value.trim();
-      const errorEl = document.getElementById('username-error');
-      errorEl.textContent = '';
-
-      if (username.length < 2) {
-        errorEl.textContent = 'Name must be at least 2 characters';
-        return;
-      }
-
-      state.username = username;
-
-      if (state.joinMode === 'create') {
-        state.socket.emit('create-room', { username }, (response) => {
+    if (createRoomBtn) {
+      createRoomBtn.addEventListener('click', () => {
+        const profile = validateProfile();
+        if (!profile) return;
+        state.socket.emit('create-room', { username: profile.username, avatarIndex: profile.avatarIndex }, (response) => {
+          const errorEl = document.getElementById('profile-error');
           if (response.success) {
             state.playerId = response.playerId;
             state.roomCode = response.room.code;
@@ -1220,17 +1288,19 @@
             state.isHost = true;
             showScreen('room');
             renderRoom();
-          } else {
+          } else if (errorEl) {
             errorEl.textContent = response.error || 'Failed to create room';
           }
         });
-      } else {
-        const code = roomCodeInput.value.trim().toUpperCase();
-        if (code.length !== 6) {
-          errorEl.textContent = 'Room code must be 6 characters';
-          return;
-        }
-        state.socket.emit('join-room', { code, username }, (response) => {
+      });
+    }
+
+    if (joinRoomBtn) {
+      joinRoomBtn.addEventListener('click', () => {
+        const profile = validateProfile({ requireCode: true });
+        if (!profile) return;
+        state.socket.emit('join-room', { code: profile.code, username: profile.username, avatarIndex: profile.avatarIndex }, (response) => {
+          const errorEl = document.getElementById('profile-error');
           if (response.success) {
             state.playerId = response.playerId;
             state.roomCode = response.room.code;
@@ -1238,12 +1308,12 @@
             state.isHost = false;
             showScreen('room');
             renderRoom();
-          } else {
+          } else if (errorEl) {
             errorEl.textContent = response.error || 'Failed to join room';
           }
         });
-      }
-    });
+      });
+    }
 
     document.getElementById('btn-leave-room').addEventListener('click', () => {
       state.socket.emit('leave-room', () => {
@@ -1313,17 +1383,20 @@
       clearTimerInterval();
       showScreen('home');
       showNav();
-      document.getElementById('input-username').value = '';
-      document.getElementById('input-room-code').value = '';
       document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
       document.querySelector('[data-tab="home"]').classList.add('active');
+      renderProfilePanel();
     });
 
   }
 
   function init() {
+    const profile = loadProfile();
+    state.username = profile.name;
+    state.selectedAvatarIndex = profile.avatarIndex;
     connectSocket();
     initEventListeners();
+    renderProfilePanel();
     showScreen('home');
     showNav();
   }

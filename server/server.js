@@ -28,16 +28,20 @@ const socketMap = new Map();
 io.on('connection', (socket) => {
   console.log(`Connected: ${socket.id}`);
 
-  socket.on('create-room', ({ username }, callback) => {
-    const room = game.createRoom(socket.id, username);
+  socket.on('create-room', ({ username, avatarIndex }, callback) => {
+    const room = game.createRoom(socket.id, username, avatarIndex);
+    if (room.error) {
+      callback({ success: false, error: room.error });
+      return;
+    }
     socketMap.set(socket.id, { code: room.code, playerId: socket.id });
     socket.join(room.code);
     const publicData = game.getRoomPublicData(room.code);
     callback({ success: true, room: publicData, playerId: socket.id });
   });
 
-  socket.on('join-room', ({ code, username }, callback) => {
-    const result = game.joinRoom(code.toUpperCase(), socket.id, username);
+  socket.on('join-room', ({ code, username, avatarIndex }, callback) => {
+    const result = game.joinRoom(code.toUpperCase(), socket.id, username, avatarIndex);
     if (result.error) {
       callback({ success: false, error: result.error });
       return;

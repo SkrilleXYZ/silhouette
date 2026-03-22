@@ -4,6 +4,37 @@ class GameLogic {
     this.avatarCount = 29;
   }
 
+  normalizePlayerName(name) {
+    return String(name || '').trim().replace(/\s+/g, ' ').slice(0, 16);
+  }
+
+  sanitizeAvatarIndex(avatarIndex) {
+    return Number.isInteger(avatarIndex) && avatarIndex >= 0
+      ? avatarIndex % this.avatarCount
+      : this.assignAvatarIndex({ players: new Map() });
+  }
+
+  resolveUniquePlayerName(room, requestedName) {
+    const baseName = this.normalizePlayerName(requestedName);
+    if (!baseName) return '';
+
+    const takenNames = new Set();
+    for (const [, player] of room.players) {
+      takenNames.add(player.name.toLowerCase());
+    }
+
+    if (!takenNames.has(baseName.toLowerCase())) return baseName;
+
+    let suffix = 2;
+    while (true) {
+      const suffixText = `-${suffix}`;
+      const stem = baseName.slice(0, Math.max(1, 16 - suffixText.length));
+      const candidate = `${stem}${suffixText}`;
+      if (!takenNames.has(candidate.toLowerCase())) return candidate;
+      suffix++;
+    }
+  }
+
   assignAvatarIndex(room) {
     const usedIndexes = new Set();
     for (const [, player] of room.players) {
@@ -35,7 +66,7 @@ class GameLogic {
     return code;
   }
 
-  createRoom(hostId, hostName) {
+  createRoom(hostId, hostName, avatarIndex = null) {
     const code = this.generateRoomCode();
     const room = {
       code,
@@ -61,10 +92,13 @@ class GameLogic {
       lastMedicTarget: null,
     };
 
+    const normalizedHostName = this.normalizePlayerName(hostName);
+    if (normalizedHostName.length < 2) return { error: 'Name must be at least 2 characters' };
+
     room.players.set(hostId, {
       id: hostId,
-      name: hostName,
-      avatarIndex: this.assignAvatarIndex(room),
+      name: normalizedHostName,
+      avatarIndex: Number.isInteger(avatarIndex) ? this.sanitizeAvatarIndex(avatarIndex) : this.assignAvatarIndex(room),
       role: null,
       faction: null,
       alive: true,
@@ -75,22 +109,18 @@ class GameLogic {
     return room;
   }
 
-  joinRoom(code, playerId, playerName) {
+  joinRoom(code, playerId, playerName, avatarIndex = null) {
     const room = this.rooms.get(code);
     if (!room) return { error: 'Room not found' };
     if (room.state !== 'lobby') return { error: 'Game already in progress' };
     if (room.players.size >= 16) return { error: 'Room is full' };
-
-    for (const [, player] of room.players) {
-      if (player.name.toLowerCase() === playerName.toLowerCase()) {
-        return { error: 'Username already taken in this room' };
-      }
-    }
+    const resolvedName = this.resolveUniquePlayerName(room, playerName);
+    if (resolvedName.length < 2) return { error: 'Name must be at least 2 characters' };
 
     room.players.set(playerId, {
       id: playerId,
-      name: playerName,
-      avatarIndex: this.assignAvatarIndex(room),
+      name: resolvedName,
+      avatarIndex: Number.isInteger(avatarIndex) ? this.sanitizeAvatarIndex(avatarIndex) : this.assignAvatarIndex(room),
       role: null,
       faction: null,
       alive: true,
