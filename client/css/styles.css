@@ -1275,19 +1275,23 @@ body {
 }
 
 .game-container.morning-chat-focus {
-  padding-top: 0;
+  padding-bottom: 0;
 }
 
-.game-container.morning-chat-focus > .game-header,
 .game-container.morning-chat-focus > .role-card,
 .game-container.morning-chat-focus > .game-status-bar {
   display: none;
+}
+
+.game-container.morning-chat-focus > .game-header {
+  margin-bottom: 8px;
 }
 
 .game-container.morning-chat-focus .game-content {
   flex: 1 1 auto;
   gap: 0;
   padding-bottom: 0;
+  min-height: 0;
 }
 
 .game-container.morning-chat-focus #game-content > .phase-chat-panel:first-child,
@@ -1295,6 +1299,7 @@ body {
   margin-top: 0;
   flex: 1 1 auto;
   min-height: 0;
+  height: 100%;
 }
 
 .role-reveal-overlay {
