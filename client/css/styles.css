@@ -417,7 +417,8 @@ body {
 }
 
 .online-join-btn {
-  min-width: 88px;
+  min-width: 68px;
+  padding: 0 16px;
 }
 
 .home-footer {
