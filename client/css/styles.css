@@ -185,7 +185,7 @@ body {
 }
 
 .screen-container {
-  padding: clamp(14px, 3.2svh, 20px) clamp(14px, 4vw, 20px);
+  padding: 20px;
   display: flex;
   flex-direction: column;
   min-height: 100%;
@@ -199,31 +199,26 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: min(100%, 480px);
-  margin: 0 auto;
   min-height: calc(100vh - 80px);
   min-height: calc(100dvh - 80px);
-  min-height: calc(100svh - 80px);
-  padding: clamp(20px, 4svh, 40px) clamp(16px, 5vw, 24px);
+  padding: 40px 24px;
   text-align: center;
-  gap: clamp(18px, 3svh, 32px);
 }
 
 .logo-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 100%;
-  margin-bottom: 0;
+  margin-bottom: 48px;
 }
 
 .logo-silhouette {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: clamp(120px, 34vw, 180px);
-  height: clamp(120px, 34vw, 180px);
-  margin-bottom: clamp(14px, 2svh, 24px);
+  width: 180px;
+  height: 180px;
+  margin-bottom: 24px;
   animation: logoBreath 4s ease-in-out infinite;
 }
 
@@ -241,9 +236,9 @@ body {
 
 .game-title {
   font-family: 'Cinzel', serif;
-  font-size: clamp(1.9rem, 6.4vw, 2.5rem);
+  font-size: 2.5rem;
   font-weight: 700;
-  letter-spacing: clamp(6px, 2vw, 12px);
+  letter-spacing: 12px;
   color: var(--fg);
   margin-bottom: 8px;
   text-shadow: 0 0 34px rgba(115, 16, 24, 0.26);
@@ -251,8 +246,8 @@ body {
 
 .game-subtitle {
   font-family: 'Cinzel', serif;
-  font-size: clamp(0.58rem, 1.8vw, 0.7rem);
-  letter-spacing: clamp(2px, 0.8vw, 4px);
+  font-size: 0.7rem;
+  letter-spacing: 4px;
   color: var(--fg-muted);
   text-transform: uppercase;
   font-weight: 400;
@@ -268,7 +263,7 @@ body {
 .home-buttons {
   display: flex;
   flex-direction: column;
-  gap: clamp(12px, 2svh, 16px);
+  gap: 16px;
   width: 100%;
   max-width: 360px;
 }
@@ -368,7 +363,7 @@ body {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
-  max-height: clamp(184px, 30svh, 268px);
+  max-height: 268px;
   overflow-y: auto;
   padding-right: 2px;
 }
@@ -405,7 +400,6 @@ body {
 .online-join-row {
   display: flex;
   align-items: stretch;
-  flex-wrap: nowrap;
   gap: 16px;
   width: 100%;
   max-width: 300px;
@@ -446,8 +440,7 @@ body {
 }
 
 .home-footer {
-  margin-top: auto;
-  padding-top: clamp(12px, 3svh, 24px);
+  margin-top: 48px;
   color: var(--fg-dim);
   font-size: 0.75rem;
   letter-spacing: 1px;
@@ -524,11 +517,7 @@ body {
   font-size: 0.75rem;
 }
 
-.btn-large {
-  min-height: clamp(52px, 8svh, 60px);
-  padding: clamp(14px, 2.2svh, 16px) clamp(22px, 6vw, 32px);
-  font-size: clamp(0.82rem, 2.2vw, 0.9rem);
-}
+.btn-large { padding: 16px 32px; font-size: 0.9rem; }
 .btn-icon { width: 18px; height: 18px; }
 .btn-icon-right { width: 16px; height: 16px; }
 
@@ -571,27 +560,27 @@ body {
   justify-content: center;
   flex: 1;
   text-align: center;
-  padding-top: clamp(16px, 4svh, 40px);
+  padding-top: 40px;
 }
 
 .screen-title {
   font-family: 'Cinzel', serif;
-  font-size: clamp(1.16rem, 4.8vw, 1.5rem);
+  font-size: 1.5rem;
   font-weight: 700;
-  letter-spacing: clamp(2px, 1vw, 4px);
+  letter-spacing: 4px;
   margin-bottom: 8px;
 }
 
 .screen-subtitle {
   color: var(--fg-muted);
-  font-size: clamp(0.76rem, 2.4vw, 0.85rem);
-  margin-bottom: clamp(18px, 4svh, 40px);
+  font-size: 0.85rem;
+  margin-bottom: 40px;
 }
 
 .online-buttons {
   display: flex;
   flex-direction: column;
-  gap: clamp(12px, 2.4svh, 16px);
+  gap: 16px;
   width: 100%;
   max-width: 300px;
 }
@@ -622,7 +611,7 @@ body {
 .input-group {
   width: 100%;
   max-width: 300px;
-  margin-bottom: clamp(16px, 3svh, 24px);
+  margin-bottom: 24px;
   position: relative;
 }
 
@@ -631,10 +620,9 @@ body {
   background: var(--bg-input);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  min-height: clamp(52px, 8svh, 60px);
-  padding: clamp(14px, 2svh, 16px) clamp(16px, 4vw, 20px);
+  padding: 16px 20px;
   font-family: 'DM Sans', sans-serif;
-  font-size: clamp(0.94rem, 2.8vw, 1rem);
+  font-size: 1rem;
   color: var(--fg);
   text-align: center;
   letter-spacing: 1px;
@@ -692,35 +680,23 @@ body {
   letter-spacing: 1.2px;
 }
 
-.room-container {
-  padding-bottom: 0;
-  min-height: calc(100vh - 80px);
-  min-height: calc(100dvh - 80px);
-  min-height: calc(100svh - 80px);
-}
+.room-container { padding-bottom: 0; }
 
 .room-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: clamp(8px, 2svh, 12px) 0;
-  margin-bottom: clamp(4px, 1.5svh, 8px);
+  padding: 12px 0;
+  margin-bottom: 8px;
 }
 
-.room-title-area {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  flex-wrap: wrap;
-}
+.room-title-area { display: flex; align-items: center; gap: 12px; }
 
 .room-title {
   font-family: 'Cinzel', serif;
-  font-size: clamp(0.98rem, 3.6vw, 1.1rem);
+  font-size: 1.1rem;
   font-weight: 700;
-  letter-spacing: clamp(2px, 0.8vw, 3px);
+  letter-spacing: 3px;
 }
 
 .player-count {
@@ -744,8 +720,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
   padding: 12px 0;
   font-family: 'Cinzel', serif;
   font-size: 0.7rem;
@@ -778,8 +752,8 @@ body {
   flex: 1;
   overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 86px), 1fr));
-  gap: clamp(8px, 1.8vw, 10px);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
   padding-bottom: 16px;
 }
 
@@ -794,7 +768,7 @@ body {
   border-radius: var(--radius-sm);
   transition: var(--transition);
   animation: playerJoin 0.4s ease;
-  min-height: clamp(118px, 18svh, 142px);
+  min-height: 142px;
 }
 
 .player-item.is-self {
@@ -808,8 +782,8 @@ body {
 }
 
 .player-avatar {
-  width: clamp(60px, 16vw, 84px);
-  height: clamp(60px, 16vw, 84px);
+  width: 84px;
+  height: 84px;
   flex-shrink: 0;
   object-fit: cover;
   object-position: center 28%;
@@ -876,21 +850,19 @@ body {
 }
 
 .room-footer {
-  padding: clamp(12px, 2.4svh, 16px) 0;
+  padding: 16px 0;
   padding-bottom: max(16px, env(safe-area-inset-bottom));
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: clamp(10px, 2svh, 12px);
+  gap: 12px;
 }
 
 .room-code-display {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: clamp(10px, 2svh, 12px) clamp(12px, 4vw, 16px);
+  padding: 12px 16px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -903,23 +875,15 @@ body {
   text-transform: uppercase;
 }
 
-.room-code-value {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  min-width: 0;
-  flex-wrap: wrap;
-}
+.room-code-value { display: flex; align-items: center; gap: 8px; }
 
 #room-code-text {
   font-family: 'Cinzel', serif;
-  font-size: clamp(0.95rem, 4vw, 1.2rem);
+  font-size: 1.2rem;
   font-weight: 700;
-  letter-spacing: clamp(3px, 1.4vw, 6px);
+  letter-spacing: 6px;
   color: var(--crew);
   text-shadow: 0 0 10px var(--crew-glow);
-  white-space: nowrap;
 }
 
 .btn-copy {
@@ -1101,11 +1065,9 @@ body {
   flex-direction: column;
   height: calc(100vh - 80px);
   height: calc(100dvh - 80px);
-  height: calc(100svh - 80px);
   min-height: calc(100vh - 80px);
   min-height: calc(100dvh - 80px);
-  min-height: calc(100svh - 80px);
-  padding: clamp(12px, 2.2svh, 16px) clamp(12px, 4vw, 20px);
+  padding: 16px 20px;
   max-width: 480px;
   margin: 0 auto;
   width: 100%;
@@ -2598,11 +2560,9 @@ body {
   justify-content: center;
   min-height: calc(100vh - 80px);
   min-height: calc(100dvh - 80px);
-  min-height: calc(100svh - 80px);
-  padding: clamp(20px, 4svh, 40px) clamp(16px, 5vw, 24px);
+  padding: 40px 24px;
   text-align: center;
   position: relative;
-  gap: clamp(8px, 1.6svh, 14px);
 }
 
 .gameover-glow {
@@ -2619,26 +2579,26 @@ body {
 
 .gameover-title {
   font-family: 'Cinzel', serif;
-  font-size: clamp(1rem, 3.6vw, 1.2rem);
+  font-size: 1.2rem;
   font-weight: 400;
-  letter-spacing: clamp(3px, 1.5vw, 6px);
+  letter-spacing: 6px;
   color: var(--fg-muted);
-  margin-bottom: 0;
+  margin-bottom: 12px;
 }
 
 .gameover-faction {
   font-family: 'Cinzel', serif;
-  font-size: clamp(1.5rem, 7vw, 2rem);
+  font-size: 2rem;
   font-weight: 800;
-  letter-spacing: clamp(2px, 1vw, 4px);
-  margin-bottom: 0;
+  letter-spacing: 4px;
+  margin-bottom: 8px;
 }
 
 .gameover-faction.crew-text { color: var(--crew); text-shadow: 0 0 30px var(--crew-glow); }
 .gameover-faction.assassin-text { color: var(--assassin); text-shadow: 0 0 30px var(--assassin-glow); }
 
 .gameover-reason {
-  font-size: clamp(0.76rem, 2.4vw, 0.85rem);
+  font-size: 0.85rem;
   color: var(--fg-muted);
   font-style: italic;
 }
@@ -2646,7 +2606,7 @@ body {
 .gameover-divider {
   width: 60px; height: 1px;
   background: var(--border-light);
-  margin: clamp(10px, 2.8svh, 24px) 0;
+  margin: 24px 0;
 }
 
 .gameover-players {
@@ -2655,8 +2615,8 @@ body {
   gap: 6px;
   width: 100%;
   max-width: 320px;
-  margin-bottom: clamp(14px, 3svh, 32px);
-  max-height: clamp(180px, 34svh, 300px);
+  margin-bottom: 32px;
+  max-height: 300px;
   overflow-y: auto;
 }
 
@@ -2702,9 +2662,8 @@ body {
   justify-content: center;
   min-height: calc(100vh - 80px);
   min-height: calc(100dvh - 80px);
-  min-height: calc(100svh - 80px);
   text-align: center;
-  padding: clamp(20px, 4svh, 40px);
+  padding: 40px;
 }
 
 .vote-result-panel {
@@ -2771,176 +2730,6 @@ body {
 @media (max-width: 360px) {
   .game-title { font-size: 2rem; letter-spacing: 8px; }
   .game-subtitle { font-size: 0.6rem; letter-spacing: 3px; }
-
-  .room-header {
-    align-items: flex-start;
-  }
-
-  .room-title-area {
-    justify-content: flex-end;
-    gap: 8px;
-  }
-
-  .room-code-display {
-    align-items: flex-start;
-  }
-
-  .room-code-value {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  #room-code-text {
-    letter-spacing: 2px;
-  }
-
-  .online-join-row {
-    gap: 10px;
-  }
-
-  .online-join-btn {
-    min-width: 68px;
-  }
-}
-
-@media (max-height: 760px) {
-  .home-container {
-    justify-content: flex-start;
-  }
-
-  .online-container {
-    justify-content: flex-start;
-    padding-top: 8px;
-  }
-
-  .screen-subtitle {
-    margin-bottom: 16px;
-  }
-
-  .profile-panel {
-    padding: 16px;
-  }
-
-  .players-list {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 78px), 1fr));
-  }
-
-  .room-settings-summary {
-    padding: 12px 14px;
-  }
-
-  .room-settings-body {
-    gap: 8px;
-    padding: 0 14px 14px;
-  }
-
-  .gameover-players {
-    max-height: 220px;
-  }
-
-  .profile-avatar-option {
-    min-height: 70px;
-    padding: 6px;
-  }
-
-  .profile-avatar-option .player-avatar {
-    width: 56px;
-    height: 56px;
-  }
-}
-
-@media (max-height: 680px) {
-  .home-container {
-    gap: 14px;
-    padding-top: 16px;
-    padding-bottom: 12px;
-  }
-
-  .screen-container {
-    padding-top: 12px;
-    padding-bottom: 12px;
-  }
-
-  .btn-large {
-    min-height: 48px;
-  }
-
-  .online-buttons {
-    gap: 10px;
-  }
-
-  .room-header {
-    padding-top: 4px;
-  }
-
-  .room-code-display {
-    padding: 10px 12px;
-  }
-
-  #room-code-text {
-    letter-spacing: 3px;
-  }
-
-  .players-list {
-    gap: 6px;
-    padding-bottom: 10px;
-  }
-
-  .player-item {
-    min-height: 108px;
-    padding: 10px 6px 8px;
-  }
-
-  .player-avatar {
-    width: 54px;
-    height: 54px;
-  }
-
-  .gameover-container {
-    justify-content: flex-start;
-    padding-top: 18px;
-    padding-bottom: 12px;
-  }
-
-  .gameover-players {
-    max-height: 170px;
-  }
-
-  .logo-silhouette {
-    width: 108px;
-    height: 108px;
-    margin-bottom: 10px;
-  }
-
-  .title-divider {
-    margin-top: 12px;
-  }
-
-  .profile-panel {
-    padding: 14px;
-  }
-
-  .profile-panel-header {
-    margin-bottom: 10px;
-  }
-
-  .profile-name-group {
-    margin-bottom: 14px;
-  }
-
-  .profile-avatar-grid {
-    max-height: 156px;
-    gap: 8px;
-  }
-
-  .profile-avatar-option {
-    min-height: 62px;
-  }
-
-  .profile-avatar-option .player-avatar {
-    width: 48px;
-    height: 48px;
-  }
 }
 
 @media (max-width: 560px) {
