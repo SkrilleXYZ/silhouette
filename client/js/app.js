@@ -36,11 +36,11 @@
   const MAX_ROOM_PLAYERS = 16;
   const PROFILE_STORAGE_KEY = 'silhouette.profile';
   const LOBBY_AVATAR_FILES = [
-    'Avatar 1.png',
-    'Avatar 2.png',
-    'Avatar 3.png',
-    'Avatar 4.png',
-    'Avatar 5.png',
+    'avatar 1.png',
+    'avatar 2.png',
+    'avatar 3.png',
+    'avatar 4.png',
+    'avatar 5.png',
     'Avatar_11-removebg-preview.png',
     'Avatar_13-removebg-preview.png',
     'Avatar_14-removebg-preview.png',
