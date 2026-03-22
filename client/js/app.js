@@ -486,14 +486,28 @@
     }
 
     sequence.push(finalRole);
-    return sequence;
+    lastRole = finalRole;
+
+    for (let i = 0; i < 2; i++) {
+      let nextRole = roles[Math.floor(Math.random() * roles.length)];
+      if (nextRole === lastRole) {
+        nextRole = roles[(roles.indexOf(nextRole) + 1 + Math.floor(Math.random() * (roles.length - 1))) % roles.length];
+      }
+      sequence.push(nextRole);
+      lastRole = nextRole;
+    }
+
+    return {
+      sequence,
+      selectedIndex: sequence.length - 3,
+    };
   }
 
-  function renderRoleRevealItem(role, isSelected) {
+  function renderRoleRevealItem(role) {
     const roleInfo = getRoleDefinition(role);
     const factionClass = roleInfo.faction.toLowerCase();
     return `
-      <div class="role-reveal-item role-${factionClass}${isSelected ? ' is-selected' : ''}">
+      <div class="role-reveal-item role-${factionClass}">
         <span class="role-reveal-name">${role}</span>
         <span class="role-reveal-faction">${roleInfo.faction}</span>
       </div>
@@ -517,8 +531,7 @@
     const timerProgress = document.getElementById('timer-progress');
 
     const roleInfo = getRoleDefinition(player.role);
-    const sequence = buildRoleRevealSequence(player.role);
-    const selectedIndex = sequence.length - 1;
+    const { sequence, selectedIndex } = buildRoleRevealSequence(player.role);
     const remainingMs = Math.max(2800, (revealEndsAt || (Date.now() + (revealDurationMs || 6000))) - Date.now());
     const spinDuration = Math.max(2200, remainingMs - 450);
 
@@ -543,7 +556,8 @@
     result.dataset.revealText = roleInfo.revealText;
     result.dataset.faction = roleInfo.faction.toLowerCase();
 
-    reel.innerHTML = sequence.map((role, index) => renderRoleRevealItem(role, index === selectedIndex)).join('');
+    reel.dataset.selectedIndex = String(selectedIndex);
+    reel.innerHTML = sequence.map((role) => renderRoleRevealItem(role)).join('');
     reel.style.transition = 'none';
     reel.style.transform = 'translateY(0px)';
 
@@ -558,6 +572,10 @@
       clearTimeout(state.roleRevealTimeout);
     }
     state.roleRevealTimeout = setTimeout(() => {
+      const revealItems = reel.querySelectorAll('.role-reveal-item');
+      if (revealItems[selectedIndex]) {
+        revealItems[selectedIndex].classList.add('is-selected');
+      }
       result.className = `role-reveal-result ${roleInfo.faction.toLowerCase()}`;
       result.innerHTML = `<strong>${player.role}</strong>${roleInfo.revealText}`;
       panel.classList.add('settled');
@@ -581,6 +599,13 @@
     if (!overlay || !panel || !gameContainer) return;
 
     if (settle) {
+      const revealItems = document.querySelectorAll('#role-reveal-reel .role-reveal-item');
+      revealItems.forEach((item) => item.classList.remove('is-selected'));
+      const reel = document.getElementById('role-reveal-reel');
+      const selectedIndex = Number.parseInt(reel?.dataset?.selectedIndex || '-1', 10);
+      if (selectedIndex >= 0 && revealItems[selectedIndex]) {
+        revealItems[selectedIndex].classList.add('is-selected');
+      }
       if (result?.dataset?.role) {
         result.className = `role-reveal-result ${result.dataset.faction || ''}`.trim();
         result.innerHTML = `<strong>${result.dataset.role}</strong>${result.dataset.revealText || ''}`;
