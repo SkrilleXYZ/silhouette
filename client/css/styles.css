@@ -1066,6 +1066,11 @@ body {
   overflow: hidden;
 }
 
+#screen-game {
+  position: relative;
+  overflow: hidden;
+}
+
 .game-header {
   display: flex;
   align-items: center;
@@ -1257,6 +1262,181 @@ body {
   opacity: 0.34;
   transform: scale(0.992);
   pointer-events: none;
+}
+
+.game-container.role-reveal-active > .game-header,
+.game-container.role-reveal-active > .role-card,
+.game-container.role-reveal-active > .game-status-bar,
+.game-container.role-reveal-active .game-content > * {
+  filter: blur(12px);
+  opacity: 0.16;
+  transform: scale(0.985);
+  pointer-events: none;
+}
+
+.role-reveal-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 20px;
+  background: rgba(4, 4, 4, 0.36);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease;
+}
+
+.role-reveal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.role-reveal-panel {
+  width: min(100%, 360px);
+  padding: 24px 20px 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top, rgba(124, 16, 27, 0.18), transparent 48%),
+    linear-gradient(180deg, rgba(19, 19, 19, 0.98), rgba(8, 8, 8, 0.98));
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.58);
+  text-align: center;
+}
+
+.role-reveal-panel.settled {
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.58), 0 0 30px rgba(140, 24, 34, 0.2);
+}
+
+.role-reveal-kicker {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.role-reveal-window {
+  position: relative;
+  height: 72px;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.role-reveal-window::before,
+.role-reveal-window::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 18px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.role-reveal-window::before {
+  top: 0;
+  background: linear-gradient(180deg, rgba(10, 10, 10, 0.92), rgba(10, 10, 10, 0));
+}
+
+.role-reveal-window::after {
+  bottom: 0;
+  background: linear-gradient(0deg, rgba(10, 10, 10, 0.92), rgba(10, 10, 10, 0));
+}
+
+.role-reveal-window-glow {
+  position: absolute;
+  inset: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.role-reveal-reel {
+  transition: transform 5.2s cubic-bezier(0.14, 0.88, 0.22, 1);
+}
+
+.role-reveal-item {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 18px;
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  opacity: 0.42;
+  transform: scale(0.96);
+  transition: opacity 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.role-reveal-item.is-selected {
+  opacity: 1;
+  transform: scale(1);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.role-reveal-item.role-crew.is-selected {
+  border-color: rgba(87, 214, 255, 0.35);
+}
+
+.role-reveal-item.role-assassin.is-selected {
+  border-color: rgba(196, 40, 52, 0.42);
+}
+
+.role-reveal-name {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  letter-spacing: 2px;
+}
+
+.role-reveal-faction {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.role-reveal-item.role-crew .role-reveal-faction {
+  color: var(--crew);
+}
+
+.role-reveal-item.role-assassin .role-reveal-faction {
+  color: var(--assassin);
+}
+
+.role-reveal-result {
+  min-height: 42px;
+  margin-top: 16px;
+  color: var(--fg-muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
+
+.role-reveal-result strong {
+  display: block;
+  font-family: 'Cinzel', serif;
+  font-size: 1.05rem;
+  letter-spacing: 2px;
+  color: var(--fg);
+  margin-bottom: 4px;
+}
+
+.role-reveal-result.assassin strong {
+  color: var(--assassin);
+  text-shadow: 0 0 16px rgba(148, 25, 35, 0.34);
+}
+
+.role-reveal-result.crew strong {
+  color: var(--fg);
 }
 
 .action-panel,

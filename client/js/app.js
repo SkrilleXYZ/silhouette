@@ -32,10 +32,36 @@
     allPlayersWithRoles: [],
     playerListOpen: false,
     chatOverlayOpen: false,
+    roleRevealActive: false,
+    roleRevealEndsAt: 0,
+    roleRevealTimeout: null,
   };
 
   const MAX_ROOM_PLAYERS = 16;
   const PROFILE_STORAGE_KEY = 'silhouette.profile';
+  const ROLE_REVEAL_ITEM_HEIGHT = 72;
+  const ROLE_DEFINITIONS = {
+    Sheriff: {
+      faction: 'Crew',
+      description: 'You uphold justice from the shadows. Shoot or investigate.',
+      revealText: 'You lead the hunt when the night begins.',
+    },
+    Medic: {
+      faction: 'Crew',
+      description: 'You protect the innocent. Cannot protect the same player twice in a row.',
+      revealText: 'You keep the crew alive through the darkest hours.',
+    },
+    Villager: {
+      faction: 'Crew',
+      description: 'Trust your instincts. Find the assassins among you.',
+      revealText: 'You have no night action, but your voice matters at dawn.',
+    },
+    Assassin: {
+      faction: 'Assassin',
+      description: 'Eliminate the crew. Stay hidden. Strike silently.',
+      revealText: 'You strike from the shadows. Do not reveal yourself.',
+    },
+  };
   const LOBBY_AVATAR_FILES = [
     'avatar 1.png',
     'avatar 2.png',
@@ -248,7 +274,7 @@
       if (state.currentScreen === 'room') renderRoom();
     });
 
-    state.socket.on('game-started', ({ player, room }) => {
+    state.socket.on('game-started', ({ player, room, revealEndsAt, revealDurationMs }) => {
       state.playerData = player;
       state.roomData = room;
       state.chatMessages = room.chatMessages || [];
@@ -264,6 +290,7 @@
       updateRoleCard();
       renderGamePlayerList();
       renderChatBox();
+      startRoleReveal(player, revealEndsAt, revealDurationMs);
     });
 
     state.socket.on('phase-changed', ({ phase, nightCount, messages, room }) => {
@@ -278,6 +305,8 @@
       state.selectedAction = null;
       state.selectedTarget = null;
       if (messages) state.morningMessages = messages;
+      if (phase === 'night') stopRoleReveal(true);
+      else if (phase !== 'vote-result') stopRoleReveal(false);
       updatePhaseUI(phase, nightCount);
       renderGameContent(phase);
       updateAliveCount();
@@ -341,6 +370,7 @@
     state.socket.on('game-over', ({ winner, players }) => {
       state.allPlayersWithRoles = players;
       clearTimerInterval();
+      stopRoleReveal(false);
       showGameOver(winner, players);
     });
 
@@ -362,6 +392,7 @@
       state.allPlayersWithRoles = [];
       state.playerListOpen = false;
       clearTimerInterval();
+      stopRoleReveal(false);
       showScreen('room');
       showNav();
       renderRoom();
@@ -430,6 +461,132 @@
       else if (state.timerValue <= 20) progress.setAttribute('stroke', 'hsl(45,90%,50%)');
       else progress.setAttribute('stroke', 'hsl(195,90%,60%)');
     }
+  }
+
+  function getRoleDefinition(role) {
+    return ROLE_DEFINITIONS[role] || {
+      faction: 'Crew',
+      description: '',
+      revealText: '',
+    };
+  }
+
+  function buildRoleRevealSequence(finalRole) {
+    const roles = Object.keys(ROLE_DEFINITIONS);
+    const sequence = [];
+    let lastRole = null;
+
+    for (let i = 0; i < 18; i++) {
+      let nextRole = roles[Math.floor(Math.random() * roles.length)];
+      if (nextRole === lastRole) {
+        nextRole = roles[(roles.indexOf(nextRole) + 1 + Math.floor(Math.random() * (roles.length - 1))) % roles.length];
+      }
+      sequence.push(nextRole);
+      lastRole = nextRole;
+    }
+
+    sequence.push(finalRole);
+    return sequence;
+  }
+
+  function renderRoleRevealItem(role, isSelected) {
+    const roleInfo = getRoleDefinition(role);
+    const factionClass = roleInfo.faction.toLowerCase();
+    return `
+      <div class="role-reveal-item role-${factionClass}${isSelected ? ' is-selected' : ''}">
+        <span class="role-reveal-name">${role}</span>
+        <span class="role-reveal-faction">${roleInfo.faction}</span>
+      </div>
+    `;
+  }
+
+  function startRoleReveal(player, revealEndsAt, revealDurationMs) {
+    if (!player || !player.role) return;
+
+    stopRoleReveal(false);
+    clearTimerInterval();
+
+    const overlay = document.getElementById('role-reveal-overlay');
+    const panel = document.getElementById('role-reveal-panel');
+    const reel = document.getElementById('role-reveal-reel');
+    const result = document.getElementById('role-reveal-result');
+    const gameContainer = document.querySelector('#screen-game .game-container');
+    if (!overlay || !panel || !reel || !result || !gameContainer) return;
+
+    const timerText = document.getElementById('timer-text');
+    const timerProgress = document.getElementById('timer-progress');
+
+    const roleInfo = getRoleDefinition(player.role);
+    const sequence = buildRoleRevealSequence(player.role);
+    const selectedIndex = sequence.length - 1;
+    const remainingMs = Math.max(2800, (revealEndsAt || (Date.now() + (revealDurationMs || 6000))) - Date.now());
+    const spinDuration = Math.max(2200, remainingMs - 450);
+
+    state.roleRevealActive = true;
+    state.roleRevealEndsAt = revealEndsAt || (Date.now() + (revealDurationMs || 6000));
+    state.timerValue = 0;
+
+    if (timerText) timerText.textContent = '--';
+    if (timerProgress) {
+      timerProgress.setAttribute('stroke-dasharray', '100, 100');
+      timerProgress.setAttribute('stroke', 'hsl(0,0%,32%)');
+    }
+
+    gameContainer.classList.add('role-reveal-active');
+    overlay.classList.add('active');
+    overlay.setAttribute('aria-hidden', 'false');
+    panel.classList.remove('settled');
+
+    result.className = `role-reveal-result ${roleInfo.faction.toLowerCase()}`;
+    result.innerHTML = `<strong>${player.role}</strong>${roleInfo.revealText}`;
+
+    reel.innerHTML = sequence.map((role, index) => renderRoleRevealItem(role, index === selectedIndex)).join('');
+    reel.style.transition = 'none';
+    reel.style.transform = 'translateY(0px)';
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        reel.style.transition = `transform ${spinDuration}ms cubic-bezier(0.14, 0.88, 0.22, 1)`;
+        reel.style.transform = `translateY(-${selectedIndex * ROLE_REVEAL_ITEM_HEIGHT}px)`;
+      });
+    });
+
+    if (state.roleRevealTimeout) {
+      clearTimeout(state.roleRevealTimeout);
+    }
+    state.roleRevealTimeout = setTimeout(() => {
+      panel.classList.add('settled');
+    }, spinDuration);
+  }
+
+  function stopRoleReveal(settle) {
+    const overlay = document.getElementById('role-reveal-overlay');
+    const panel = document.getElementById('role-reveal-panel');
+    const gameContainer = document.querySelector('#screen-game .game-container');
+
+    if (state.roleRevealTimeout) {
+      clearTimeout(state.roleRevealTimeout);
+      state.roleRevealTimeout = null;
+    }
+
+    state.roleRevealActive = false;
+    state.roleRevealEndsAt = 0;
+
+    if (!overlay || !panel || !gameContainer) return;
+
+    if (settle) {
+      panel.classList.add('settled');
+      window.setTimeout(() => {
+        overlay.classList.remove('active');
+        overlay.setAttribute('aria-hidden', 'true');
+      }, 220);
+    } else {
+      panel.classList.remove('settled');
+      overlay.classList.remove('active');
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+
+    gameContainer.classList.remove('role-reveal-active');
   }
 
   // Renders the collapsible player list during the game
@@ -1167,6 +1324,7 @@
   function updateRoleCard() {
     const player = state.playerData;
     if (!player) return;
+    const roleInfo = getRoleDefinition(player.role);
 
     const card = document.getElementById('role-card');
     const faction = document.getElementById('role-faction');
@@ -1178,14 +1336,7 @@
     card.className = `role-card ${player.faction?.toLowerCase() || ''}`;
     faction.textContent = player.faction?.toUpperCase() || '';
     roleName.textContent = player.role?.toUpperCase() || '';
-
-    const descriptions = {
-      Sheriff: 'You uphold justice from the shadows. Shoot or investigate.',
-      Medic: 'You protect the innocent. Cannot protect the same player twice in a row.',
-      Villager: 'Trust your instincts. Find the assassins among you.',
-      Assassin: 'Eliminate the crew. Stay hidden. Strike silently.',
-    };
-    desc.textContent = descriptions[player.role] || '';
+    desc.textContent = roleInfo.description;
 
     if (player.faction === 'Assassin' && player.teammates && player.teammates.length > 0) {
       teammates.style.display = 'block';

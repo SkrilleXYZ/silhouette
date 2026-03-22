@@ -20,6 +20,7 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, '../client')));
 
 const game = new GameLogic();
+const ROLE_REVEAL_DELAY_MS = 6000;
 
 setInterval(() => game.cleanupOldRooms(), 10 * 60 * 1000);
 
@@ -83,19 +84,30 @@ io.on('connection', (socket) => {
       callback({ success: false, error: result.error });
       return;
     }
+    const revealEndsAt = Date.now() + ROLE_REVEAL_DELAY_MS;
+    result.room.roleRevealEndsAt = revealEndsAt;
     for (const [playerId] of result.room.players) {
       const playerData = game.getPlayerData(mapping.code, playerId);
       io.to(playerId).emit('game-started', {
         player: playerData,
-        room: game.getRoomPublicData(mapping.code)
+        room: game.getRoomPublicData(mapping.code),
+        revealEndsAt,
+        revealDurationMs: ROLE_REVEAL_DELAY_MS
       });
     }
-    io.to(mapping.code).emit('phase-changed', {
-      phase: 'night',
-      nightCount: result.room.nightCount,
-      room: game.getRoomPublicData(mapping.code)
-    });
-    startNightTimer(mapping.code);
+    const revealTimer = setTimeout(() => {
+      const room = game.getRoom(mapping.code);
+      roleRevealTimers.delete(mapping.code);
+      if (!room || room.state !== 'night') return;
+      room.roleRevealEndsAt = 0;
+      io.to(mapping.code).emit('phase-changed', {
+        phase: 'night',
+        nightCount: room.nightCount,
+        room: game.getRoomPublicData(mapping.code)
+      });
+      startNightTimer(mapping.code);
+    }, ROLE_REVEAL_DELAY_MS);
+    roleRevealTimers.set(mapping.code, revealTimer);
     callback({ success: true });
   });
 
@@ -268,6 +280,7 @@ io.on('connection', (socket) => {
 const nightTimers = new Map();
 const votingTimers = new Map();
 const morningTimers = new Map();
+const roleRevealTimers = new Map();
 
 function emitTimerStart(code, phase, duration, endsAt = Date.now() + duration * 1000) {
   io.to(code).emit('timer-start', { phase, duration, endsAt });
@@ -312,6 +325,10 @@ function startVotingTimer(code) {
 }
 
 function clearAllTimers(code) {
+  if (roleRevealTimers.has(code)) {
+    clearTimeout(roleRevealTimers.get(code));
+    roleRevealTimers.delete(code);
+  }
   if (nightTimers.has(code)) {
     clearTimeout(nightTimers.get(code));
     nightTimers.delete(code);

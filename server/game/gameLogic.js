@@ -91,6 +91,7 @@ class GameLogic {
       playerOrder: [],
       lastAction: Date.now(),
       lastMedicTarget: null,
+      roleRevealEndsAt: 0,
     };
 
     const normalizedHostName = this.normalizePlayerName(hostName);
@@ -239,6 +240,7 @@ class GameLogic {
     room.chatMessages = [];
     room.currentPhaseSummaryId = null;
     room.lastMedicTarget = null;
+    room.roleRevealEndsAt = 0;
 
     this.beginPhaseSummary(code, 'Night 1 has begun. Chat is locked until morning.');
 
@@ -270,6 +272,7 @@ class GameLogic {
     room.playerOrder = [];
     room.lastAction = Date.now();
     room.lastMedicTarget = null;
+    room.roleRevealEndsAt = 0;
 
     return { room };
   }
@@ -277,6 +280,9 @@ class GameLogic {
   submitNightAction(code, playerId, action, targetId) {
     const room = this.rooms.get(code);
     if (!room || room.state !== 'night') return { error: 'Not in night phase' };
+    if (room.roleRevealEndsAt && Date.now() < room.roleRevealEndsAt) {
+      return { error: 'Night actions unlock after the role reveal.' };
+    }
 
     const player = room.players.get(playerId);
     if (!player || !player.alive) return { error: 'Invalid player' };
@@ -309,6 +315,9 @@ class GameLogic {
   skipNightAction(code, playerId) {
     const room = this.rooms.get(code);
     if (!room || room.state !== 'night') return { error: 'Not in night phase' };
+    if (room.roleRevealEndsAt && Date.now() < room.roleRevealEndsAt) {
+      return { error: 'Night actions unlock after the role reveal.' };
+    }
 
     const player = room.players.get(playerId);
     if (!player || !player.alive) return { error: 'Invalid player' };
