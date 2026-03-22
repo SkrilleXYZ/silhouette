@@ -1274,34 +1274,6 @@ body {
   pointer-events: none;
 }
 
-.game-container.morning-chat-focus {
-  padding-bottom: 0;
-}
-
-.game-container.morning-chat-focus > .role-card,
-.game-container.morning-chat-focus > .game-status-bar {
-  display: none;
-}
-
-.game-container.morning-chat-focus > .game-header {
-  margin-bottom: 8px;
-}
-
-.game-container.morning-chat-focus .game-content {
-  flex: 1 1 auto;
-  gap: 0;
-  padding-bottom: 0;
-  min-height: 0;
-}
-
-.game-container.morning-chat-focus #game-content > .phase-chat-panel:first-child,
-.game-container.morning-chat-focus .phase-chat-panel.chat-expanded {
-  margin-top: 0;
-  flex: 1 1 auto;
-  min-height: 0;
-  height: 100%;
-}
-
 .role-reveal-overlay {
   position: absolute;
   inset: 0;
@@ -3095,19 +3067,19 @@ body {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 4px;
     align-content: center;
-    grid-auto-rows: minmax(68px, auto);
+    grid-auto-rows: minmax(72px, auto);
   }
 
   .action-panel .target-item,
   .voting-panel .target-item {
-    min-height: 68px;
+    min-height: 72px;
     padding: 8px 2px 7px;
     gap: 3px;
   }
 
   .target-avatar {
-    width: 34px;
-    height: 34px;
+    width: 40px;
+    height: 40px;
   }
 
   .action-panel .target-name,
