@@ -1176,6 +1176,24 @@
     return '';
   }
 
+  function getSystemMessageVariantClass(message) {
+    if (!message || message.type !== 'system') return '';
+    const text = String(message.text || '').trim();
+    if (!text) return '';
+
+    if (/Your investigation found that .* is the .*?\.$/i.test(text)) {
+      return ' system-result-search';
+    }
+    if (/.* has killed someone in the last 2 rounds\.$/i.test(text) || /.* has not killed anyone in the last 2 rounds\.$/i.test(text)) {
+      return ' system-result-examine';
+    }
+    if (/You were protected by the Vitalist during the night\.$/i.test(text)) {
+      return ' system-result-protect';
+    }
+
+    return '';
+  }
+
   function formatChatMessageHtml(message) {
     if (message.type === 'system' && message.summaryTitle) {
       const title = `<div class="chat-summary-title">${escapeHtml(message.summaryTitle)}</div>`;
@@ -2328,7 +2346,8 @@
         const isSelf = message.senderId === state.playerId;
         const phaseClass = message.type === 'system' && message.phase ? ` phase-${message.phase}` : '';
         const summaryClass = message.type === 'system' && message.summaryTitle ? ' phase-summary' : '';
-        const classes = `chat-message ${message.type === 'system' ? 'system' : 'player'}${phaseClass}${summaryClass}${message.private ? ' private' : ''}${isSelf ? ' self' : ''}`;
+        const variantClass = getSystemMessageVariantClass(message);
+        const classes = `chat-message ${message.type === 'system' ? 'system' : 'player'}${phaseClass}${summaryClass}${message.private ? ' private' : ''}${variantClass}${isSelf ? ' self' : ''}`;
         const sender = message.type === 'system' ? 'SYSTEM' : message.senderName;
         const style = getPlayerChatStyle(message);
         return `
