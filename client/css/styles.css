@@ -978,6 +978,17 @@ body {
   line-height: 1.65;
 }
 
+.roles-guide-ability-highlight {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--fg);
+  font-weight: 700;
+}
+
 .roles-empty-state {
   padding: 28px 24px;
   animation-delay: 0ms;

@@ -766,6 +766,23 @@
       .map(([role, roleInfo]) => ({ role, ...roleInfo }));
   }
 
+  function formatRoleGuideAbilityDescription(description) {
+    const safeDescription = escapeHtml(description || '');
+    return safeDescription
+      .replace(
+        'Cannot target the same player 3 times in a row.',
+        '<span class="roles-guide-ability-highlight">Cannot target the same player 3 times in a row.</span>'
+      )
+      .replace(
+        'Cannot target the same player in a row.',
+        '<span class="roles-guide-ability-highlight">Cannot target the same player in a row.</span>'
+      )
+      .replace(
+        'Cannot protect the same player twice in a row.',
+        '<span class="roles-guide-ability-highlight">Cannot protect the same player twice in a row.</span>'
+      );
+  }
+
   function renderRolesGuide() {
     const tabs = document.getElementById('roles-faction-tabs');
     const summaryLabel = document.getElementById('roles-guide-summary-label');
@@ -822,7 +839,7 @@
                 <span class="roles-guide-ability-name">${ability.name}</span>
                 <span class="roles-guide-ability-type">${ability.type}</span>
               </div>
-              <p class="roles-guide-ability-copy">${ability.description}</p>
+              <p class="roles-guide-ability-copy">${formatRoleGuideAbilityDescription(ability.description)}</p>
             </div>
           `).join('')}
         </div>
