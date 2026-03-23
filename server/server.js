@@ -352,6 +352,7 @@ function startNightTimer(code) {
     for (const [id, player] of room.players) {
       if (!player.alive) continue;
       if (player.role === 'Villager') continue;
+      if (player.role === 'Jester') continue;
       if (!room.nightActions[id]) {
         game.skipNightAction(code, id);
       }

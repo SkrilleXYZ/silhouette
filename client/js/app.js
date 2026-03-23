@@ -77,6 +77,19 @@
         },
       ],
     },
+    Investigator: {
+      faction: 'Crew',
+      subfaction: 'Info',
+      description: 'Investigate a player to learn if they have killed someone in the last 2 rounds. Cannot target the same player 3 times in a row.',
+      revealText: 'Violet intuition hums around you. Read the blood trail hidden in the dark.',
+      abilities: [
+        {
+          name: 'Examine',
+          type: 'Night',
+          description: 'Investigate a player to learn if they have killed someone in the last 2 rounds. Cannot target the same player 3 times in a row.',
+        },
+      ],
+    },
     Villager: {
       faction: 'Crew',
       subfaction: 'Info',
@@ -117,21 +130,7 @@
       ],
     },
   };
-  const ROLE_GUIDE_DEFINITIONS = {
-    ...ROLE_DEFINITIONS,
-    Investigator: {
-      faction: 'Crew',
-      subfaction: 'Info',
-      description: 'Investigate a player to learn if they have killed someone in the last 2 rounds. Cannot target the same player 3 times in a row.',
-      abilities: [
-        {
-          name: 'Examine',
-          type: 'Night',
-          description: 'Investigate a player to learn if they have killed someone in the last 2 rounds. Cannot target the same player 3 times in a row.',
-        },
-      ],
-    },
-  };
+  const ROLE_GUIDE_DEFINITIONS = ROLE_DEFINITIONS;
   const ROLE_GUIDE_SECTIONS = [
     { key: 'Crew', label: 'Crew', icon: 'Crew' },
     { key: 'Assassin', label: 'Assassin', icon: 'Assassin' },
@@ -1170,7 +1169,7 @@
     if (/alive players:/i.test(text)) return 'summary-alive';
     if (/was found dead|was eliminated by vote/i.test(text)) return 'summary-death';
     if (/used their gun/i.test(text)) return 'summary-shoot';
-    if (/investigating someone/i.test(text)) return 'summary-search';
+    if (/investigating someone|examining someone/i.test(text)) return 'summary-search';
     if (/protected someone/i.test(text)) return 'summary-protect';
     if (/moved through the shadows/i.test(text)) return 'summary-kill';
     return '';
@@ -2547,10 +2546,19 @@
     const isAssassin = player.faction === 'Assassin';
     const actionClass = isAssassin ? 'assassin-action' : '';
     const targetClass = isAssassin ? 'assassin-target' : '';
+    const investigatorLockedTargetId = player.role === 'Investigator'
+      && Array.isArray(player.lastInvestigatorTargets)
+      && player.lastInvestigatorTargets.length >= 2
+      && player.lastInvestigatorTargets[0] === player.lastInvestigatorTargets[1]
+      ? player.lastInvestigatorTargets[0]
+      : null;
 
     let actionsHTML = '';
     if (player.role === 'Sheriff') {
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'shoot' ? 'selected' : ''}" data-action="shoot">Shoot</button><button class="action-btn ${state.selectedAction === 'search' ? 'selected' : ''}" data-action="search">Search</button></div>`;
+    } else if (player.role === 'Investigator') {
+      state.selectedAction = 'examine';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="examine">Examine</button></div>';
     } else if (player.role === 'Vitalist') {
       state.selectedAction = 'protect';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">Protect</button></div>';
@@ -2561,18 +2569,29 @@
 
     let actionDesc = '';
     if (player.role === 'Sheriff') actionDesc = 'Choose to shoot or investigate a player';
+    else if (player.role === 'Investigator') actionDesc = 'Choose a player to examine for recent kills';
     else if (player.role === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
     else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
+
+    let restrictionNote = '';
+    if (player.role === 'Investigator' && investigatorLockedTargetId) {
+      const lockedTarget = state.roomData?.players?.find((candidate) => candidate.id === investigatorLockedTargetId);
+      if (lockedTarget) {
+        restrictionNote = `<div class="medic-restriction">Cannot examine <strong>${lockedTarget.name}</strong> a third time in a row</div>`;
+      }
+    }
 
     container.innerHTML = `
       <div class="action-panel">
         <div class="action-title">YOUR NIGHT ACTION</div>
         <div class="action-subtitle">${actionDesc}</div>
         ${actionsHTML}
+        ${restrictionNote}
         <div class="target-label">SELECT TARGET</div>
         <div class="target-list chat-target-list" id="target-list">
           ${targets.map(t => {
-            const isRestricted = player.role === 'Vitalist' && t.id === player.lastMedicTarget;
+            const isRestricted = (player.role === 'Vitalist' && t.id === player.lastMedicTarget)
+              || (player.role === 'Investigator' && t.id === investigatorLockedTargetId);
             return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`;
           }).join('')}
         </div>
@@ -2597,7 +2616,11 @@
     container.querySelectorAll('#target-list .target-item').forEach(item => {
       item.addEventListener('click', () => {
         if (item.dataset.restricted === 'true') {
-          showToast('You cannot protect the same player two nights in a row', 'error');
+          if (player.role === 'Investigator') {
+            showToast('You cannot target the same player 3 times in a row', 'error');
+          } else {
+            showToast('You cannot protect the same player two nights in a row', 'error');
+          }
           return;
         }
         state.selectedTarget = item.dataset.target;

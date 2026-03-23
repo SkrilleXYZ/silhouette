@@ -91,6 +91,8 @@ class GameLogic {
       playerOrder: [],
       lastAction: Date.now(),
       lastMedicTarget: null,
+      lastInvestigatorTargets: {},
+      recentKillers: [],
       roleRevealEndsAt: 0,
     };
 
@@ -187,6 +189,11 @@ class GameLogic {
     return { room };
   }
 
+  pickRandomRole(roles) {
+    if (!Array.isArray(roles) || !roles.length) return null;
+    return roles[Math.floor(Math.random() * roles.length)];
+  }
+
   assignRoles(code) {
     const room = this.rooms.get(code);
     if (!room) return null;
@@ -224,9 +231,9 @@ class GameLogic {
       vitalist.faction = 'Crew';
       index++;
 
-      const villager = room.players.get(shuffled[index]);
-      villager.role = 'Villager';
-      villager.faction = 'Crew';
+      const crewInfo = room.players.get(shuffled[index]);
+      crewInfo.role = this.pickRandomRole(['Villager', 'Investigator']);
+      crewInfo.faction = 'Crew';
       index++;
 
       const jester = room.players.get(shuffled[index]);
@@ -311,6 +318,8 @@ class GameLogic {
     room.playerOrder = [];
     room.lastAction = Date.now();
     room.lastMedicTarget = null;
+    room.lastInvestigatorTargets = {};
+    room.recentKillers = [];
     room.roleRevealEndsAt = 0;
 
     return { room };
@@ -332,6 +341,13 @@ class GameLogic {
     if (player.role === 'Sheriff') {
       if (action !== 'shoot' && action !== 'search') return { error: 'Invalid action for Sheriff' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
+    } else if (player.role === 'Investigator') {
+      if (action !== 'examine') return { error: 'Invalid action for Investigator' };
+      if (targetId === playerId) return { error: 'Cannot target yourself' };
+      const recentTargets = room.lastInvestigatorTargets[playerId] || [];
+      if (recentTargets.length >= 2 && recentTargets[recentTargets.length - 1] === targetId && recentTargets[recentTargets.length - 2] === targetId) {
+        return { error: 'You cannot target the same player 3 times in a row' };
+      }
     } else if (player.role === 'Vitalist') {
       if (action !== 'protect') return { error: 'Invalid action for Vitalist' };
       // Cannot protect the same player twice in a row
@@ -387,6 +403,8 @@ class GameLogic {
     const protected_ = new Set();
     const searchResults = {};
     const privateMessages = {};
+    const killersThisNight = new Set();
+    const recentKillers = new Set((room.recentKillers || []).flat());
 
     // Track who the medic protected this night
     let medicTargetThisNight = null;
@@ -418,6 +436,7 @@ class GameLogic {
       if (action.action === 'kill' && player.role === 'Assassin' && action.targetId) {
         if (!protected_.has(action.targetId)) {
           killed.add(action.targetId);
+          killersThisNight.add(playerId);
         } else {
           if (!privateMessages[action.targetId]) {
             privateMessages[action.targetId] = [
@@ -438,6 +457,7 @@ class GameLogic {
           killed.add(playerId);
         } else if (!protected_.has(action.targetId)) {
           killed.add(action.targetId);
+          killersThisNight.add(playerId);
         } else {
           if (!privateMessages[action.targetId]) {
             privateMessages[action.targetId] = [
@@ -459,6 +479,38 @@ class GameLogic {
         );
       }
     }
+
+    const nextInvestigatorTargets = {};
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      if (!player || player.role !== 'Investigator') continue;
+
+      const previousTargets = room.lastInvestigatorTargets[playerId] || [];
+      if (action.action === 'examine' && action.targetId) {
+        const target = room.players.get(action.targetId);
+        const hasKilledRecently = recentKillers.has(action.targetId);
+        searchResults[playerId] = {
+          targetId: action.targetId,
+          targetName: target.name,
+          resultType: 'kill-check',
+          hasKilledRecently,
+          roundsChecked: 2,
+        };
+        if (!privateMessages[playerId]) privateMessages[playerId] = [];
+        privateMessages[playerId].push(
+          this.createPrivateSystemMessage(
+            code,
+            hasKilledRecently
+              ? `${target.name} has killed someone in the last 2 rounds.`
+              : `${target.name} has not killed anyone in the last 2 rounds.`
+          )
+        );
+        nextInvestigatorTargets[playerId] = [...previousTargets.slice(-1), action.targetId];
+      } else {
+        nextInvestigatorTargets[playerId] = [];
+      }
+    }
+    room.lastInvestigatorTargets = nextInvestigatorTargets;
 
     for (const deadId of killed) {
       const deadPlayer = room.players.get(deadId);
@@ -493,6 +545,7 @@ class GameLogic {
     room.state = 'morning';
     this.beginPhaseSummary(code, `Morning ${room.nightCount} begins.`, morningLines);
     room.searchResults = searchResults;
+    room.recentKillers = [...(room.recentKillers || []), Array.from(killersThisNight)].slice(-2);
     room.nightActions = {};
 
     const winCheck = this.checkWinCondition(code);
@@ -755,6 +808,7 @@ class GameLogic {
 
     if (action === 'shoot') return 'Sheriff has used their gun.';
     if (action === 'search') return 'Sheriff is investigating someone.';
+    if (action === 'examine') return 'Investigator is examining someone.';
     if (action === 'protect') return 'Vitalist has protected someone.';
     if (action === 'kill') return 'An Assassin has moved through the shadows.';
     return null;
@@ -901,6 +955,7 @@ class GameLogic {
       hasSubmittedAction: !!room.nightActions[playerId],
       hasVoted: !!room.votes[playerId],
       lastMedicTarget: player.role === 'Vitalist' ? room.lastMedicTarget : null,
+      lastInvestigatorTargets: player.role === 'Investigator' ? (room.lastInvestigatorTargets[playerId] || []) : [],
     };
   }
 
