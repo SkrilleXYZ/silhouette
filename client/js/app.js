@@ -167,12 +167,12 @@
   function getOrCreatePlayerSessionId() {
     let playerSessionId = '';
     try {
-      playerSessionId = window.localStorage.getItem(PLAYER_SESSION_STORAGE_KEY) || '';
+      playerSessionId = window.sessionStorage.getItem(PLAYER_SESSION_STORAGE_KEY) || '';
       if (!playerSessionId) {
         playerSessionId = window.crypto?.randomUUID
           ? window.crypto.randomUUID()
           : `player-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-        window.localStorage.setItem(PLAYER_SESSION_STORAGE_KEY, playerSessionId);
+        window.sessionStorage.setItem(PLAYER_SESSION_STORAGE_KEY, playerSessionId);
       }
     } catch (error) {
       playerSessionId = `player-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
