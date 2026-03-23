@@ -3197,6 +3197,23 @@ body {
   transform: rotate(40deg);
 }
 
+.chat-message.system.phase-summary.phase-night,
+.chat-message.system.phase-summary.phase-morning,
+.chat-message.system.phase-summary.phase-voting {
+  background: linear-gradient(180deg, rgba(12, 17, 24, 0.96), rgba(8, 12, 18, 0.98));
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.chat-message.system.phase-summary.phase-night::before,
+.chat-message.system.phase-summary.phase-night::after,
+.chat-message.system.phase-summary.phase-morning::before,
+.chat-message.system.phase-summary.phase-morning::after,
+.chat-message.system.phase-summary.phase-voting::before,
+.chat-message.system.phase-summary.phase-voting::after {
+  background: none;
+  box-shadow: none;
+}
+
 .chat-message.private {
   border-color: var(--crew);
   background: hsl(195,35%,14%);
