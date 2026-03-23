@@ -403,7 +403,10 @@ class GameLogic {
       if (!player || player.role !== 'Sheriff') continue;
 
       if (action.action === 'shoot' && action.targetId) {
-        if (!protected_.has(action.targetId)) {
+        const target = room.players.get(action.targetId);
+        if (target && target.faction === 'Crew') {
+          killed.add(playerId);
+        } else if (!protected_.has(action.targetId)) {
           killed.add(action.targetId);
         } else {
           if (!privateMessages[action.targetId]) {
