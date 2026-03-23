@@ -593,7 +593,7 @@ body {
   width: 100%;
   max-width: 1180px;
   margin: 0 auto;
-  padding: 36px 20px 120px;
+  padding: 28px 20px 120px;
   position: relative;
 }
 
@@ -609,34 +609,33 @@ body {
 }
 
 .roles-guide-screen::before {
-  width: 280px;
-  height: 280px;
-  top: 18px;
-  right: 6%;
-  background: radial-gradient(circle, rgba(67, 239, 255, 0.24), transparent 70%);
-  animation: rolesOrbit 12s ease-in-out infinite;
+  width: 320px;
+  height: 320px;
+  top: 84px;
+  right: 4%;
+  background: radial-gradient(circle, rgba(67, 239, 255, 0.14), transparent 72%);
+  animation: rolesOrbit 18s ease-in-out infinite;
 }
 
 .roles-guide-screen::after {
-  width: 240px;
-  height: 240px;
-  left: -30px;
-  top: 180px;
-  background: radial-gradient(circle, rgba(255, 73, 85, 0.16), transparent 72%);
-  animation: rolesOrbit 15s ease-in-out infinite reverse;
+  width: 260px;
+  height: 260px;
+  left: -46px;
+  top: 220px;
+  background: radial-gradient(circle, rgba(255, 73, 85, 0.1), transparent 74%);
+  animation: rolesOrbit 20s ease-in-out infinite reverse;
 }
 
 .roles-guide-hero {
   position: relative;
   z-index: 1;
-  margin-bottom: 24px;
-  padding: 28px 28px 22px;
-  border: 1px solid rgba(80, 122, 139, 0.16);
-  border-radius: 28px;
+  margin-bottom: 18px;
+  padding: 18px 4px 10px;
+  border: none;
+  border-radius: 0;
   background:
-    linear-gradient(135deg, rgba(11, 28, 38, 0.96), rgba(6, 13, 20, 0.92)),
-    radial-gradient(circle at top, rgba(67, 239, 255, 0.08), transparent 48%);
-  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    linear-gradient(180deg, rgba(8, 12, 16, 0.18), rgba(8, 12, 16, 0));
+  box-shadow: none;
   overflow: hidden;
 }
 
@@ -645,9 +644,8 @@ body {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05), transparent 30%, transparent 70%, rgba(255, 255, 255, 0.03)),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.016) 0 1px, transparent 1px 64px);
-  opacity: 0.75;
+    linear-gradient(90deg, rgba(255, 255, 255, 0.015), transparent 24%, transparent 76%, rgba(255, 255, 255, 0.015));
+  opacity: 0.35;
   pointer-events: none;
 }
 
@@ -657,38 +655,38 @@ body {
 }
 
 .roles-guide-kicker {
-  font-size: 0.78rem;
-  letter-spacing: 3px;
+  font-size: 0.74rem;
+  letter-spacing: 4px;
   text-transform: uppercase;
-  color: var(--crew);
-  margin-bottom: 8px;
+  color: rgba(182, 217, 230, 0.7);
+  margin-bottom: 10px;
 }
 
 .roles-guide-title {
   font-family: 'Cinzel', serif;
-  font-size: clamp(2rem, 5vw, 3.4rem);
-  letter-spacing: 4px;
-  margin-bottom: 12px;
-  text-shadow: 0 0 24px rgba(91, 208, 240, 0.12);
+  font-size: clamp(2.05rem, 5vw, 3.55rem);
+  letter-spacing: 5px;
+  margin-bottom: 10px;
+  text-shadow: 0 0 20px rgba(91, 208, 240, 0.08);
 }
 
 .roles-guide-subtitle {
-  max-width: 760px;
-  color: var(--fg-muted);
-  font-size: 1rem;
-  line-height: 1.6;
+  max-width: 720px;
+  color: rgba(207, 216, 222, 0.7);
+  font-size: 0.98rem;
+  line-height: 1.7;
 }
 
 .roles-faction-tabs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px;
   margin-bottom: 24px;
-  padding: 8px;
-  border: 1px solid rgba(75, 108, 122, 0.18);
-  border-radius: 22px;
-  background: linear-gradient(180deg, rgba(5, 16, 22, 0.92), rgba(4, 10, 14, 0.96));
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  padding: 6px;
+  border: 1px solid rgba(82, 94, 102, 0.12);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(7, 11, 15, 0.96), rgba(5, 8, 11, 0.98));
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
   position: relative;
   overflow: hidden;
   z-index: 1;
@@ -698,24 +696,24 @@ body {
   content: '';
   position: absolute;
   inset: -40% -10%;
-  background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.08) 50%, transparent 80%);
+  background: linear-gradient(115deg, transparent 22%, rgba(255, 255, 255, 0.045) 50%, transparent 78%);
   transform: translateX(-55%) skewX(-18deg);
-  animation: rolesSweep 8s linear infinite;
+  animation: rolesSweep 12s linear infinite;
   pointer-events: none;
 }
 
 .roles-faction-tab {
   position: relative;
-  min-height: 58px;
-  border: 1px solid transparent;
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
-  color: var(--fg-muted);
+  min-height: 54px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0));
+  color: rgba(207, 216, 222, 0.66);
   font-family: 'DM Sans', sans-serif;
-  font-size: 1rem;
+  font-size: 0.98rem;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+  transition: border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
   overflow: hidden;
 }
 
@@ -731,7 +729,6 @@ body {
 .roles-faction-tab:hover {
   color: var(--fg);
   border-color: rgba(255, 255, 255, 0.08);
-  transform: translateY(-2px);
 }
 
 .roles-faction-tab:hover::before {
@@ -739,29 +736,29 @@ body {
 }
 
 .roles-faction-tab.active {
-  background: linear-gradient(180deg, rgba(26, 83, 102, 0.48), rgba(12, 39, 51, 0.9));
-  border-color: rgba(66, 211, 255, 0.55);
+  background: linear-gradient(180deg, rgba(17, 45, 57, 0.72), rgba(8, 19, 27, 0.96));
+  border-color: rgba(66, 211, 255, 0.34);
   color: var(--fg);
-  box-shadow: inset 0 -2px 0 rgba(66, 211, 255, 0.85), 0 0 28px rgba(35, 178, 224, 0.2);
+  box-shadow: inset 0 -1px 0 rgba(66, 211, 255, 0.85), 0 0 20px rgba(35, 178, 224, 0.12);
 }
 
 .roles-faction-tab-assassin.active {
-  background: linear-gradient(180deg, rgba(93, 18, 27, 0.5), rgba(45, 10, 14, 0.92));
-  border-color: rgba(255, 72, 84, 0.55);
-  box-shadow: inset 0 -2px 0 rgba(255, 72, 84, 0.9), 0 0 28px rgba(255, 72, 84, 0.18);
+  background: linear-gradient(180deg, rgba(57, 13, 19, 0.72), rgba(24, 8, 11, 0.96));
+  border-color: rgba(255, 72, 84, 0.34);
+  box-shadow: inset 0 -1px 0 rgba(255, 72, 84, 0.9), 0 0 20px rgba(255, 72, 84, 0.12);
 }
 
 .roles-faction-tab-neutral.active {
-  background: linear-gradient(180deg, rgba(110, 92, 58, 0.5), rgba(48, 40, 26, 0.92));
-  border-color: rgba(218, 197, 164, 0.52);
-  box-shadow: inset 0 -2px 0 rgba(226, 205, 171, 0.86), 0 0 28px rgba(218, 197, 164, 0.16);
+  background: linear-gradient(180deg, rgba(58, 50, 34, 0.72), rgba(24, 20, 13, 0.96));
+  border-color: rgba(218, 197, 164, 0.28);
+  box-shadow: inset 0 -1px 0 rgba(226, 205, 171, 0.82), 0 0 20px rgba(218, 197, 164, 0.11);
 }
 
 .roles-guide-summary {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
   position: relative;
   z-index: 1;
 }
@@ -782,9 +779,9 @@ body {
 
 .roles-guide-summary-label {
   font-family: 'Cinzel', serif;
-  font-size: 2rem;
+  font-size: 2.15rem;
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   color: var(--crew);
 }
 
@@ -803,10 +800,11 @@ body {
 
 .roles-guide-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 28px;
   position: relative;
   z-index: 1;
+  align-items: start;
 }
 
 .roles-guide-card,
@@ -814,13 +812,13 @@ body {
   position: relative;
   overflow: hidden;
   border-radius: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(102, 118, 126, 0.18);
   background:
-    linear-gradient(180deg, rgba(8, 27, 36, 0.94), rgba(7, 12, 18, 0.98));
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
-  transform: translateY(24px) scale(0.985);
+    linear-gradient(180deg, rgba(7, 15, 22, 0.98), rgba(5, 9, 14, 0.99));
+  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.24);
+  transform: translateY(18px);
   opacity: 0;
-  animation: rolesCardRise 0.7s cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+  animation: rolesCardRise 0.58s cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
   animation-delay: var(--role-card-delay, 0ms);
 }
 
@@ -830,17 +828,16 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), transparent 42%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 26%);
 }
 
 .roles-guide-card::after,
 .roles-empty-state::after {
   content: '';
   position: absolute;
-  inset: -30% auto -30% -120%;
-  width: 55%;
-  background: linear-gradient(110deg, transparent, rgba(255, 255, 255, 0.12), transparent);
-  transform: skewX(-18deg);
+  inset: auto 0 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
   opacity: 0;
   transition: opacity 0.28s ease;
   pointer-events: none;
@@ -848,54 +845,53 @@ body {
 
 .roles-guide-card:hover,
 .roles-empty-state:hover {
-  transform: translateY(-6px) scale(1.01);
-  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.34);
+  transform: translateY(-4px);
+  box-shadow: 0 26px 52px rgba(0, 0, 0, 0.28);
 }
 
 .roles-guide-card:hover::after,
 .roles-empty-state:hover::after {
   opacity: 1;
-  animation: rolesShine 1s ease;
 }
 
 .roles-guide-card-head {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 22px 22px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: linear-gradient(90deg, rgba(18, 60, 76, 0.72), rgba(22, 87, 110, 0.38));
+  padding: 26px 24px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(90deg, rgba(17, 50, 63, 0.8), rgba(20, 66, 84, 0.5));
   position: relative;
 }
 
 .roles-guide-card-aura {
   position: absolute;
-  width: 128px;
-  height: 128px;
-  right: -24px;
-  top: -42px;
+  width: 156px;
+  height: 156px;
+  right: -28px;
+  top: -46px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(67, 239, 255, 0.2), transparent 68%);
-  filter: blur(6px);
-  opacity: 0.8;
+  filter: blur(14px);
+  opacity: 0.68;
   pointer-events: none;
 }
 
 .roles-guide-card-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 18px;
+  width: 68px;
+  height: 68px;
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: 'Cinzel', serif;
-  font-size: 1.6rem;
+  font-size: 1.85rem;
   font-weight: 700;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(24, 86, 108, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(24, 86, 108, 0.48);
   color: var(--crew);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 16px 28px rgba(0, 0, 0, 0.22);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 12px 24px rgba(0, 0, 0, 0.18);
+  transition: transform 0.28s ease, box-shadow 0.28s ease;
 }
 
 .roles-guide-card-copy {
@@ -904,17 +900,17 @@ body {
 
 .roles-guide-card-title {
   font-family: 'Cinzel', serif;
-  font-size: 1.1rem;
+  font-size: 1.22rem;
   letter-spacing: 1px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .roles-guide-card-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  color: var(--fg-muted);
-  font-size: 0.92rem;
+  color: rgba(214, 219, 223, 0.68);
+  font-size: 0.95rem;
 }
 
 .roles-guide-card-meta span {
@@ -930,17 +926,17 @@ body {
 .roles-guide-abilities {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 22px;
+  gap: 0;
+  padding: 18px 24px 22px;
   position: relative;
 }
 
 .roles-guide-ability {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px 14px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 12px;
+  padding: 18px 6px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .roles-guide-ability:first-child {
@@ -956,26 +952,26 @@ body {
 }
 
 .roles-guide-ability-name {
-  font-size: 1rem;
+  font-size: 1.06rem;
   font-weight: 700;
   color: var(--fg);
 }
 
 .roles-guide-ability-type {
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: 999px;
   border: 1px solid rgba(66, 211, 255, 0.28);
-  background: rgba(13, 70, 88, 0.55);
+  background: rgba(13, 70, 88, 0.42);
   color: var(--crew);
   font-size: 0.82rem;
-  font-weight: 600;
+  font-weight: 700;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .roles-guide-ability-copy {
-  color: var(--fg-muted);
-  font-size: 0.98rem;
-  line-height: 1.65;
+  color: rgba(218, 222, 225, 0.72);
+  font-size: 0.99rem;
+  line-height: 1.72;
 }
 
 .roles-guide-ability-highlight {
@@ -1142,8 +1138,8 @@ body {
 }
 
 .roles-guide-card:hover .roles-guide-card-icon {
-  transform: translateY(-3px) scale(1.04);
-  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.3), 0 0 26px rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 16px 30px rgba(0, 0, 0, 0.22);
 }
 
 @keyframes rolesCardRise {
