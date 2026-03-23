@@ -58,7 +58,7 @@
           description: 'Shoot a player. If they happen to be a Crew member the victim survives but you die instead.',
         },
         {
-          name: 'Investigate',
+          name: 'Search',
           type: 'Night',
           description: 'Choose a player to learn their exact role.',
         },
