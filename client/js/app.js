@@ -37,6 +37,7 @@
     roleRevealTimeout: null,
     toastTimeout: null,
     connectionToastVisible: false,
+    currentRolesFaction: 'Crew',
   };
 
   const MAX_ROOM_PLAYERS = 16;
@@ -47,25 +48,66 @@
   const ROLE_DEFINITIONS = {
     Sheriff: {
       faction: 'Crew',
+      subfaction: 'Killing',
       description: 'You uphold justice from the shadows. Shoot or investigate.',
-      revealText: 'You lead the hunt when the night begins.',
+      revealText: 'Justice glints in gold. Hunt carefully from the dark.',
+      abilities: [
+        {
+          name: 'Shoot',
+          type: 'Night',
+          description: 'Shoot a player. If they happen to be a Crew member the victim survives but you die instead.',
+        },
+        {
+          name: 'Investigate',
+          type: 'Night',
+          description: 'Choose a player to learn their exact role.',
+        },
+      ],
     },
-    Medic: {
+    Vitalist: {
       faction: 'Crew',
+      subfaction: 'Protection',
       description: 'You protect the innocent. Cannot protect the same player twice in a row.',
-      revealText: 'You keep the crew alive through the darkest hours.',
+      revealText: 'A neon ward surrounds you. Keep the crew alive through the dark.',
+      abilities: [
+        {
+          name: 'Shield',
+          type: 'Night',
+          description: 'Protect a player from getting killed until the next night. Cannot target the same player in a row.',
+        },
+      ],
     },
     Villager: {
       faction: 'Crew',
       description: 'Trust your instincts. Find the assassins among you.',
       revealText: 'You have no night action, but your voice matters at dawn.',
+      abilities: [
+        {
+          name: 'Survive',
+          type: 'Passive',
+          description: 'Try to survive and eliminate all Assassins and Neutral Killers.',
+        },
+      ],
     },
     Assassin: {
       faction: 'Assassin',
+      subfaction: 'Power',
       description: 'Eliminate the crew. Stay hidden. Strike silently.',
-      revealText: 'You strike from the shadows. Do not reveal yourself.',
+      revealText: 'Crimson intent burns bright. Stay hidden and strike first.',
+      abilities: [
+        {
+          name: 'Kill',
+          type: 'Night',
+          description: 'Eliminate a player.',
+        },
+      ],
     },
   };
+  const ROLE_GUIDE_SECTIONS = [
+    { key: 'Crew', label: 'Crew', icon: 'Crew' },
+    { key: 'Assassin', label: 'Assassin', icon: 'Assassin' },
+    { key: 'Neutral', label: 'Neutral', icon: 'Neutral' },
+  ];
   const LOBBY_AVATAR_FILES = [
     'Avatar 1.png',
     'Avatar 11.png',
@@ -634,12 +676,95 @@
     }
   }
 
+  function getRoleThemeClass(role, fallbackFaction = 'Crew') {
+    const normalizedRole = String(role || '').trim().toLowerCase();
+    if (normalizedRole === 'sheriff') return 'sheriff';
+    if (normalizedRole === 'vitalist') return 'vitalist';
+    if (normalizedRole === 'assassin') return 'assassin';
+    if (normalizedRole === 'villager') return 'villager';
+    return String(fallbackFaction || 'Crew').trim().toLowerCase();
+  }
+
+  function getRoleBadgeClass(role, faction) {
+    return `role-theme-${getRoleThemeClass(role, faction)}`;
+  }
+
   function getRoleDefinition(role) {
     return ROLE_DEFINITIONS[role] || {
       faction: 'Crew',
       description: '',
       revealText: '',
+      abilities: [],
     };
+  }
+
+  function getRolesForFaction(faction) {
+    return Object.entries(ROLE_DEFINITIONS)
+      .filter(([, roleInfo]) => roleInfo.faction === faction)
+      .map(([role, roleInfo]) => ({ role, ...roleInfo }));
+  }
+
+  function renderRolesGuide() {
+    const tabs = document.getElementById('roles-faction-tabs');
+    const summaryLabel = document.getElementById('roles-guide-summary-label');
+    const summaryCount = document.getElementById('roles-guide-summary-count');
+    const grid = document.getElementById('roles-guide-grid');
+    if (!tabs || !summaryLabel || !summaryCount || !grid) return;
+
+    const activeFaction = state.currentRolesFaction || 'Crew';
+    const factionRoles = getRolesForFaction(activeFaction);
+
+    tabs.innerHTML = ROLE_GUIDE_SECTIONS.map((section) => `
+      <button
+        class="roles-faction-tab roles-faction-tab-${section.key.toLowerCase()} ${section.key === activeFaction ? 'active' : ''}"
+        type="button"
+        role="tab"
+        aria-selected="${section.key === activeFaction ? 'true' : 'false'}"
+        data-roles-faction="${section.key}"
+      >
+        <span class="roles-faction-tab-label">${section.label}</span>
+      </button>
+    `).join('');
+
+    summaryLabel.className = `roles-guide-summary-label roles-faction-${activeFaction.toLowerCase()}`;
+    summaryLabel.textContent = activeFaction;
+    summaryCount.textContent = `${factionRoles.length} role${factionRoles.length === 1 ? '' : 's'}`;
+
+    if (!factionRoles.length) {
+      grid.innerHTML = `
+        <article class="roles-empty-state">
+          <h3 class="roles-empty-title">Neutral Roles Incoming</h3>
+          <p class="roles-empty-copy">This faction is reserved for standalone roles with their own agendas. Their cards will appear here once they enter the lineup.</p>
+        </article>
+      `;
+      return;
+    }
+
+    grid.innerHTML = factionRoles.map((roleInfo) => `
+      <article class="roles-guide-card ${getRoleBadgeClass(roleInfo.role, roleInfo.faction)}">
+        <div class="roles-guide-card-head">
+          <div class="roles-guide-card-icon">${roleInfo.role.slice(0, 1)}</div>
+          <div class="roles-guide-card-copy">
+            <h3 class="roles-guide-card-title">${roleInfo.role.toUpperCase()}</h3>
+            <div class="roles-guide-card-meta">
+              <span>${roleInfo.faction}</span>
+              ${roleInfo.subfaction ? `<span>${roleInfo.subfaction}</span>` : ''}
+            </div>
+          </div>
+        </div>
+        <div class="roles-guide-abilities">
+          ${roleInfo.abilities.map((ability) => `
+            <div class="roles-guide-ability">
+              <div class="roles-guide-ability-head">
+                <span class="roles-guide-ability-name">${ability.name}</span>
+                <span class="roles-guide-ability-type">${ability.type}</span>
+              </div>
+              <p class="roles-guide-ability-copy">${ability.description}</p>
+            </div>
+          `).join('')}
+        </div>
+      </article>
+    `).join('');
   }
 
   function buildRoleRevealSequence(finalRole) {
@@ -677,8 +802,9 @@
   function renderRoleRevealItem(role) {
     const roleInfo = getRoleDefinition(role);
     const factionClass = roleInfo.faction.toLowerCase();
+    const themeClass = getRoleBadgeClass(role, roleInfo.faction);
     return `
-      <div class="role-reveal-item role-${factionClass}">
+      <div class="role-reveal-item role-${factionClass} ${themeClass}">
         <span class="role-reveal-name">${role}</span>
         <span class="role-reveal-faction">${roleInfo.faction}</span>
       </div>
@@ -702,6 +828,7 @@
     const timerProgress = document.getElementById('timer-progress');
 
     const roleInfo = getRoleDefinition(player.role);
+    const roleThemeClass = getRoleBadgeClass(player.role, roleInfo.faction);
     const { sequence, selectedIndex } = buildRoleRevealSequence(player.role);
     const remainingMs = Math.max(2800, (revealEndsAt || (Date.now() + (revealDurationMs || 6000))) - Date.now());
     const spinDuration = Math.max(2200, remainingMs - 450);
@@ -719,13 +846,14 @@
     gameContainer.classList.add('role-reveal-active');
     overlay.classList.add('active');
     overlay.setAttribute('aria-hidden', 'false');
-    panel.classList.remove('settled');
+    panel.className = `role-reveal-panel ${roleThemeClass}`;
 
     result.className = 'role-reveal-result pending';
     result.innerHTML = '<strong>Shadows decide...</strong>The reel is still spinning.';
     result.dataset.role = player.role;
     result.dataset.revealText = roleInfo.revealText;
     result.dataset.faction = roleInfo.faction.toLowerCase();
+    result.dataset.theme = roleThemeClass;
 
     reel.dataset.selectedIndex = String(selectedIndex);
     reel.innerHTML = sequence.map((role) => renderRoleRevealItem(role)).join('');
@@ -747,7 +875,7 @@
       if (revealItems[selectedIndex]) {
         revealItems[selectedIndex].classList.add('is-selected');
       }
-      result.className = `role-reveal-result ${roleInfo.faction.toLowerCase()}`;
+      result.className = `role-reveal-result ${roleThemeClass}`;
       result.innerHTML = `<strong>${player.role}</strong>${roleInfo.revealText}`;
       panel.classList.add('settled');
     }, spinDuration);
@@ -778,7 +906,7 @@
         revealItems[selectedIndex].classList.add('is-selected');
       }
       if (result?.dataset?.role) {
-        result.className = `role-reveal-result ${result.dataset.faction || ''}`.trim();
+        result.className = `role-reveal-result ${result.dataset.theme || result.dataset.faction || ''}`.trim();
         result.innerHTML = `<strong>${result.dataset.role}</strong>${result.dataset.revealText || ''}`;
       }
       panel.classList.add('settled');
@@ -825,7 +953,7 @@
         const rp = roleMap[p.id] || p;
         if (rp && rp.role) {
           const isAssassin = rp.faction === 'Assassin';
-          roleTag = `<span class="gpl-role ${isAssassin ? 'assassin-role' : 'crew-role'}">${rp.role}</span>`;
+          roleTag = `<span class="gpl-role ${getRoleBadgeClass(rp.role, rp.faction)}">${rp.role}</span>`;
         } else {
           roleTag = `<span class="gpl-role unknown-role">?</span>`;
         }
@@ -1100,7 +1228,7 @@
     let actionsHTML = '';
     if (player.role === 'Sheriff') {
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'shoot' ? 'selected' : ''}" data-action="shoot">🔫 SHOOT</button><button class="action-btn ${state.selectedAction === 'search' ? 'selected' : ''}" data-action="search">🔍 SEARCH</button></div>`;
-    } else if (player.role === 'Medic') {
+    } else if (player.role === 'Vitalist') {
       state.selectedAction = 'protect';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">🛡️ PROTECT</button></div>';
     } else if (player.role === 'Assassin') {
@@ -1110,12 +1238,12 @@
 
     let actionDesc = '';
     if (player.role === 'Sheriff') actionDesc = 'Choose to shoot or investigate a player';
-    else if (player.role === 'Medic') actionDesc = 'Choose a player to protect tonight';
+    else if (player.role === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
     else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
 
-    // For medic: find the last protected player name to show restriction
+    // For the Vitalist: find the last protected player name to show restriction
     let medicNote = '';
-    if (player.role === 'Medic' && player.lastMedicTarget) {
+    if (player.role === 'Vitalist' && player.lastMedicTarget) {
       const lastTarget = state.roomData?.players?.find(p => p.id === player.lastMedicTarget);
       if (lastTarget) {
         medicNote = `<div class="medic-restriction">⚠️ Cannot protect <strong>${lastTarget.name}</strong> again this night</div>`;
@@ -1131,7 +1259,7 @@
         <div class="target-label">SELECT TARGET</div>
         <div class="target-list" id="target-list">
           ${targets.map(t => {
-            const isRestricted = player.role === 'Medic' && t.id === player.lastMedicTarget;
+            const isRestricted = player.role === 'Vitalist' && t.id === player.lastMedicTarget;
             return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}><div class="target-dot"></div><span class="target-name">${t.name}${isRestricted ? ' <span class="restricted-label">(protected last night)</span>' : ''}</span></div>`;
           }).join('')}
         </div>
@@ -1196,10 +1324,9 @@
     msgList.innerHTML = '';
 
     if (state.searchResult) {
-      const isAssassin = state.searchResult.faction === 'Assassin';
       const div = document.createElement('div');
       div.className = 'search-result-card';
-      div.innerHTML = `<div class="search-label">🔍 INVESTIGATION RESULT</div><div class="search-target-name">${state.searchResult.targetName}</div><div class="search-target-role ${isAssassin ? 'assassin-role' : 'crew-role'}">${state.searchResult.role} (${state.searchResult.faction})</div>`;
+      div.innerHTML = `<div class="search-label">🔍 INVESTIGATION RESULT</div><div class="search-target-name">${state.searchResult.targetName}</div><div class="search-target-role ${getRoleBadgeClass(state.searchResult.role, state.searchResult.faction)}">${state.searchResult.role} (${state.searchResult.faction})</div>`;
       msgList.appendChild(div);
       state.searchResult = null;
     }
@@ -1337,7 +1464,7 @@
     let actionsHTML = '';
     if (player.role === 'Sheriff') {
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'shoot' ? 'selected' : ''}" data-action="shoot">🔫 SHOOT</button><button class="action-btn ${state.selectedAction === 'search' ? 'selected' : ''}" data-action="search">🔍 SEARCH</button></div>`;
-    } else if (player.role === 'Medic') {
+    } else if (player.role === 'Vitalist') {
       state.selectedAction = 'protect';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">🛡️ PROTECT</button></div>';
     } else if (player.role === 'Assassin') {
@@ -1347,7 +1474,7 @@
 
     let actionDesc = '';
     if (player.role === 'Sheriff') actionDesc = 'Choose to shoot or investigate a player';
-    else if (player.role === 'Medic') actionDesc = 'Choose a player to protect tonight';
+    else if (player.role === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
     else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
 
     container.innerHTML = `
@@ -1358,7 +1485,7 @@
         <div class="target-label">SELECT TARGET</div>
         <div class="target-list" id="target-list">
           ${targets.map(t => {
-            const isRestricted = player.role === 'Medic' && t.id === player.lastMedicTarget;
+            const isRestricted = player.role === 'Vitalist' && t.id === player.lastMedicTarget;
             return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}><div class="target-dot"></div><span class="target-name">${t.name}</span></div>`;
           }).join('')}
         </div>
@@ -1541,7 +1668,7 @@
     const teammates = document.getElementById('role-teammates');
     const teammatesList = document.getElementById('teammates-list');
 
-    card.className = `role-card ${player.faction?.toLowerCase() || ''}`;
+    card.className = `role-card ${player.faction?.toLowerCase() || ''} ${getRoleBadgeClass(player.role, player.faction)}`;
     faction.textContent = player.faction?.toUpperCase() || '';
     roleName.textContent = player.role?.toUpperCase() || '';
     desc.textContent = roleInfo.description;
@@ -1558,7 +1685,7 @@
     if (!state.roomData || !state.playerData) return [];
     return state.roomData.players.filter(p => {
       if (!p.alive) return false;
-      if (p.id === state.playerId) return state.playerData.role === 'Medic';
+      if (p.id === state.playerId) return state.playerData.role === 'Vitalist';
       if (state.playerData.role === 'Assassin') {
         const isTeammate = state.playerData.teammates?.some(t => t.id === p.id);
         if (isTeammate) return false;
@@ -1590,7 +1717,7 @@
     playersList.innerHTML = players.map(p => `
       <div class="gameover-player ${!p.alive ? 'dead' : ''}">
         <span class="gameover-player-name">${p.name}</span>
-        <span class="gameover-player-role ${p.faction === 'Crew' ? 'crew-role' : 'assassin-role'}">
+        <span class="gameover-player-role ${getRoleBadgeClass(p.role, p.faction)}">
           ${p.role}
           <span class="gameover-player-status">${p.alive ? '✓' : '✗'}</span>
         </span>
@@ -1639,11 +1766,24 @@
         if (tabName === 'home') {
           if (state.roomCode) showScreen('room');
           else showScreen('home');
-        } else if (tabName === 'roles') showScreen('roles');
+        } else if (tabName === 'roles') {
+          renderRolesGuide();
+          showScreen('roles');
+        }
         else if (tabName === 'rules') showScreen('rules');
         else if (tabName === 'changelog') showScreen('changelog');
       });
     });
+
+    const rolesFactionTabs = document.getElementById('roles-faction-tabs');
+    if (rolesFactionTabs) {
+      rolesFactionTabs.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-roles-faction]');
+        if (!button) return;
+        state.currentRolesFaction = button.dataset.rolesFaction || 'Crew';
+        renderRolesGuide();
+      });
+    }
 
     const profileNameInput = document.getElementById('profile-name-input');
     const onlineBtn = document.getElementById('btn-online');
@@ -1835,6 +1975,7 @@
     connectSocket();
     initEventListeners();
     renderProfilePanel();
+    renderRolesGuide();
     applyRoomCodeToInput(state.roomCode);
     showScreen(state.roomCode ? 'online' : 'home');
     showNav();
@@ -1889,7 +2030,7 @@
     let actionsHTML = '';
     if (player.role === 'Sheriff') {
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'shoot' ? 'selected' : ''}" data-action="shoot">🔫 SHOOT</button><button class="action-btn ${state.selectedAction === 'search' ? 'selected' : ''}" data-action="search">🔍 SEARCH</button></div>`;
-    } else if (player.role === 'Medic') {
+    } else if (player.role === 'Vitalist') {
       state.selectedAction = 'protect';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">🛡️ PROTECT</button></div>';
     } else if (player.role === 'Assassin') {
@@ -1899,7 +2040,7 @@
 
     let actionDesc = '';
     if (player.role === 'Sheriff') actionDesc = 'Choose to shoot or investigate a player';
-    else if (player.role === 'Medic') actionDesc = 'Choose a player to protect tonight';
+    else if (player.role === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
     else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
 
     container.innerHTML = `
@@ -1910,7 +2051,7 @@
         <div class="target-label">SELECT TARGET</div>
         <div class="target-list" id="target-list">
           ${targets.map(t => {
-            const isRestricted = player.role === 'Medic' && t.id === player.lastMedicTarget;
+            const isRestricted = player.role === 'Vitalist' && t.id === player.lastMedicTarget;
             return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}><div class="target-dot"></div><span class="target-name">${t.name}</span></div>`;
           }).join('')}
         </div>
@@ -2326,7 +2467,7 @@
     let actionsHTML = '';
     if (player.role === 'Sheriff') {
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'shoot' ? 'selected' : ''}" data-action="shoot">Shoot</button><button class="action-btn ${state.selectedAction === 'search' ? 'selected' : ''}" data-action="search">Search</button></div>`;
-    } else if (player.role === 'Medic') {
+    } else if (player.role === 'Vitalist') {
       state.selectedAction = 'protect';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">Protect</button></div>';
     } else if (player.role === 'Assassin') {
@@ -2336,7 +2477,7 @@
 
     let actionDesc = '';
     if (player.role === 'Sheriff') actionDesc = 'Choose to shoot or investigate a player';
-    else if (player.role === 'Medic') actionDesc = 'Choose a player to protect tonight';
+    else if (player.role === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
     else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
 
     container.innerHTML = `
@@ -2347,7 +2488,7 @@
         <div class="target-label">SELECT TARGET</div>
         <div class="target-list chat-target-list" id="target-list">
           ${targets.map(t => {
-            const isRestricted = player.role === 'Medic' && t.id === player.lastMedicTarget;
+            const isRestricted = player.role === 'Vitalist' && t.id === player.lastMedicTarget;
             return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`;
           }).join('')}
         </div>
@@ -2516,3 +2657,4 @@
     });
   }
 })();
+

@@ -221,7 +221,7 @@ class GameLogic {
     index++;
 
     const medic = room.players.get(shuffled[index]);
-    medic.role = 'Medic';
+    medic.role = 'Vitalist';
     medic.faction = 'Crew';
     index++;
 
@@ -303,8 +303,8 @@ class GameLogic {
     if (player.role === 'Sheriff') {
       if (action !== 'shoot' && action !== 'search') return { error: 'Invalid action for Sheriff' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
-    } else if (player.role === 'Medic') {
-      if (action !== 'protect') return { error: 'Invalid action for Medic' };
+    } else if (player.role === 'Vitalist') {
+      if (action !== 'protect') return { error: 'Invalid action for Vitalist' };
       // Cannot protect the same player twice in a row
       if (targetId === room.lastMedicTarget) {
         return { error: 'You cannot protect the same player two nights in a row' };
@@ -391,7 +391,7 @@ class GameLogic {
         } else {
           if (!privateMessages[action.targetId]) {
             privateMessages[action.targetId] = [
-              this.createPrivateSystemMessage(code, 'You were protected by the Medic during the night.')
+              this.createPrivateSystemMessage(code, 'You were protected by the Vitalist during the night.')
             ];
           }
         }
@@ -411,7 +411,7 @@ class GameLogic {
         } else {
           if (!privateMessages[action.targetId]) {
             privateMessages[action.targetId] = [
-              this.createPrivateSystemMessage(code, 'You were protected by the Medic during the night.')
+              this.createPrivateSystemMessage(code, 'You were protected by the Vitalist during the night.')
             ];
           }
         }
@@ -706,7 +706,7 @@ class GameLogic {
 
     if (action === 'shoot') return 'Sheriff has used their gun.';
     if (action === 'search') return 'Sheriff is investigating someone.';
-    if (action === 'protect') return 'Medic has protected someone.';
+    if (action === 'protect') return 'Vitalist has protected someone.';
     if (action === 'kill') return 'An Assassin has moved through the shadows.';
     return null;
   }
@@ -851,7 +851,7 @@ class GameLogic {
       teammates,
       hasSubmittedAction: !!room.nightActions[playerId],
       hasVoted: !!room.votes[playerId],
-      lastMedicTarget: player.role === 'Medic' ? room.lastMedicTarget : null,
+      lastMedicTarget: player.role === 'Vitalist' ? room.lastMedicTarget : null,
     };
   }
 
