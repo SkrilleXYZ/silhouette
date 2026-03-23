@@ -92,6 +92,7 @@ class GameLogic {
       lastAction: Date.now(),
       lastMedicTarget: null,
       lastInvestigatorTargets: {},
+      lastTrackerTargets: {},
       recentKillers: [],
       roleRevealEndsAt: 0,
     };
@@ -232,7 +233,7 @@ class GameLogic {
       index++;
 
       const crewInfo = room.players.get(shuffled[index]);
-      crewInfo.role = this.pickRandomRole(['Villager', 'Investigator']);
+      crewInfo.role = this.pickRandomRole(['Villager', 'Investigator', 'Tracker']);
       crewInfo.faction = 'Crew';
       index++;
 
@@ -319,6 +320,7 @@ class GameLogic {
     room.lastAction = Date.now();
     room.lastMedicTarget = null;
     room.lastInvestigatorTargets = {};
+    room.lastTrackerTargets = {};
     room.recentKillers = [];
     room.roleRevealEndsAt = 0;
 
@@ -347,6 +349,12 @@ class GameLogic {
       const recentTargets = room.lastInvestigatorTargets[playerId] || [];
       if (recentTargets.length >= 2 && recentTargets[recentTargets.length - 1] === targetId && recentTargets[recentTargets.length - 2] === targetId) {
         return { error: 'You cannot target the same player 3 times in a row' };
+      }
+    } else if (player.role === 'Tracker') {
+      if (action !== 'track') return { error: 'Invalid action for Tracker' };
+      if (targetId === playerId) return { error: 'Cannot target yourself' };
+      if (room.lastTrackerTargets[playerId] === targetId) {
+        return { error: 'You cannot target the same player twice in a row' };
       }
     } else if (player.role === 'Vitalist') {
       if (action !== 'protect') return { error: 'Invalid action for Vitalist' };
@@ -482,6 +490,7 @@ class GameLogic {
 
     const nextInvestigatorTargets = {};
     const killHistoryForInvestigators = new Set([...recentKillers, ...killersThisNight]);
+    const nextTrackerTargets = {};
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       if (!player || player.role !== 'Investigator') continue;
@@ -513,6 +522,44 @@ class GameLogic {
       }
     }
     room.lastInvestigatorTargets = nextInvestigatorTargets;
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      if (!player || player.role !== 'Tracker') continue;
+
+      if (action.action === 'track' && action.targetId) {
+        const trackedPlayer = room.players.get(action.targetId);
+        const trackedAction = room.nightActions[action.targetId];
+        const interactedTarget = trackedAction?.targetId
+          ? room.players.get(trackedAction.targetId)
+          : null;
+        const interactedWithPlayer = trackedAction?.action && trackedAction.action !== 'skip' && interactedTarget;
+
+        searchResults[playerId] = {
+          targetId: action.targetId,
+          targetName: trackedPlayer?.name || 'Unknown',
+          resultType: 'track',
+          interactedWithId: interactedWithPlayer ? interactedTarget.id : null,
+          interactedWithName: interactedWithPlayer ? interactedTarget.name : null,
+        };
+
+        if (!privateMessages[playerId]) privateMessages[playerId] = [];
+        privateMessages[playerId].push(
+          this.createPrivateSystemMessage(
+            code,
+            interactedWithPlayer
+              ? `${trackedPlayer.name} interacted with ${interactedTarget.name} tonight.`
+              : `${trackedPlayer.name} did not interact with anyone tonight.`,
+            'Tracker'
+          )
+        );
+
+        nextTrackerTargets[playerId] = action.targetId;
+      } else {
+        nextTrackerTargets[playerId] = null;
+      }
+    }
+    room.lastTrackerTargets = nextTrackerTargets;
 
     for (const deadId of killed) {
       const deadPlayer = room.players.get(deadId);
@@ -811,6 +858,7 @@ class GameLogic {
     if (action === 'shoot') return 'Sheriff has used their gun.';
     if (action === 'search') return 'Sheriff is investigating someone.';
     if (action === 'examine') return 'Investigator is examining someone.';
+    if (action === 'track') return 'Tracker is following someone.';
     if (action === 'protect') return 'Vitalist has protected someone.';
     if (action === 'kill') return 'An Assassin has moved through the shadows.';
     return null;
@@ -958,6 +1006,7 @@ class GameLogic {
       hasVoted: !!room.votes[playerId],
       lastMedicTarget: player.role === 'Vitalist' ? room.lastMedicTarget : null,
       lastInvestigatorTargets: player.role === 'Investigator' ? (room.lastInvestigatorTargets[playerId] || []) : [],
+      lastTrackerTarget: player.role === 'Tracker' ? (room.lastTrackerTargets[playerId] || null) : null,
     };
   }
 

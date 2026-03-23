@@ -90,6 +90,19 @@
         },
       ],
     },
+    Tracker: {
+      faction: 'Crew',
+      subfaction: 'Info',
+      description: 'Track a player to learn who they interacted with at night. Cannot target the same player twice in a row.',
+      revealText: 'An icy blue trail sharpens your senses. Follow movement through the dark.',
+      abilities: [
+        {
+          name: 'Track',
+          type: 'Night',
+          description: 'Track a player to learn who they interacted with at night. Cannot target the same player twice in a row.',
+        },
+      ],
+    },
     Villager: {
       faction: 'Crew',
       subfaction: 'Info',
@@ -709,6 +722,7 @@
     if (normalizedRole === 'sheriff') return 'sheriff';
     if (normalizedRole === 'vitalist') return 'vitalist';
     if (normalizedRole === 'investigator') return 'investigator';
+    if (normalizedRole === 'tracker') return 'tracker';
     if (normalizedRole === 'assassin') return 'assassin';
     if (normalizedRole === 'villager') return 'villager';
     if (normalizedRole === 'jester') return 'jester';
@@ -775,6 +789,10 @@
       .replace(
         'Cannot target the same player in a row.',
         '<span class="roles-guide-ability-highlight">Cannot target the same player in a row.</span>'
+      )
+      .replace(
+        'Cannot target the same player twice in a row.',
+        '<span class="roles-guide-ability-highlight">Cannot target the same player twice in a row.</span>'
       )
       .replace(
         'Cannot protect the same player twice in a row.',
@@ -1171,6 +1189,7 @@
     if (/used their gun/i.test(text)) return 'summary-shoot';
     if (/Sheriff is investigating someone/i.test(text)) return 'summary-search';
     if (/Investigator is examining someone/i.test(text)) return 'summary-examine';
+    if (/Tracker is following someone/i.test(text)) return 'summary-track';
     if (/protected someone/i.test(text)) return 'summary-protect';
     if (/moved through the shadows/i.test(text)) return 'summary-kill';
     return '';
@@ -1212,6 +1231,9 @@
     if (/.* has killed someone in the last 2 rounds\.$/i.test(text) || /.* has not killed anyone in the last 2 rounds\.$/i.test(text)) {
       return ' system-result-examine';
     }
+    if (/.* interacted with .* tonight\.$/i.test(text) || /.* did not interact with anyone tonight\.$/i.test(text)) {
+      return ' system-result-track';
+    }
     if (/You were protected by the Vitalist during the night\.$/i.test(text)) {
       return ' system-result-protect';
     }
@@ -1242,6 +1264,16 @@
       const notKilledMatch = text.match(/^(.*?) has not killed anyone in the last 2 rounds\.$/i);
       if (notKilledMatch) {
         return `${escapeHtml(notKilledMatch[1])} <span class="chat-result-highlight is-negative">has not killed anyone in the last 2 rounds.</span>`;
+      }
+
+      const interactedMatch = text.match(/^(.*?) interacted with (.*?) tonight\.$/i);
+      if (interactedMatch) {
+        return `${escapeHtml(interactedMatch[1])} <span class="chat-result-highlight is-tracker">interacted with ${escapeHtml(interactedMatch[2])} tonight.</span>`;
+      }
+
+      const noInteractionMatch = text.match(/^(.*?) did not interact with anyone tonight\.$/i);
+      if (noInteractionMatch) {
+        return `${escapeHtml(noInteractionMatch[1])} <span class="chat-result-highlight is-tracker-muted">did not interact with anyone tonight.</span>`;
       }
     }
 
@@ -2613,6 +2645,9 @@
       && player.lastInvestigatorTargets[0] === player.lastInvestigatorTargets[1]
       ? player.lastInvestigatorTargets[0]
       : null;
+    const trackerLockedTargetId = player.role === 'Tracker'
+      ? player.lastTrackerTarget
+      : null;
 
     let actionsHTML = '';
     if (player.role === 'Sheriff') {
@@ -2620,6 +2655,9 @@
     } else if (player.role === 'Investigator') {
       state.selectedAction = 'examine';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="examine">Examine</button></div>';
+    } else if (player.role === 'Tracker') {
+      state.selectedAction = 'track';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="track">Track</button></div>';
     } else if (player.role === 'Vitalist') {
       state.selectedAction = 'protect';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">Protect</button></div>';
@@ -2631,6 +2669,7 @@
     let actionDesc = '';
     if (player.role === 'Sheriff') actionDesc = 'Choose to shoot or investigate a player';
     else if (player.role === 'Investigator') actionDesc = 'Choose a player to examine for recent kills';
+    else if (player.role === 'Tracker') actionDesc = 'Choose a player to track for nighttime interactions';
     else if (player.role === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
     else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
 
@@ -2639,6 +2678,11 @@
       const lockedTarget = state.roomData?.players?.find((candidate) => candidate.id === investigatorLockedTargetId);
       if (lockedTarget) {
         restrictionNote = `<div class="medic-restriction">Cannot examine <strong>${lockedTarget.name}</strong> a third time in a row</div>`;
+      }
+    } else if (player.role === 'Tracker' && trackerLockedTargetId) {
+      const lockedTarget = state.roomData?.players?.find((candidate) => candidate.id === trackerLockedTargetId);
+      if (lockedTarget) {
+        restrictionNote = `<div class="medic-restriction">Cannot track <strong>${lockedTarget.name}</strong> twice in a row</div>`;
       }
     }
 
@@ -2652,7 +2696,8 @@
         <div class="target-list chat-target-list" id="target-list">
           ${targets.map(t => {
             const isRestricted = (player.role === 'Vitalist' && t.id === player.lastMedicTarget)
-              || (player.role === 'Investigator' && t.id === investigatorLockedTargetId);
+              || (player.role === 'Investigator' && t.id === investigatorLockedTargetId)
+              || (player.role === 'Tracker' && t.id === trackerLockedTargetId);
             return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`;
           }).join('')}
         </div>
@@ -2679,6 +2724,8 @@
         if (item.dataset.restricted === 'true') {
           if (player.role === 'Investigator') {
             showToast('You cannot target the same player 3 times in a row', 'error');
+          } else if (player.role === 'Tracker') {
+            showToast('You cannot target the same player twice in a row', 'error');
           } else {
             showToast('You cannot protect the same player two nights in a row', 'error');
           }
