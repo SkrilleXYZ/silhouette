@@ -1176,6 +1176,27 @@
     return '';
   }
 
+  function formatAlivePlayersSummaryLine(line) {
+    const text = String(line || '').trim();
+    const match = text.match(/^Alive players:\s*(.*)\.$/i);
+    if (!match) return escapeHtml(text);
+
+    const namesText = String(match[1] || '').trim();
+    if (!namesText || /^No one$/i.test(namesText)) {
+      return 'Alive players: No one.';
+    }
+
+    const names = namesText.split(',').map((name) => name.trim()).filter(Boolean);
+    const renderedNames = names.map((name) => {
+      const player = state.roomData?.players?.find((candidate) => candidate.name === name);
+      if (!player) return escapeHtml(name);
+      const themeClass = `role-theme-${getRoleThemeClass(player.role, player.faction)}`;
+      return `<span class="chat-alive-name ${themeClass}">${escapeHtml(name)}</span>`;
+    }).join(', ');
+
+    return `Alive players: ${renderedNames}.`;
+  }
+
   function getSystemMessageVariantClass(message) {
     if (!message || message.type !== 'system') return '';
     const text = String(message.text || '').trim();
@@ -1199,7 +1220,10 @@
       const title = `<div class="chat-summary-title">${escapeHtml(message.summaryTitle)}</div>`;
       const lines = (message.summaryLines || []).map((line) => {
         const lineClass = getSummaryLineClass(line);
-        return `<div class="chat-summary-line${lineClass ? ` ${lineClass}` : ''}">${escapeHtml(line)}</div>`;
+        const lineHtml = lineClass === 'summary-alive'
+          ? formatAlivePlayersSummaryLine(line)
+          : escapeHtml(line);
+        return `<div class="chat-summary-line${lineClass ? ` ${lineClass}` : ''}">${lineHtml}</div>`;
       }).join('');
       return `${title}${lines ? `<div class="chat-summary-lines">${lines}</div>` : ''}`;
     }
@@ -1248,7 +1272,7 @@
       ? messages.map((message) => {
         const isSelf = message.senderId === state.playerId;
         const classes = `chat-message ${message.type === 'system' ? 'system' : ''}${isSelf ? ' self' : ''}`;
-        const sender = message.type === 'system' ? 'SYSTEM' : message.senderName;
+        const sender = message.type === 'system' ? (message.senderName || 'SYSTEM') : message.senderName;
         return `
           <div class="${classes}">
             <div class="chat-message-meta">${sender}</div>
@@ -2348,7 +2372,7 @@
         const summaryClass = message.type === 'system' && message.summaryTitle ? ' phase-summary' : '';
         const variantClass = getSystemMessageVariantClass(message);
         const classes = `chat-message ${message.type === 'system' ? 'system' : 'player'}${phaseClass}${summaryClass}${message.private ? ' private' : ''}${variantClass}${isSelf ? ' self' : ''}`;
-        const sender = message.type === 'system' ? 'SYSTEM' : message.senderName;
+        const sender = message.type === 'system' ? (message.senderName || 'SYSTEM') : message.senderName;
         const style = getPlayerChatStyle(message);
         return `
           <div class="${classes}"${style ? ` style="${style}"` : ''}>

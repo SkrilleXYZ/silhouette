@@ -3373,6 +3373,39 @@ body {
   color: hsl(145, 86%, 94%);
 }
 
+.chat-alive-name {
+  font-weight: 700;
+}
+
+.chat-alive-name.role-theme-villager {
+  color: var(--crew);
+}
+
+.chat-alive-name.role-theme-vitalist {
+  color: var(--vitalist);
+  text-shadow: 0 0 12px rgba(85, 255, 149, 0.16);
+}
+
+.chat-alive-name.role-theme-investigator {
+  color: var(--investigator);
+  text-shadow: 0 0 12px rgba(185, 132, 255, 0.18);
+}
+
+.chat-alive-name.role-theme-jester {
+  color: var(--jester);
+  text-shadow: 0 0 12px rgba(255, 193, 223, 0.18);
+}
+
+.chat-alive-name.role-theme-sheriff {
+  color: var(--sheriff);
+  text-shadow: 0 0 12px rgba(255, 208, 80, 0.16);
+}
+
+.chat-alive-name.role-theme-assassin {
+  color: var(--assassin);
+  text-shadow: 0 0 12px rgba(255, 72, 84, 0.18);
+}
+
 .chat-summary-line.summary-shoot {
   background: linear-gradient(135deg, hsla(43, 83%, 44%, 0.22), hsla(35, 78%, 18%, 0.28));
   border-color: hsla(43, 92%, 62%, 0.46);

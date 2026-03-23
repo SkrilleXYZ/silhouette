@@ -440,7 +440,7 @@ class GameLogic {
         } else {
           if (!privateMessages[action.targetId]) {
             privateMessages[action.targetId] = [
-              this.createPrivateSystemMessage(code, 'You were protected by the Vitalist during the night.')
+              this.createPrivateSystemMessage(code, 'You were protected by the Vitalist during the night.', 'Vitalist')
             ];
           }
         }
@@ -461,7 +461,7 @@ class GameLogic {
         } else {
           if (!privateMessages[action.targetId]) {
             privateMessages[action.targetId] = [
-              this.createPrivateSystemMessage(code, 'You were protected by the Vitalist during the night.')
+              this.createPrivateSystemMessage(code, 'You were protected by the Vitalist during the night.', 'Vitalist')
             ];
           }
         }
@@ -475,7 +475,7 @@ class GameLogic {
         };
         if (!privateMessages[playerId]) privateMessages[playerId] = [];
         privateMessages[playerId].push(
-          this.createPrivateSystemMessage(code, `Your investigation found that ${target.name} is the ${target.role}.`)
+          this.createPrivateSystemMessage(code, `Your investigation found that ${target.name} is the ${target.role}.`, 'Sheriff')
         );
       }
     }
@@ -503,7 +503,8 @@ class GameLogic {
             code,
             hasKilledRecently
               ? `${target.name} has killed someone in the last 2 rounds.`
-              : `${target.name} has not killed anyone in the last 2 rounds.`
+              : `${target.name} has not killed anyone in the last 2 rounds.`,
+            'Investigator'
           )
         );
         nextInvestigatorTargets[playerId] = [...previousTargets.slice(-1), action.targetId];
@@ -882,11 +883,11 @@ class GameLogic {
     return `${cleanTitle}\n\n${cleanLines.map((line) => `- ${line}`).join('\n')}`;
   }
 
-  createPrivateSystemMessage(code, text) {
+  createPrivateSystemMessage(code, text, senderName = 'SYSTEM') {
     const room = this.rooms.get(code);
     if (!room || !text) return null;
     return {
-      ...this.createChatMessage('system', 'SYSTEM', text, null, room.state),
+      ...this.createChatMessage('system', senderName, text, null, room.state),
       private: true,
     };
   }
