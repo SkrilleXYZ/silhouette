@@ -79,6 +79,7 @@
     },
     Villager: {
       faction: 'Crew',
+      subfaction: 'Info',
       description: 'Trust your instincts. Find the assassins among you.',
       revealText: 'You have no night action, but your voice matters at dawn.',
       abilities: [
