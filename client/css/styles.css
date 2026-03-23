@@ -2272,12 +2272,12 @@ body {
 }
 
 .chat-message.system.phase-voting {
-  color: hsl(8, 26%, 17%);
+  color: hsl(28, 36%, 88%);
   background:
-    linear-gradient(135deg, rgba(255,255,255,0.24) 0 12%, transparent 12% 24%, rgba(255,255,255,0.1) 24% 36%, transparent 36%),
-    linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0)),
-    linear-gradient(135deg, hsl(6,82%,86%), hsl(20,88%,80%) 42%, hsl(41,92%,76%) 100%);
-  border-color: hsl(21, 74%, 70%);
+    linear-gradient(135deg, rgba(255,255,255,0.08) 0 12%, transparent 12% 24%, rgba(255,255,255,0.04) 24% 36%, transparent 36%),
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)),
+    linear-gradient(135deg, hsl(18,40%,18%), hsl(18,42%,14%) 42%, hsl(24,48%,20%) 100%);
+  border-color: hsl(24, 38%, 30%);
 }
 
 .chat-message.system.phase-voting::before {
@@ -2353,6 +2353,16 @@ body {
 .chat-message.system.phase-voting .chat-message-text {
   color: rgba(20, 25, 34, 0.96);
   text-shadow: 0 1px 0 rgba(255,255,255,0.18);
+}
+
+.chat-message.system.phase-voting .chat-message-meta {
+  color: rgba(255, 231, 204, 0.82);
+  text-shadow: none;
+}
+
+.chat-message.system.phase-voting .chat-message-text {
+  color: rgba(255, 244, 232, 0.96);
+  text-shadow: none;
 }
 
 .chat-summary-title {
