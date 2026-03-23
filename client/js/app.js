@@ -1766,7 +1766,7 @@
 
     playersList.innerHTML = players.map((p, index) => `
       <div class="gameover-player ${((winningSide === 'Crew' && p.faction === 'Crew') || (winningSide === 'Assassin' && p.faction === 'Assassin') || winningSide === p.role) ? 'won' : 'lost'}" style="--gameover-delay:${320 + (index * 60)}ms;">
-        <span class="gameover-player-name">${p.name}</span>
+        <span class="gameover-player-name" style="${getPlayerChatStyle({ type: 'player', senderId: p.id, senderName: p.name })}">${p.name}</span>
         <span class="gameover-player-role ${getRoleBadgeClass(p.role, p.faction)}">
           ${p.role}
           <span class="gameover-player-status">${p.alive ? '✓' : '✗'}</span>

@@ -3517,7 +3517,12 @@ body {
 }
 
 .gameover-player.lost { opacity: 0.5; }
-.gameover-player-name { font-size: 0.85rem; font-weight: 500; }
+.gameover-player-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: hsla(var(--chat-accent, 195), 80%, 92%, 0.98);
+  text-shadow: 0 0 10px hsla(var(--chat-accent, 195), 86%, 62%, 0.16);
+}
 
 .gameover-player-role {
   display: flex;
