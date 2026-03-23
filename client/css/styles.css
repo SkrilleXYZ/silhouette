@@ -2036,7 +2036,7 @@ body {
 
 .role-reveal-window {
   position: relative;
-  height: 216px;
+  height: 360px;
   overflow: hidden;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -2069,7 +2069,7 @@ body {
 }
 
 .role-reveal-reel {
-  padding: 72px 0;
+  padding: 144px 0;
   transition: transform 5.2s cubic-bezier(0.14, 0.88, 0.22, 1);
 }
 
