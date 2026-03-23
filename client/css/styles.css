@@ -2066,10 +2066,10 @@ body {
 
 .role-reveal-indicator {
   position: absolute;
-  left: 10px;
+  left: 6px;
   top: 50%;
-  width: 20px;
-  height: 20px;
+  width: 14px;
+  height: 14px;
   transform: translateY(-50%);
   z-index: 3;
   pointer-events: none;
@@ -2079,41 +2079,21 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  clip-path: polygon(0 50%, 100% 0, 100% 100%);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(190, 190, 190, 0.85));
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.18));
+  clip-path: polygon(100% 50%, 0 0, 0 100%);
+  background: hsl(0, 0%, 72%);
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.24));
 }
 
 .role-reveal-indicator::after {
   content: '';
   position: absolute;
-  left: 2px;
+  right: 2px;
   top: 50%;
-  width: 6px;
+  width: 4px;
   height: 2px;
   border-radius: 999px;
-  background: rgba(8, 8, 8, 0.75);
+  background: rgba(24, 24, 24, 0.72);
   transform: translateY(-50%);
-}
-
-.role-reveal-panel.role-theme-sheriff .role-reveal-indicator::before {
-  background: linear-gradient(135deg, hsl(42, 100%, 82%), hsl(42, 84%, 60%));
-  filter: drop-shadow(0 0 10px rgba(255, 208, 80, 0.22));
-}
-
-.role-reveal-panel.role-theme-vitalist .role-reveal-indicator::before {
-  background: linear-gradient(135deg, hsl(138, 100%, 90%), hsl(132, 92%, 58%));
-  filter: drop-shadow(0 0 10px rgba(85, 255, 149, 0.22));
-}
-
-.role-reveal-panel.role-theme-jester .role-reveal-indicator::before {
-  background: linear-gradient(135deg, hsl(336, 100%, 92%), hsl(336, 72%, 82%));
-  filter: drop-shadow(0 0 10px rgba(255, 193, 223, 0.24));
-}
-
-.role-reveal-panel.role-theme-assassin .role-reveal-indicator::before {
-  background: linear-gradient(135deg, hsl(0, 100%, 88%), hsl(0, 86%, 58%));
-  filter: drop-shadow(0 0 10px rgba(255, 72, 84, 0.24));
 }
 
 .role-reveal-window-glow {
