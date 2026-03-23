@@ -800,31 +800,24 @@ body {
 
 .roles-guide-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 28px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
   position: relative;
   z-index: 1;
-  align-items: start;
 }
 
 .roles-guide-card,
 .roles-empty-state {
   position: relative;
   overflow: hidden;
-  --role-accent: #ffffff;
-  --role-icon-border: rgba(255, 255, 255, 0.15);
-  --role-header-tint: linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
-  --role-badge-bg: rgba(255,255,255,0.06);
-  --role-badge-text: #ffffff;
-  min-height: 360px;
-  border-radius: 12px;
+  border-radius: 22px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background:
-    linear-gradient(180deg, rgba(14, 20, 31, 0.96), rgba(8, 12, 20, 0.98));
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  transform: none;
+    linear-gradient(180deg, rgba(8, 27, 36, 0.94), rgba(7, 12, 18, 0.98));
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+  transform: translateY(24px) scale(0.985);
   opacity: 0;
-  animation: rolesCardRise 0.3s ease forwards;
+  animation: rolesCardRise 0.7s cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
   animation-delay: var(--role-card-delay, 0ms);
 }
 
@@ -834,51 +827,72 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent 28%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), transparent 42%);
 }
 
 .roles-guide-card::after,
 .roles-empty-state::after {
-  display: none;
+  content: '';
+  position: absolute;
+  inset: -30% auto -30% -120%;
+  width: 55%;
+  background: linear-gradient(110deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+  transform: skewX(-18deg);
+  opacity: 0;
+  transition: opacity 0.28s ease;
+  pointer-events: none;
 }
 
 .roles-guide-card:hover,
 .roles-empty-state:hover {
-  transform: none;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.34);
+}
+
+.roles-guide-card:hover::after,
+.roles-empty-state:hover::after {
+  opacity: 1;
+  animation: rolesShine 1s ease;
 }
 
 .roles-guide-card-head {
   display: flex;
-  gap: 16px;
   align-items: center;
-  padding: 22px 24px;
+  gap: 16px;
+  padding: 22px 22px 18px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background:
-    linear-gradient(90deg, rgba(255,255,255,0.015), transparent 70%),
-    var(--role-header-tint);
+  background: linear-gradient(90deg, rgba(18, 60, 76, 0.72), rgba(22, 87, 110, 0.38));
   position: relative;
 }
 
 .roles-guide-card-aura {
-  display: none;
+  position: absolute;
+  width: 128px;
+  height: 128px;
+  right: -24px;
+  top: -42px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(67, 239, 255, 0.2), transparent 68%);
+  filter: blur(6px);
+  opacity: 0.8;
+  pointer-events: none;
 }
 
 .roles-guide-card-icon {
-  width: 72px;
-  height: 72px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 2.2rem;
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cinzel', serif;
+  font-size: 1.6rem;
   font-weight: 700;
-  border: 1px solid var(--role-icon-border);
-  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
-  color: var(--role-accent);
-  flex-shrink: 0;
-  box-shadow: none;
-  transition: none;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(24, 86, 108, 0.68);
+  color: var(--crew);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 16px 28px rgba(0, 0, 0, 0.22);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .roles-guide-card-copy {
@@ -886,23 +900,18 @@ body {
 }
 
 .roles-guide-card-title {
-  margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 2rem;
-  line-height: 1;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--role-accent);
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
 }
 
 .roles-guide-card-meta {
-  margin-top: 10px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  color: #95a0b3;
-  font-size: 1.15rem;
-  letter-spacing: 0.01em;
+  color: var(--fg-muted);
+  font-size: 0.92rem;
 }
 
 .roles-guide-card-meta span {
@@ -912,67 +921,58 @@ body {
 .roles-guide-card-meta span + span::before {
   content: '\2022';
   margin-right: 8px;
-  color: #95a0b3;
+  color: rgba(255, 255, 255, 0.3);
 }
 
 .roles-guide-abilities {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  padding: 22px 24px 26px;
-  position: static;
-  background: transparent;
+  gap: 18px;
+  padding: 22px;
+  position: relative;
 }
 
 .roles-guide-ability {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  padding: 0;
-  border-top: none;
+  gap: 10px;
+  padding: 14px 14px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.roles-guide-ability + .roles-guide-ability {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255,255,255,0.06);
+.roles-guide-ability:first-child {
+  padding-top: 0;
+  border-top: none;
 }
 
 .roles-guide-ability-head {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 12px;
 }
 
 .roles-guide-ability-name {
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 700;
-  color: #f2f5fb;
+  color: var(--fg);
 }
 
 .roles-guide-ability-type {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 30px;
-  padding: 0 12px;
+  padding: 4px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: var(--role-badge-bg);
-  color: var(--role-badge-text);
+  border: 1px solid rgba(66, 211, 255, 0.28);
+  background: rgba(13, 70, 88, 0.55);
+  color: var(--crew);
   font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  box-shadow: none;
+  font-weight: 600;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .roles-guide-ability-copy {
-  margin: 0;
-  color: #b8c1d1;
+  color: var(--fg-muted);
   font-size: 0.98rem;
-  line-height: 1.7;
+  line-height: 1.65;
 }
 
 .roles-guide-ability-highlight {
@@ -1006,145 +1006,151 @@ body {
 }
 
 .roles-guide-card.role-theme-villager .roles-guide-card-head {
-  --role-accent: #55c7ff;
-  --role-icon-border: rgba(85, 199, 255, 0.35);
-  --role-header-tint: linear-gradient(90deg, rgba(21, 87, 116, 0.55), rgba(21, 87, 116, 0.08));
-  --role-badge-bg: rgba(85, 199, 255, 0.14);
-  --role-badge-text: #8ddcff;
+  background: linear-gradient(90deg, rgba(18, 60, 76, 0.72), rgba(22, 87, 110, 0.38));
 }
 
 .roles-guide-card.role-theme-villager .roles-guide-card-icon,
 .roles-guide-card.role-theme-villager .roles-guide-card-title {
-  color: var(--role-accent);
+  color: var(--crew);
+}
+
+.roles-guide-card.role-theme-villager .roles-guide-card-aura {
+  background: radial-gradient(circle, rgba(67, 239, 255, 0.2), transparent 68%);
 }
 
 .roles-guide-card.role-theme-sheriff .roles-guide-card-head {
-  --role-accent: #e0aa2f;
-  --role-icon-border: rgba(224, 170, 47, 0.35);
-  --role-header-tint: linear-gradient(90deg, rgba(110, 78, 15, 0.55), rgba(110, 78, 15, 0.08));
-  --role-badge-bg: rgba(224, 170, 47, 0.14);
-  --role-badge-text: #f1c75d;
+  background: linear-gradient(90deg, rgba(84, 62, 16, 0.78), rgba(115, 81, 18, 0.38));
 }
 
 .roles-guide-card.role-theme-sheriff .roles-guide-card-icon,
 .roles-guide-card.role-theme-sheriff .roles-guide-card-title,
 .roles-guide-card.role-theme-sheriff .roles-guide-ability-type {
-  color: var(--role-accent);
+  color: var(--sheriff);
+}
+
+.roles-guide-card.role-theme-sheriff .roles-guide-card-aura {
+  background: radial-gradient(circle, rgba(255, 208, 80, 0.22), transparent 68%);
 }
 
 .roles-guide-card.role-theme-sheriff .roles-guide-card-icon,
 .roles-guide-card.role-theme-sheriff .roles-guide-ability-type {
-  border-color: var(--role-icon-border);
+  border-color: rgba(255, 208, 80, 0.28);
+  background: rgba(87, 64, 15, 0.62);
 }
 
 .roles-guide-card.role-theme-vitalist .roles-guide-card-head {
-  --role-accent: #32df67;
-  --role-icon-border: rgba(50, 223, 103, 0.35);
-  --role-header-tint: linear-gradient(90deg, rgba(20, 100, 44, 0.55), rgba(20, 100, 44, 0.08));
-  --role-badge-bg: rgba(50, 223, 103, 0.14);
-  --role-badge-text: #69f08f;
+  background: linear-gradient(90deg, rgba(13, 65, 27, 0.78), rgba(17, 96, 39, 0.38));
 }
 
 .roles-guide-card.role-theme-vitalist .roles-guide-card-icon,
 .roles-guide-card.role-theme-vitalist .roles-guide-card-title,
 .roles-guide-card.role-theme-vitalist .roles-guide-ability-type {
-  color: var(--role-accent);
+  color: var(--vitalist);
+}
+
+.roles-guide-card.role-theme-vitalist .roles-guide-card-aura {
+  background: radial-gradient(circle, rgba(85, 255, 149, 0.24), transparent 68%);
 }
 
 .roles-guide-card.role-theme-vitalist .roles-guide-card-icon,
 .roles-guide-card.role-theme-vitalist .roles-guide-ability-type {
-  border-color: var(--role-icon-border);
+  border-color: rgba(85, 255, 149, 0.26);
+  background: rgba(17, 80, 34, 0.62);
 }
 
 .roles-guide-card.role-theme-investigator .roles-guide-card-head {
-  --role-accent: #b57cff;
-  --role-icon-border: rgba(181, 124, 255, 0.35);
-  --role-header-tint: linear-gradient(90deg, rgba(76, 35, 122, 0.55), rgba(76, 35, 122, 0.08));
-  --role-badge-bg: rgba(181, 124, 255, 0.14);
-  --role-badge-text: #d0a6ff;
+  background: linear-gradient(90deg, rgba(50, 23, 87, 0.8), rgba(84, 45, 129, 0.4));
 }
 
 .roles-guide-card.role-theme-investigator .roles-guide-card-icon,
 .roles-guide-card.role-theme-investigator .roles-guide-card-title,
 .roles-guide-card.role-theme-investigator .roles-guide-ability-type {
-  color: var(--role-accent);
+  color: var(--investigator);
+}
+
+.roles-guide-card.role-theme-investigator .roles-guide-card-aura {
+  background: radial-gradient(circle, rgba(185, 132, 255, 0.24), transparent 68%);
 }
 
 .roles-guide-card.role-theme-investigator .roles-guide-card-icon,
 .roles-guide-card.role-theme-investigator .roles-guide-ability-type {
-  border-color: var(--role-icon-border);
+  border-color: rgba(185, 132, 255, 0.28);
+  background: rgba(64, 33, 102, 0.62);
 }
 
 .roles-guide-card.role-theme-assassin .roles-guide-card-head {
-  --role-accent: var(--assassin);
-  --role-icon-border: rgba(255, 72, 84, 0.35);
-  --role-header-tint: linear-gradient(90deg, rgba(93, 24, 31, 0.55), rgba(93, 24, 31, 0.08));
-  --role-badge-bg: rgba(255, 72, 84, 0.14);
-  --role-badge-text: hsl(0, 100%, 72%);
+  background: linear-gradient(90deg, rgba(77, 14, 22, 0.82), rgba(110, 16, 28, 0.42));
 }
 
 .roles-guide-card.role-theme-assassin .roles-guide-card-icon,
 .roles-guide-card.role-theme-assassin .roles-guide-card-title,
 .roles-guide-card.role-theme-assassin .roles-guide-ability-type {
-  color: var(--role-accent);
+  color: var(--assassin);
+}
+
+.roles-guide-card.role-theme-assassin .roles-guide-card-aura {
+  background: radial-gradient(circle, rgba(255, 72, 84, 0.24), transparent 68%);
 }
 
 .roles-guide-card.role-theme-assassin .roles-guide-card-icon,
 .roles-guide-card.role-theme-assassin .roles-guide-ability-type {
-  border-color: var(--role-icon-border);
+  border-color: rgba(255, 72, 84, 0.26);
+  background: rgba(89, 17, 24, 0.62);
 }
 
 .roles-guide-card.role-theme-neutral .roles-guide-card-head {
-  --role-accent: var(--neutral);
-  --role-icon-border: rgba(226, 205, 171, 0.35);
-  --role-header-tint: linear-gradient(90deg, rgba(96, 76, 44, 0.55), rgba(96, 76, 44, 0.08));
-  --role-badge-bg: rgba(226, 205, 171, 0.14);
-  --role-badge-text: hsl(36, 52%, 82%);
+  background: linear-gradient(90deg, rgba(96, 76, 44, 0.78), rgba(122, 98, 58, 0.4));
 }
 
 .roles-guide-card.role-theme-neutral .roles-guide-card-icon,
 .roles-guide-card.role-theme-neutral .roles-guide-card-title,
 .roles-guide-card.role-theme-neutral .roles-guide-ability-type {
-  color: var(--role-accent);
+  color: var(--neutral);
+}
+
+.roles-guide-card.role-theme-neutral .roles-guide-card-aura {
+  background: radial-gradient(circle, rgba(226, 205, 171, 0.24), transparent 68%);
 }
 
 .roles-guide-card.role-theme-neutral .roles-guide-card-icon,
 .roles-guide-card.role-theme-neutral .roles-guide-ability-type {
-  border-color: var(--role-icon-border);
+  border-color: rgba(226, 205, 171, 0.28);
+  background: rgba(104, 84, 52, 0.62);
 }
 
 .roles-guide-card.role-theme-jester .roles-guide-card-head {
-  --role-accent: var(--jester);
-  --role-icon-border: rgba(255, 193, 223, 0.35);
-  --role-header-tint: linear-gradient(90deg, rgba(92, 40, 63, 0.55), rgba(92, 40, 63, 0.08));
-  --role-badge-bg: rgba(255, 193, 223, 0.14);
-  --role-badge-text: hsl(336, 100%, 88%);
+  background: linear-gradient(90deg, rgba(92, 40, 63, 0.8), rgba(118, 61, 90, 0.42));
 }
 
 .roles-guide-card.role-theme-jester .roles-guide-card-icon,
 .roles-guide-card.role-theme-jester .roles-guide-card-title,
 .roles-guide-card.role-theme-jester .roles-guide-ability-type {
-  color: var(--role-accent);
+  color: var(--jester);
+}
+
+.roles-guide-card.role-theme-jester .roles-guide-card-aura {
+  background: radial-gradient(circle, rgba(255, 193, 223, 0.28), transparent 68%);
 }
 
 .roles-guide-card.role-theme-jester .roles-guide-card-icon,
 .roles-guide-card.role-theme-jester .roles-guide-ability-type {
-  border-color: var(--role-icon-border);
+  border-color: rgba(255, 193, 223, 0.26);
+  background: rgba(104, 49, 75, 0.62);
 }
 
 .roles-guide-card:hover .roles-guide-card-icon {
-  transform: none;
-  box-shadow: none;
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.3), 0 0 26px rgba(255, 255, 255, 0.08);
 }
 
 @keyframes rolesCardRise {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(24px) scale(0.985);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -1455,7 +1461,7 @@ body {
   }
 
   .roles-guide-card-head {
-    padding: 18px;
+    padding: 18px 18px 16px;
   }
 
   .roles-guide-abilities {
