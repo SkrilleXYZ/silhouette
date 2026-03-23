@@ -38,7 +38,6 @@
     toastTimeout: null,
     connectionToastVisible: false,
     currentRolesFaction: 'Crew',
-    profileEditorOpen: false,
   };
 
   const MAX_ROOM_PLAYERS = 16;
@@ -347,7 +346,6 @@
   }
 
   function renderProfilePanel() {
-    const panel = document.querySelector('.profile-panel');
     const nameInput = document.getElementById('profile-name-input');
     const preview = document.getElementById('profile-avatar-preview');
     const grid = document.getElementById('profile-avatar-grid');
@@ -356,20 +354,13 @@
     const compactName = document.getElementById('profile-compact-name');
     const editButton = document.getElementById('btn-edit-profile');
     const confirmButton = document.getElementById('btn-confirm-profile');
-    const backdrop = document.getElementById('profile-modal-backdrop');
-    const closeButton = document.getElementById('btn-close-profile-modal');
-    if (!panel || !nameInput || !preview || !grid || !compact || !body || !compactName || !editButton || !confirmButton || !backdrop || !closeButton) return;
-
-    const isModalOpen = !!(state.profileConfirmed && state.profileEditorOpen);
+    if (!nameInput || !preview || !grid || !compact || !body || !compactName || !editButton || !confirmButton) return;
 
     nameInput.value = state.username || '';
     preview.innerHTML = renderAvatarMarkup('profile-preview', 'player-avatar', state.selectedAvatarIndex);
     compactName.textContent = state.username || 'Choose your profile';
-    compact.style.display = state.profileConfirmed && !state.profileEditorOpen ? 'flex' : 'none';
-    body.style.display = state.profileConfirmed && !state.profileEditorOpen ? 'none' : 'flex';
-    panel.classList.toggle('profile-modal-open', isModalOpen);
-    backdrop.classList.toggle('active', isModalOpen);
-    backdrop.setAttribute('aria-hidden', isModalOpen ? 'false' : 'true');
+    compact.style.display = state.profileConfirmed ? 'flex' : 'none';
+    body.style.display = state.profileConfirmed ? 'none' : 'flex';
     grid.innerHTML = LOBBY_AVATAR_IMAGES.map((_, index) => `
       <button class="profile-avatar-option ${index === state.selectedAvatarIndex ? 'selected' : ''}" type="button" data-avatar-option="${index}">
         ${renderAvatarMarkup(`profile-option-${index}`, 'player-avatar', index)}
@@ -388,25 +379,16 @@
       const profile = validateProfile();
       if (!profile) return;
       state.profileConfirmed = true;
-      state.profileEditorOpen = false;
       saveProfile();
       renderProfilePanel();
     };
 
     editButton.onclick = () => {
-      state.profileEditorOpen = true;
+      state.profileConfirmed = false;
+      saveProfile();
       renderProfilePanel();
       nameInput.focus();
     };
-
-    const closeEditor = () => {
-      if (!state.profileConfirmed) return;
-      state.profileEditorOpen = false;
-      renderProfilePanel();
-    };
-
-    closeButton.onclick = closeEditor;
-    backdrop.onclick = closeEditor;
   }
 
   function validateProfile({ requireCode = false } = {}) {
@@ -1841,12 +1823,6 @@
         if (event.key === 'Enter') joinRoomBtn.click();
       });
     }
-
-    document.addEventListener('keydown', (event) => {
-      if (event.key !== 'Escape' || !state.profileEditorOpen || !state.profileConfirmed) return;
-      state.profileEditorOpen = false;
-      renderProfilePanel();
-    });
 
     if (createRoomBtn) {
       createRoomBtn.addEventListener('click', () => {
