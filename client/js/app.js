@@ -116,7 +116,21 @@
       ],
     },
   };
-  const ROLE_GUIDE_DEFINITIONS = ROLE_DEFINITIONS;
+  const ROLE_GUIDE_DEFINITIONS = {
+    ...ROLE_DEFINITIONS,
+    Investigator: {
+      faction: 'Crew',
+      subfaction: 'Info',
+      description: 'Investigate a player to learn if they have killed someone in the last 2 rounds. Cannot target the same player 3 times in a row.',
+      abilities: [
+        {
+          name: 'Examine',
+          type: 'Night',
+          description: 'Investigate a player to learn if they have killed someone in the last 2 rounds. Cannot target the same player 3 times in a row.',
+        },
+      ],
+    },
+  };
   const ROLE_GUIDE_SECTIONS = [
     { key: 'Crew', label: 'Crew', icon: 'Crew' },
     { key: 'Assassin', label: 'Assassin', icon: 'Assassin' },
@@ -694,6 +708,7 @@
     const normalizedRole = String(role || '').trim().toLowerCase();
     if (normalizedRole === 'sheriff') return 'sheriff';
     if (normalizedRole === 'vitalist') return 'vitalist';
+    if (normalizedRole === 'investigator') return 'investigator';
     if (normalizedRole === 'assassin') return 'assassin';
     if (normalizedRole === 'villager') return 'villager';
     if (normalizedRole === 'jester') return 'jester';
