@@ -448,6 +448,16 @@ function resolveVotingPhase(code) {
   const result = game.resolveVotes(code);
   if (!result) return;
 
+  if (result.winner?.winner === 'Jester') {
+    const allPlayers = game.getAllPlayersWithRoles(code);
+    io.to(code).emit('game-over', {
+      winner: result.winner,
+      players: allPlayers
+    });
+    clearAllTimers(code);
+    return;
+  }
+
   io.to(code).emit('vote-result', {
     message: result.message,
     voteCounts: result.voteCounts,

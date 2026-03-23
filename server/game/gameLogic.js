@@ -615,6 +615,25 @@ class GameLogic {
         faction: player.faction,
         public: true
       };
+
+      if (player.role === 'Jester') {
+        room.eliminatedToday = eliminated;
+        room.votes = {};
+        this.appendToPhaseSummary(code, message.text);
+        room.state = 'ended';
+        room.winner = {
+          winner: 'Jester',
+          reason: 'Jester tricked the town into voting them out. Everyone else loses.',
+        };
+
+        return {
+          room,
+          message,
+          voteCounts,
+          eliminated,
+          winner: room.winner
+        };
+      }
     }
 
     room.eliminatedToday = eliminated;
