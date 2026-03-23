@@ -103,6 +103,21 @@
       ],
     },
   };
+  const ROLE_GUIDE_DEFINITIONS = {
+    ...ROLE_DEFINITIONS,
+    Jester: {
+      faction: 'Neutral',
+      subfaction: 'Evil',
+      description: 'Act like an Assassin to get voted out. Try to avoid dying.',
+      abilities: [
+        {
+          name: 'Trickster',
+          type: 'Passive',
+          description: 'Act like an Assassin to get voted out. Try to avoid dying.',
+        },
+      ],
+    },
+  };
   const ROLE_GUIDE_SECTIONS = [
     { key: 'Crew', label: 'Crew', icon: 'Crew' },
     { key: 'Assassin', label: 'Assassin', icon: 'Assassin' },
@@ -682,6 +697,7 @@
     if (normalizedRole === 'vitalist') return 'vitalist';
     if (normalizedRole === 'assassin') return 'assassin';
     if (normalizedRole === 'villager') return 'villager';
+    if (normalizedRole === 'jester') return 'neutral';
     return String(fallbackFaction || 'Crew').trim().toLowerCase();
   }
 
@@ -699,7 +715,7 @@
   }
 
   function getRolesForFaction(faction) {
-    return Object.entries(ROLE_DEFINITIONS)
+    return Object.entries(ROLE_GUIDE_DEFINITIONS)
       .filter(([, roleInfo]) => roleInfo.faction === faction)
       .map(([role, roleInfo]) => ({ role, ...roleInfo }));
   }
