@@ -3429,6 +3429,46 @@ body {
   position: relative;
 }
 
+#screen-gameover.active {
+  animation: gameoverScreenFade 0.3s ease-out;
+}
+
+#screen-gameover.active .gameover-glow {
+  animation: gameoverGlowRise 0.9s cubic-bezier(0.18, 0.86, 0.22, 1) both;
+}
+
+#screen-gameover.active .gameover-title {
+  animation: gameoverItemRise 0.45s ease-out both;
+  animation-delay: 40ms;
+}
+
+#screen-gameover.active .gameover-faction {
+  animation: gameoverItemRise 0.55s cubic-bezier(0.18, 0.86, 0.22, 1) both;
+  animation-delay: 110ms;
+}
+
+#screen-gameover.active .gameover-reason {
+  animation: gameoverItemRise 0.45s ease-out both;
+  animation-delay: 180ms;
+}
+
+#screen-gameover.active .gameover-divider {
+  animation: gameoverDividerExpand 0.45s ease-out both;
+  animation-delay: 240ms;
+}
+
+#screen-gameover.active .gameover-player {
+  opacity: 0;
+  animation: gameoverItemRise 0.42s ease-out both;
+  animation-delay: var(--gameover-delay, 320ms);
+}
+
+#screen-gameover.active .gameover-cta {
+  opacity: 0;
+  animation: gameoverItemRise 0.5s ease-out both;
+  animation-delay: 620ms;
+}
+
 .gameover-glow {
   position: absolute;
   width: 300px; height: 300px;
@@ -3533,6 +3573,50 @@ body {
 
 .gameover-player.lost .gameover-player-status::before {
   content: '✗';
+}
+
+@keyframes gameoverScreenFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes gameoverGlowRise {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+    filter: blur(120px);
+  }
+  to {
+    opacity: 0.2;
+    transform: scale(1);
+    filter: blur(100px);
+  }
+}
+
+@keyframes gameoverItemRise {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes gameoverDividerExpand {
+  from {
+    opacity: 0;
+    transform: scaleX(0.35);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
 }
 
 #btn-play-again {

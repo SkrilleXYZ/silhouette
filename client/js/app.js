@@ -1764,8 +1764,8 @@
       ? (winner.reason || 'Everyone else loses.')
       : winner.reason;
 
-    playersList.innerHTML = players.map(p => `
-      <div class="gameover-player ${((winningSide === 'Crew' && p.faction === 'Crew') || (winningSide === 'Assassin' && p.faction === 'Assassin') || winningSide === p.role) ? 'won' : 'lost'}">
+    playersList.innerHTML = players.map((p, index) => `
+      <div class="gameover-player ${((winningSide === 'Crew' && p.faction === 'Crew') || (winningSide === 'Assassin' && p.faction === 'Assassin') || winningSide === p.role) ? 'won' : 'lost'}" style="--gameover-delay:${320 + (index * 60)}ms;">
         <span class="gameover-player-name">${p.name}</span>
         <span class="gameover-player-role ${getRoleBadgeClass(p.role, p.faction)}">
           ${p.role}
@@ -1781,7 +1781,7 @@
     if (state.isHost) {
       const btn = document.createElement('button');
       btn.id = 'btn-play-again';
-      btn.className = 'btn btn-primary';
+      btn.className = 'btn btn-primary gameover-cta';
       btn.style.cssText = 'margin-top: 24px; width: 100%; max-width: 320px; display: flex; align-items: center; justify-content: center; gap: 8px;';
       btn.innerHTML = '▶ PLAY AGAIN';
       btn.addEventListener('click', () => {
@@ -1799,6 +1799,7 @@
     } else {
       const waiting = document.createElement('p');
       waiting.id = 'btn-play-again';
+      waiting.className = 'gameover-cta gameover-waiting';
       waiting.style.cssText = 'margin-top: 24px; color: hsl(195,60%,60%); font-size: 0.85rem; text-align: center;';
       waiting.textContent = 'Waiting for host to start a new game...';
       gameoverScreen.appendChild(waiting);
