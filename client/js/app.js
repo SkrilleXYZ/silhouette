@@ -740,9 +740,10 @@
       return;
     }
 
-    grid.innerHTML = factionRoles.map((roleInfo) => `
-      <article class="roles-guide-card ${getRoleBadgeClass(roleInfo.role, roleInfo.faction)}">
+    grid.innerHTML = factionRoles.map((roleInfo, index) => `
+      <article class="roles-guide-card ${getRoleBadgeClass(roleInfo.role, roleInfo.faction)}" style="--role-card-delay:${index * 90}ms;">
         <div class="roles-guide-card-head">
+          <div class="roles-guide-card-aura"></div>
           <div class="roles-guide-card-icon">${roleInfo.role.slice(0, 1)}</div>
           <div class="roles-guide-card-copy">
             <h3 class="roles-guide-card-title">${roleInfo.role.toUpperCase()}</h3>
