@@ -481,6 +481,7 @@ class GameLogic {
     }
 
     const nextInvestigatorTargets = {};
+    const killHistoryForInvestigators = new Set([...recentKillers, ...killersThisNight]);
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       if (!player || player.role !== 'Investigator') continue;
@@ -488,7 +489,7 @@ class GameLogic {
       const previousTargets = room.lastInvestigatorTargets[playerId] || [];
       if (action.action === 'examine' && action.targetId) {
         const target = room.players.get(action.targetId);
-        const hasKilledRecently = recentKillers.has(action.targetId);
+        const hasKilledRecently = killHistoryForInvestigators.has(action.targetId);
         searchResults[playerId] = {
           targetId: action.targetId,
           targetName: target.name,
