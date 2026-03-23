@@ -11,7 +11,7 @@
     isHost: false,
     joinMode: null,
     selectedAvatarIndex: 0,
-    selectedNameColorHue: 195,
+    selectedNameColorHex: '#F5F7FF',
     profileConfirmed: false,
     playerData: null,
     roomData: null,
@@ -39,6 +39,7 @@
     toastTimeout: null,
     connectionToastVisible: false,
     currentRolesFaction: 'Crew',
+    profilePaletteView: 'avatars',
   };
 
   const MAX_ROOM_PLAYERS = 16;
@@ -176,19 +177,23 @@
     'Avatar 9.png',
   ];
   const LOBBY_AVATAR_IMAGES = LOBBY_AVATAR_FILES.map((fileName) => `./assets/avatars/${encodeURIComponent(fileName)}?v=${AVATAR_ASSET_VERSION}`);
-  const PLAYER_CHAT_ACCENTS = [
-    8,
-    28,
-    52,
-    76,
-    112,
-    148,
-    182,
-    210,
-    238,
-    268,
-    300,
-    336,
+  const PLAYER_NAME_PALETTE = [
+    { label: 'Ivory', value: '#F5F7FF' },
+    { label: 'Rose', value: '#FF8FA3' },
+    { label: 'Coral', value: '#FF9A6B' },
+    { label: 'Amber', value: '#FFC857' },
+    { label: 'Lime', value: '#D9F06B' },
+    { label: 'Mint', value: '#7EF7C9' },
+    { label: 'Teal', value: '#58E1D9' },
+    { label: 'Sky', value: '#7ED7FF' },
+    { label: 'Azure', value: '#6DA8FF' },
+    { label: 'Indigo', value: '#8D8BFF' },
+    { label: 'Violet', value: '#B78CFF' },
+    { label: 'Magenta', value: '#E882FF' },
+    { label: 'Blush', value: '#FF9AD5' },
+    { label: 'Ruby', value: '#FF6B8A' },
+    { label: 'Silver', value: '#D7DEE8' },
+    { label: 'Stone', value: '#B8C0CC' },
   ];
 
   function getLobbyAvatarSrc(index) {
@@ -228,63 +233,48 @@
     return String(name || '').trim().replace(/\s+/g, ' ').slice(0, 16);
   }
 
-  function sanitizePlayerColorHue(value, fallback = 195) {
-    const numeric = Number(value);
-    if (!Number.isFinite(numeric)) return fallback;
-    return ((Math.round(numeric) % 360) + 360) % 360;
+  function sanitizePlayerColorHex(value, fallback = PLAYER_NAME_PALETTE[0].value) {
+    const normalized = String(value || '').trim().toUpperCase();
+    const match = PLAYER_NAME_PALETTE.find((entry) => entry.value.toUpperCase() === normalized);
+    return match ? match.value : fallback;
   }
 
-  function hueToHex(hue) {
-    const normalizedHue = sanitizePlayerColorHue(hue);
-    const saturation = 0.9;
-    const lightness = 0.6;
-    const chroma = (1 - Math.abs((2 * lightness) - 1)) * saturation;
-    const segment = normalizedHue / 60;
-    const x = chroma * (1 - Math.abs((segment % 2) - 1));
-    let red = 0;
-    let green = 0;
-    let blue = 0;
-
-    if (segment >= 0 && segment < 1) [red, green, blue] = [chroma, x, 0];
-    else if (segment < 2) [red, green, blue] = [x, chroma, 0];
-    else if (segment < 3) [red, green, blue] = [0, chroma, x];
-    else if (segment < 4) [red, green, blue] = [0, x, chroma];
-    else if (segment < 5) [red, green, blue] = [x, 0, chroma];
-    else [red, green, blue] = [chroma, 0, x];
-
-    const match = lightness - (chroma / 2);
-    const toHex = (channel) => Math.round((channel + match) * 255).toString(16).padStart(2, '0');
-    return `#${toHex(red)}${toHex(green)}${toHex(blue)}`;
-  }
-
-  function hexToHue(hex, fallback = 195) {
-    const normalized = String(hex || '').trim();
-    const match = normalized.match(/^#?([0-9a-f]{6})$/i);
-    if (!match) return fallback;
-
-    const value = match[1];
+  function hexToHsl(hex) {
+    const normalized = sanitizePlayerColorHex(hex);
+    const value = normalized.slice(1);
     const red = Number.parseInt(value.slice(0, 2), 16) / 255;
     const green = Number.parseInt(value.slice(2, 4), 16) / 255;
     const blue = Number.parseInt(value.slice(4, 6), 16) / 255;
     const max = Math.max(red, green, blue);
     const min = Math.min(red, green, blue);
     const delta = max - min;
-
-    if (!delta) return fallback;
+    const lightness = (max + min) / 2;
+    const saturation = delta === 0 ? 0 : delta / (1 - Math.abs((2 * lightness) - 1));
 
     let hue;
-    if (max === red) hue = ((green - blue) / delta) % 6;
+    if (delta === 0) hue = 0;
+    else if (max === red) hue = ((green - blue) / delta) % 6;
     else if (max === green) hue = ((blue - red) / delta) + 2;
     else hue = ((red - green) / delta) + 4;
 
-    return sanitizePlayerColorHue(hue * 60, fallback);
+    return {
+      h: ((hue * 60) + 360) % 360,
+      s: Math.round(saturation * 100),
+      l: Math.round(lightness * 100),
+    };
+  }
+
+  function buildPlayerColorStyle(colorHex) {
+    const normalized = sanitizePlayerColorHex(colorHex);
+    const hsl = hexToHsl(normalized);
+    return `--chat-accent-color:${normalized};--chat-accent-h:${hsl.h};--chat-accent-s:${hsl.s}%;--chat-accent-l:${hsl.l}%;`;
   }
 
   function getDefaultProfile() {
     return {
       name: '',
       avatarIndex: Math.floor(Math.random() * LOBBY_AVATAR_IMAGES.length),
-      colorHue: PLAYER_CHAT_ACCENTS[Math.floor(Math.random() * PLAYER_CHAT_ACCENTS.length)],
+      colorHex: PLAYER_NAME_PALETTE[Math.floor(Math.random() * PLAYER_NAME_PALETTE.length)].value,
       confirmed: false,
     };
   }
@@ -299,7 +289,7 @@
       return {
         name: normalizeProfileName(parsed.name || ''),
         avatarIndex,
-        colorHue: sanitizePlayerColorHue(parsed.colorHue, fallback.colorHue),
+        colorHex: sanitizePlayerColorHex(parsed.colorHex || parsed.colorHue, fallback.colorHex),
         confirmed: !!parsed.confirmed,
       };
     } catch (error) {
@@ -311,7 +301,7 @@
     const profile = {
       name: normalizeProfileName(state.username),
       avatarIndex: Number.isInteger(state.selectedAvatarIndex) ? state.selectedAvatarIndex : 0,
-      colorHue: sanitizePlayerColorHue(state.selectedNameColorHue, 195),
+      colorHex: sanitizePlayerColorHex(state.selectedNameColorHex, PLAYER_NAME_PALETTE[0].value),
       confirmed: !!state.profileConfirmed,
     };
     window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
@@ -423,7 +413,7 @@
       playerId: state.playerId,
       username: state.username,
       avatarIndex: state.selectedAvatarIndex,
-      colorHue: state.selectedNameColorHue,
+      colorHex: state.selectedNameColorHex,
     }, (response) => {
       if (response?.success) {
         restoreRoomSession(response);
@@ -437,7 +427,7 @@
           playerId: state.playerId,
           username: state.username,
           avatarIndex: state.selectedAvatarIndex,
-          colorHue: state.selectedNameColorHue,
+          colorHex: state.selectedNameColorHex,
         }, (joinResponse) => {
           if (!joinResponse?.success) return;
           state.playerId = joinResponse.playerId;
@@ -460,30 +450,40 @@
 
   function renderProfilePanel() {
     const nameInput = document.getElementById('profile-name-input');
-    const colorInput = document.getElementById('profile-name-color');
     const preview = document.getElementById('profile-avatar-preview');
     const grid = document.getElementById('profile-avatar-grid');
+    const selectionLabel = document.getElementById('profile-selection-label');
+    const paletteMode = document.getElementById('profile-palette-mode');
+    const prevPaletteButton = document.getElementById('btn-profile-palette-prev');
+    const nextPaletteButton = document.getElementById('btn-profile-palette-next');
     const compact = document.getElementById('profile-panel-compact');
     const body = document.getElementById('profile-panel-body');
     const compactName = document.getElementById('profile-compact-name');
     const editButton = document.getElementById('btn-edit-profile');
     const confirmButton = document.getElementById('btn-confirm-profile');
-    if (!nameInput || !colorInput || !preview || !grid || !compact || !body || !compactName || !editButton || !confirmButton) return;
+    if (!nameInput || !preview || !grid || !selectionLabel || !paletteMode || !prevPaletteButton || !nextPaletteButton || !compact || !body || !compactName || !editButton || !confirmButton) return;
 
     nameInput.value = state.username || '';
-    colorInput.value = hueToHex(state.selectedNameColorHue);
-    nameInput.style.setProperty('--chat-accent', String(state.selectedNameColorHue));
-    nameInput.style.color = `hsla(${state.selectedNameColorHue}, 82%, 90%, 0.98)`;
+    nameInput.style.cssText = `${buildPlayerColorStyle(state.selectedNameColorHex)}color: var(--chat-accent-color);`;
     preview.innerHTML = renderAvatarMarkup('profile-preview', 'player-avatar', state.selectedAvatarIndex);
     compactName.textContent = state.username || 'Choose your profile';
-    compactName.style.setProperty('--chat-accent', String(state.selectedNameColorHue));
+    compactName.style.cssText = buildPlayerColorStyle(state.selectedNameColorHex);
     compact.style.display = state.profileConfirmed ? 'flex' : 'none';
     body.style.display = state.profileConfirmed ? 'none' : 'flex';
-    grid.innerHTML = LOBBY_AVATAR_IMAGES.map((_, index) => `
-      <button class="profile-avatar-option ${index === state.selectedAvatarIndex ? 'selected' : ''}" type="button" data-avatar-option="${index}">
-        ${renderAvatarMarkup(`profile-option-${index}`, 'player-avatar', index)}
-      </button>
-    `).join('');
+    selectionLabel.textContent = state.profilePaletteView === 'colors' ? 'Choose Name Color' : 'Choose Avatar';
+    paletteMode.textContent = state.profilePaletteView === 'colors' ? 'Colors' : 'Avatars';
+    grid.innerHTML = state.profilePaletteView === 'colors'
+      ? PLAYER_NAME_PALETTE.map((entry) => `
+        <button class="profile-color-option ${entry.value === sanitizePlayerColorHex(state.selectedNameColorHex) ? 'selected' : ''}" type="button" data-color-option="${entry.value}">
+          <span class="profile-color-swatch" style="background:${entry.value};"></span>
+          <span class="profile-color-name">${entry.label}</span>
+        </button>
+      `).join('')
+      : LOBBY_AVATAR_IMAGES.map((_, index) => `
+        <button class="profile-avatar-option ${index === state.selectedAvatarIndex ? 'selected' : ''}" type="button" data-avatar-option="${index}">
+          ${renderAvatarMarkup(`profile-option-${index}`, 'player-avatar', index)}
+        </button>
+      `).join('');
 
     grid.querySelectorAll('[data-avatar-option]').forEach((button) => {
       button.addEventListener('click', () => {
@@ -493,11 +493,20 @@
       });
     });
 
-    colorInput.oninput = () => {
-      state.selectedNameColorHue = hexToHue(colorInput.value, state.selectedNameColorHue);
-      saveProfile();
+    grid.querySelectorAll('[data-color-option]').forEach((button) => {
+      button.addEventListener('click', () => {
+        state.selectedNameColorHex = sanitizePlayerColorHex(button.dataset.colorOption, state.selectedNameColorHex);
+        saveProfile();
+        renderProfilePanel();
+      });
+    });
+
+    const togglePaletteView = () => {
+      state.profilePaletteView = state.profilePaletteView === 'avatars' ? 'colors' : 'avatars';
       renderProfilePanel();
     };
+    prevPaletteButton.onclick = togglePaletteView;
+    nextPaletteButton.onclick = togglePaletteView;
 
     confirmButton.onclick = () => {
       const profile = validateProfile();
@@ -541,20 +550,20 @@
     return {
       username: profileName,
       avatarIndex: state.selectedAvatarIndex,
-      colorHue: sanitizePlayerColorHue(state.selectedNameColorHue, 195),
+      colorHex: sanitizePlayerColorHex(state.selectedNameColorHex, PLAYER_NAME_PALETTE[0].value),
       code: roomCode,
     };
   }
 
   function getPlayerChatStyle(message) {
     if (!message || message.type === 'system') return '';
-    const explicitHue = message.colorHue ?? message.senderColorHue;
-    if (Number.isFinite(explicitHue)) {
-      return `--chat-accent:${sanitizePlayerColorHue(explicitHue)};`;
+    const explicitColor = message.colorHex ?? message.senderColorHex;
+    if (explicitColor) {
+      return buildPlayerColorStyle(explicitColor);
     }
     const playerFromRoom = state.roomData?.players?.find((candidate) => candidate.id === message.senderId);
-    if (Number.isFinite(playerFromRoom?.colorHue)) {
-      return `--chat-accent:${sanitizePlayerColorHue(playerFromRoom.colorHue)};`;
+    if (playerFromRoom?.colorHex) {
+      return buildPlayerColorStyle(playerFromRoom.colorHex);
     }
     const source = String(message.senderId || message.senderName || 'player');
     let hash = 5381;
@@ -562,8 +571,7 @@
       hash = ((hash << 5) + hash) ^ source.charCodeAt(index);
     }
     const normalizedHash = Math.abs(hash >>> 0);
-    const hue = PLAYER_CHAT_ACCENTS[normalizedHash % PLAYER_CHAT_ACCENTS.length];
-    return `--chat-accent:${hue};`;
+    return buildPlayerColorStyle(PLAYER_NAME_PALETTE[normalizedHash % PLAYER_NAME_PALETTE.length].value);
   }
 
   function connectSocket() {
@@ -2007,7 +2015,7 @@
 
     playersList.innerHTML = players.map((p, index) => `
       <div class="gameover-player ${((winningSide === 'Crew' && p.faction === 'Crew') || (winningSide === 'Assassin' && p.faction === 'Assassin') || winningSide === p.role) ? 'won' : 'lost'}" style="--gameover-delay:${320 + (index * 60)}ms;">
-        <span class="gameover-player-name" style="${getPlayerChatStyle({ type: 'player', senderId: p.id, senderName: p.name, colorHue: p.colorHue })}">${p.name}</span>
+        <span class="gameover-player-name" style="${getPlayerChatStyle({ type: 'player', senderId: p.id, senderName: p.name, colorHex: p.colorHex || p.colorHue })}">${p.name}</span>
         <span class="gameover-player-role ${getRoleBadgeClass(p.role, p.faction)}">
           ${p.role}
           <span class="gameover-player-status">${p.alive ? '✓' : '✗'}</span>
@@ -2124,7 +2132,7 @@
         }
         const profile = validateProfile();
         if (!profile) return;
-        state.socket.emit('create-room', { playerId: state.playerId, username: profile.username, avatarIndex: profile.avatarIndex, colorHue: profile.colorHue }, (response) => {
+        state.socket.emit('create-room', { playerId: state.playerId, username: profile.username, avatarIndex: profile.avatarIndex, colorHex: profile.colorHex }, (response) => {
           const errorEl = document.getElementById('profile-error');
           if (response.success) {
             state.playerId = response.playerId;
@@ -2151,7 +2159,7 @@
         }
         const profile = validateProfile({ requireCode: true });
         if (!profile) return;
-        state.socket.emit('join-room', { code: profile.code, playerId: state.playerId, username: profile.username, avatarIndex: profile.avatarIndex, colorHue: profile.colorHue }, (response) => {
+        state.socket.emit('join-room', { code: profile.code, playerId: state.playerId, username: profile.username, avatarIndex: profile.avatarIndex, colorHex: profile.colorHex }, (response) => {
           const errorEl = document.getElementById('profile-error');
           if (response.success) {
             state.playerId = response.playerId;
@@ -2262,7 +2270,7 @@
     state.playerId = getOrCreatePlayerSessionId();
     state.username = profile.name;
     state.selectedAvatarIndex = profile.avatarIndex;
-    state.selectedNameColorHue = sanitizePlayerColorHue(profile.colorHue, 195);
+    state.selectedNameColorHex = sanitizePlayerColorHex(profile.colorHex || profile.colorHue, PLAYER_NAME_PALETTE[0].value);
     state.profileConfirmed = profile.confirmed;
     state.roomCode = getRoomCodeFromUrl();
     connectSocket();

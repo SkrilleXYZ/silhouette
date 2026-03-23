@@ -87,14 +87,19 @@
                     <input type="text" id="profile-name-input" class="text-input" placeholder="Player name..." maxlength="16" autocomplete="off">
                     <div class="input-line"></div>
                   </div>
-                  <label class="profile-color-picker" for="profile-name-color" title="Choose username color">
-                    <input type="color" id="profile-name-color" class="profile-color-input" aria-label="Choose username color">
-                    <span class="profile-color-wheel" aria-hidden="true"></span>
-                  </label>
                 </div>
                 <div class="profile-avatar-section">
-                  <div class="profile-avatar-label">Choose Avatar</div>
+                  <div id="profile-selection-label" class="profile-avatar-label">Choose Avatar</div>
                   <div id="profile-avatar-grid" class="profile-avatar-grid"></div>
+                  <div class="profile-palette-switch">
+                    <button class="profile-palette-arrow" id="btn-profile-palette-prev" type="button" aria-label="Show previous profile palette">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <div id="profile-palette-mode" class="profile-palette-mode">Avatars</div>
+                    <button class="profile-palette-arrow" id="btn-profile-palette-next" type="button" aria-label="Show next profile palette">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                  </div>
                 </div>
                 <p id="profile-error" class="error-text"></p>
                 <button class="btn btn-primary profile-confirm-btn" id="btn-confirm-profile" type="button">Confirm Profile</button>

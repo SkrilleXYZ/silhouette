@@ -33,12 +33,12 @@ function getPlayerChannel(playerId) {
 io.on('connection', (socket) => {
   console.log(`Connected: ${socket.id}`);
 
-  socket.on('create-room', ({ playerId, username, avatarIndex, colorHue }, callback) => {
+  socket.on('create-room', ({ playerId, username, avatarIndex, colorHex }, callback) => {
     if (!playerId) {
       callback({ success: false, error: 'Missing player session' });
       return;
     }
-    const room = game.createRoom(playerId, username, avatarIndex, colorHue);
+    const room = game.createRoom(playerId, username, avatarIndex, colorHex);
     if (room.error) {
       callback({ success: false, error: room.error });
       return;
@@ -50,13 +50,13 @@ io.on('connection', (socket) => {
     callback({ success: true, room: publicData, playerId });
   });
 
-  socket.on('join-room', ({ code, playerId, username, avatarIndex, colorHue }, callback) => {
+  socket.on('join-room', ({ code, playerId, username, avatarIndex, colorHex }, callback) => {
     if (!playerId) {
       callback({ success: false, error: 'Missing player session' });
       return;
     }
     const normalizedCode = code.toUpperCase();
-    const result = game.joinRoom(normalizedCode, playerId, username, avatarIndex, colorHue);
+    const result = game.joinRoom(normalizedCode, playerId, username, avatarIndex, colorHex);
     if (result.error) {
       callback({ success: false, error: result.error });
       return;
@@ -69,13 +69,13 @@ io.on('connection', (socket) => {
     callback({ success: true, room: publicData, playerId });
   });
 
-  socket.on('rejoin-room', ({ code, playerId, username, avatarIndex, colorHue }, callback) => {
+  socket.on('rejoin-room', ({ code, playerId, username, avatarIndex, colorHex }, callback) => {
     if (!playerId) {
       callback({ success: false, error: 'Missing player session' });
       return;
     }
     const normalizedCode = code.toUpperCase();
-    const result = game.reconnectPlayer(normalizedCode, playerId, username, avatarIndex, colorHue);
+    const result = game.reconnectPlayer(normalizedCode, playerId, username, avatarIndex, colorHex);
     if (result.error) {
       callback({ success: false, error: result.error });
       return;
