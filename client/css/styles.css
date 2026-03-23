@@ -281,6 +281,39 @@ body {
   border-radius: var(--radius-lg);
   padding: 18px;
   box-shadow: var(--shadow);
+  position: relative;
+  z-index: 1;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.profile-panel.profile-modal-open {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: min(92vw, 420px);
+  max-height: min(84vh, 84dvh);
+  padding: 20px;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.44);
+  transform: translate(-50%, -50%);
+  z-index: 81;
+}
+
+.profile-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 6, 8, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+  z-index: 80;
+}
+
+.profile-modal-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .profile-panel-header {
@@ -288,6 +321,7 @@ body {
   align-items: center;
   justify-content: center;
   margin-bottom: 12px;
+  position: relative;
 }
 
 .profile-title {
@@ -322,6 +356,11 @@ body {
 .profile-panel-body {
   display: flex;
   flex-direction: column;
+}
+
+.profile-panel.profile-modal-open .profile-panel-body {
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .profile-panel-compact {
@@ -1222,6 +1261,39 @@ body {
   right: 0;
   font-size: 0.68rem;
   letter-spacing: 1.2px;
+}
+
+.profile-modal-close {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.profile-modal-close svg {
+  width: 18px;
+  height: 18px;
+}
+
+.profile-panel.profile-modal-open .profile-modal-close {
+  display: inline-flex;
+}
+
+.profile-modal-close:hover {
+  color: var(--fg);
+  border-color: var(--border-light);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .room-container { padding-bottom: 0; }
