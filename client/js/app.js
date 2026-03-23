@@ -389,7 +389,12 @@
 
   function connectSocket() {
     state.socket = io(window.location.origin, {
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
     });
 
     state.socket.on('connect', () => {
@@ -404,6 +409,13 @@
       if (state.connectionToastVisible) return;
       state.connectionToastVisible = true;
       showToast('Connection lost. Reconnecting...', 'error');
+    });
+
+    state.socket.on('connect_error', (error) => {
+      console.log('Socket connect error:', error?.message || error);
+      if (state.connectionToastVisible) return;
+      state.connectionToastVisible = true;
+      showToast('Trying to reconnect...', 'error');
     });
 
     state.socket.on('room-updated', (roomData) => {
