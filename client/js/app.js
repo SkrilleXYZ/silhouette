@@ -1190,8 +1190,12 @@
     const renderedNames = names.map((name) => {
       const player = state.roomData?.players?.find((candidate) => candidate.name === name);
       if (!player) return escapeHtml(name);
-      const themeClass = `role-theme-${getRoleThemeClass(player.role, player.faction)}`;
-      return `<span class="chat-alive-name ${themeClass}">${escapeHtml(name)}</span>`;
+      const style = getPlayerChatStyle({
+        type: 'player',
+        senderId: player.id,
+        senderName: player.name,
+      });
+      return `<span class="chat-alive-name"${style ? ` style="${style}"` : ''}>${escapeHtml(name)}</span>`;
     }).join(', ');
 
     return `Alive players: ${renderedNames}.`;
