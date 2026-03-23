@@ -1755,6 +1755,7 @@
     const reason = document.getElementById('gameover-reason');
     const playersList = document.getElementById('gameover-players');
     const winnerPresentation = getWinnerPresentation(winner?.winner);
+    const winningSide = String(winner?.winner || '').trim();
 
     glow.className = `gameover-glow ${winnerPresentation.glowClass}`;
     title.className = `gameover-faction ${winnerPresentation.textClass}`;
@@ -1764,7 +1765,7 @@
       : winner.reason;
 
     playersList.innerHTML = players.map(p => `
-      <div class="gameover-player ${!p.alive ? 'dead' : ''}">
+      <div class="gameover-player ${((winningSide === 'Crew' && p.faction === 'Crew') || (winningSide === 'Assassin' && p.faction === 'Assassin') || winningSide === p.role) ? 'won' : 'lost'}">
         <span class="gameover-player-name">${p.name}</span>
         <span class="gameover-player-role ${getRoleBadgeClass(p.role, p.faction)}">
           ${p.role}
@@ -2706,4 +2707,7 @@
     });
   }
 })();
+
+
+
 

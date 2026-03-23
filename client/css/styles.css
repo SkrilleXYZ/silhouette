@@ -3444,7 +3444,7 @@ body {
   border-radius: var(--radius-sm);
 }
 
-.gameover-player.dead { opacity: 0.5; }
+.gameover-player.lost { opacity: 0.5; }
 .gameover-player-name { font-size: 0.85rem; font-weight: 500; }
 
 .gameover-player-role {
@@ -3465,9 +3465,22 @@ body {
 .gameover-player-role.role-theme-assassin { color: var(--assassin); }
 
 .gameover-player-status {
+  font-size: 0;
+  color: transparent;
+  margin-left: 4px;
+}
+
+.gameover-player-status::before {
   font-size: 0.6rem;
   color: var(--fg-dim);
-  margin-left: 4px;
+}
+
+.gameover-player.won .gameover-player-status::before {
+  content: '✓';
+}
+
+.gameover-player.lost .gameover-player-status::before {
+  content: '✗';
 }
 
 #btn-play-again {
