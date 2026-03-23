@@ -979,8 +979,15 @@ body {
 }
 
 .roles-guide-ability-highlight {
-  color: hsl(2, 82%, 78%);
   font-weight: 700;
+}
+
+.roles-guide-card.role-theme-vitalist .roles-guide-ability-highlight {
+  color: var(--vitalist);
+}
+
+.roles-guide-card.role-theme-investigator .roles-guide-ability-highlight {
+  color: var(--investigator);
 }
 
 .roles-empty-state {
