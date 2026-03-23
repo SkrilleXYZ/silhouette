@@ -132,6 +132,26 @@ class GameLogic {
     return { room };
   }
 
+  reconnectPlayer(code, playerId, playerName = null, avatarIndex = null) {
+    const room = this.rooms.get(code);
+    if (!room) return { error: 'Room not found' };
+
+    const player = room.players.get(playerId);
+    if (!player) return { error: 'Player not found' };
+
+    const normalizedName = this.normalizePlayerName(playerName);
+    if (normalizedName.length >= 2) {
+      player.name = normalizedName;
+    }
+    if (Number.isInteger(avatarIndex)) {
+      player.avatarIndex = this.sanitizeAvatarIndex(avatarIndex);
+    }
+
+    player.connected = true;
+    room.lastAction = Date.now();
+    return { room, player };
+  }
+
   leaveRoom(code, playerId) {
     const room = this.rooms.get(code);
     if (!room) return null;
@@ -163,17 +183,7 @@ class GameLogic {
     if (!player) return { room };
 
     player.connected = false;
-    if (player.alive) {
-      player.alive = false;
-
-      const winCheck = this.checkWinCondition(code);
-      if (winCheck && room.state !== 'ended') {
-        room.state = 'ended';
-        room.winner = winCheck;
-        return { room, winner: winCheck };
-      }
-    }
-
+    room.lastAction = Date.now();
     return { room };
   }
 
@@ -658,7 +668,9 @@ class GameLogic {
       hostId: room.hostId,
       players,
       state: room.state,
+      winner: room.winner || null,
       nightCount: room.nightCount,
+      roleRevealEndsAt: room.roleRevealEndsAt || 0,
       playerCount: room.players.size,
       aliveCount: players.filter(p => p.alive).length,
       chatMessages: room.chatMessages.slice(-150),

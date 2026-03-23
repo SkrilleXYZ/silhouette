@@ -26,32 +26,76 @@ setInterval(() => game.cleanupOldRooms(), 10 * 60 * 1000);
 
 const socketMap = new Map();
 
+function getPlayerChannel(playerId) {
+  return `player:${playerId}`;
+}
+
 io.on('connection', (socket) => {
   console.log(`Connected: ${socket.id}`);
 
-  socket.on('create-room', ({ username, avatarIndex }, callback) => {
-    const room = game.createRoom(socket.id, username, avatarIndex);
+  socket.on('create-room', ({ playerId, username, avatarIndex }, callback) => {
+    if (!playerId) {
+      callback({ success: false, error: 'Missing player session' });
+      return;
+    }
+    const room = game.createRoom(playerId, username, avatarIndex);
     if (room.error) {
       callback({ success: false, error: room.error });
       return;
     }
-    socketMap.set(socket.id, { code: room.code, playerId: socket.id });
+    socketMap.set(socket.id, { code: room.code, playerId });
     socket.join(room.code);
+    socket.join(getPlayerChannel(playerId));
     const publicData = game.getRoomPublicData(room.code);
-    callback({ success: true, room: publicData, playerId: socket.id });
+    callback({ success: true, room: publicData, playerId });
   });
 
-  socket.on('join-room', ({ code, username, avatarIndex }, callback) => {
-    const result = game.joinRoom(code.toUpperCase(), socket.id, username, avatarIndex);
+  socket.on('join-room', ({ code, playerId, username, avatarIndex }, callback) => {
+    if (!playerId) {
+      callback({ success: false, error: 'Missing player session' });
+      return;
+    }
+    const normalizedCode = code.toUpperCase();
+    const result = game.joinRoom(normalizedCode, playerId, username, avatarIndex);
     if (result.error) {
       callback({ success: false, error: result.error });
       return;
     }
-    socketMap.set(socket.id, { code: code.toUpperCase(), playerId: socket.id });
-    socket.join(code.toUpperCase());
-    const publicData = game.getRoomPublicData(code.toUpperCase());
-    io.to(code.toUpperCase()).emit('room-updated', publicData);
-    callback({ success: true, room: publicData, playerId: socket.id });
+    socketMap.set(socket.id, { code: normalizedCode, playerId });
+    socket.join(normalizedCode);
+    socket.join(getPlayerChannel(playerId));
+    const publicData = game.getRoomPublicData(normalizedCode);
+    io.to(normalizedCode).emit('room-updated', publicData);
+    callback({ success: true, room: publicData, playerId });
+  });
+
+  socket.on('rejoin-room', ({ code, playerId, username, avatarIndex }, callback) => {
+    if (!playerId) {
+      callback({ success: false, error: 'Missing player session' });
+      return;
+    }
+    const normalizedCode = code.toUpperCase();
+    const result = game.reconnectPlayer(normalizedCode, playerId, username, avatarIndex);
+    if (result.error) {
+      callback({ success: false, error: result.error });
+      return;
+    }
+
+    socketMap.set(socket.id, { code: normalizedCode, playerId });
+    socket.join(normalizedCode);
+    socket.join(getPlayerChannel(playerId));
+
+    const publicData = game.getRoomPublicData(normalizedCode);
+    io.to(normalizedCode).emit('room-updated', publicData);
+    callback({
+      success: true,
+      room: publicData,
+      player: game.getPlayerData(normalizedCode, playerId),
+      playerId,
+      allPlayers: publicData.state === 'ended' ? game.getAllPlayersWithRoles(normalizedCode) : null,
+      winner: result.room?.winner || null,
+      timer: getActiveTimerState(normalizedCode),
+    });
   });
 
   socket.on('leave-room', (callback) => {
@@ -60,7 +104,7 @@ io.on('connection', (socket) => {
       if (callback) callback({ success: false });
       return;
     }
-    const result = game.leaveRoom(mapping.code, socket.id);
+    const result = game.leaveRoom(mapping.code, mapping.playerId);
     socket.leave(mapping.code);
     socketMap.delete(socket.id);
     if (result && !result.deleted) {
@@ -79,7 +123,7 @@ io.on('connection', (socket) => {
       callback({ success: false, error: 'Not in a room' });
       return;
     }
-    const result = game.startGame(mapping.code, socket.id);
+    const result = game.startGame(mapping.code, mapping.playerId);
     if (result.error) {
       callback({ success: false, error: result.error });
       return;
@@ -88,7 +132,7 @@ io.on('connection', (socket) => {
     result.room.roleRevealEndsAt = revealEndsAt;
     for (const [playerId] of result.room.players) {
       const playerData = game.getPlayerData(mapping.code, playerId);
-      io.to(playerId).emit('game-started', {
+      io.to(getPlayerChannel(playerId)).emit('game-started', {
         player: playerData,
         room: game.getRoomPublicData(mapping.code),
         revealEndsAt,
@@ -107,7 +151,7 @@ io.on('connection', (socket) => {
       });
       startNightTimer(mapping.code);
     }, ROLE_REVEAL_DELAY_MS);
-    roleRevealTimers.set(mapping.code, revealTimer);
+    setTimerRecord(roleRevealTimers, mapping.code, revealTimer, 'role-reveal', revealEndsAt);
     callback({ success: true });
   });
 
@@ -118,7 +162,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const result = game.updateRoomSettings(mapping.code, socket.id, { anonymousVotes, anonymousEjects, hiddenRoleList });
+    const result = game.updateRoomSettings(mapping.code, mapping.playerId, { anonymousVotes, anonymousEjects, hiddenRoleList });
     if (result.error) {
       if (callback) callback({ success: false, error: result.error });
       return;
@@ -135,7 +179,7 @@ io.on('connection', (socket) => {
       callback({ success: false, error: 'Not in a room' });
       return;
     }
-    const result = game.submitNightAction(mapping.code, socket.id, action, targetId);
+    const result = game.submitNightAction(mapping.code, mapping.playerId, action, targetId);
     if (result.error) {
       callback({ success: false, error: result.error });
       return;
@@ -146,7 +190,7 @@ io.on('connection', (socket) => {
       const chatMessage = game.appendToPhaseSummary(mapping.code, publicNightMessage);
       if (chatMessage) io.to(mapping.code).emit('chat-message-updated', { message: chatMessage });
     }
-    const playerData = game.getPlayerData(mapping.code, socket.id);
+    const playerData = game.getPlayerData(mapping.code, mapping.playerId);
     socket.emit('player-updated', { player: playerData });
     callback({ success: true });
     if (game.checkAllNightActionsSubmitted(mapping.code)) {
@@ -160,12 +204,12 @@ io.on('connection', (socket) => {
       callback({ success: false, error: 'Not in a room' });
       return;
     }
-    const result = game.skipNightAction(mapping.code, socket.id);
+    const result = game.skipNightAction(mapping.code, mapping.playerId);
     if (result.error) {
       callback({ success: false, error: result.error });
       return;
     }
-    const playerData = game.getPlayerData(mapping.code, socket.id);
+    const playerData = game.getPlayerData(mapping.code, mapping.playerId);
     socket.emit('player-updated', { player: playerData });
     callback({ success: true });
     if (game.checkAllNightActionsSubmitted(mapping.code)) {
@@ -179,14 +223,14 @@ io.on('connection', (socket) => {
       callback({ success: false, error: 'Not in a room' });
       return;
     }
-    const result = game.submitVote(mapping.code, socket.id, targetId);
+    const result = game.submitVote(mapping.code, mapping.playerId, targetId);
     if (result.error) {
       callback({ success: false, error: result.error });
       return;
     }
     const room = game.getRoom(mapping.code);
     if (room && !room.anonymousVotes) {
-      const voter = room.players.get(socket.id);
+      const voter = room.players.get(mapping.playerId);
       let voteText = `${voter.name} skipped their vote.`;
       if (targetId !== 'skip') {
         const target = room.players.get(targetId);
@@ -195,11 +239,11 @@ io.on('connection', (socket) => {
       const chatMessage = game.appendToPhaseSummary(mapping.code, voteText);
       if (chatMessage) io.to(mapping.code).emit('chat-message-updated', { message: chatMessage });
     }
-    const playerData = game.getPlayerData(mapping.code, socket.id);
+    const playerData = game.getPlayerData(mapping.code, mapping.playerId);
     socket.emit('player-updated', { player: playerData });
     io.to(mapping.code).emit('vote-update', {
-      voterId: socket.id,
-      voterName: game.getRoom(mapping.code).players.get(socket.id).name,
+      voterId: mapping.playerId,
+      voterName: game.getRoom(mapping.code).players.get(mapping.playerId).name,
       votesCast: Object.keys(game.getRoom(mapping.code).votes).length,
       totalAlive: game.getAlivePlayers(mapping.code).length
     });
@@ -215,7 +259,7 @@ io.on('connection', (socket) => {
       callback({ success: false });
       return;
     }
-    const playerData = game.getPlayerData(mapping.code, socket.id);
+    const playerData = game.getPlayerData(mapping.code, mapping.playerId);
     const roomData = game.getRoomPublicData(mapping.code);
     callback({ success: true, player: playerData, room: roomData });
   });
@@ -227,7 +271,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const result = game.addChatMessage(mapping.code, socket.id, text);
+    const result = game.addChatMessage(mapping.code, mapping.playerId, text);
     if (result.error) {
       if (callback) callback({ success: false, error: result.error });
       return;
@@ -244,7 +288,7 @@ io.on('connection', (socket) => {
       const room = game.getRoom(mapping.code);
       if (room) {
         if (room.state === 'lobby') {
-          const result = game.leaveRoom(mapping.code, socket.id);
+          const result = game.leaveRoom(mapping.code, mapping.playerId);
           if (result && !result.deleted) {
             const publicData = game.getRoomPublicData(mapping.code);
             io.to(mapping.code).emit('room-updated', publicData);
@@ -253,7 +297,7 @@ io.on('connection', (socket) => {
             }
           }
         } else {
-  const disconnectResult = game.disconnectPlayer(mapping.code, socket.id);
+  const disconnectResult = game.disconnectPlayer(mapping.code, mapping.playerId);
   const publicData = game.getRoomPublicData(mapping.code);
   io.to(mapping.code).emit('room-updated', publicData);
   if (disconnectResult && disconnectResult.winner) {
@@ -276,6 +320,24 @@ const votingTimers = new Map();
 const morningTimers = new Map();
 const roleRevealTimers = new Map();
 
+function setTimerRecord(map, code, timeout, phase, endsAt) {
+  map.set(code, { timeout, phase, endsAt });
+}
+
+function getActiveTimerState(code) {
+  const sources = [roleRevealTimers, nightTimers, morningTimers, votingTimers];
+  for (const source of sources) {
+    const record = source.get(code);
+    if (record) {
+      return {
+        phase: record.phase,
+        endsAt: record.endsAt,
+      };
+    }
+  }
+  return null;
+}
+
 function emitTimerStart(code, phase, duration, endsAt = Date.now() + duration * 1000) {
   io.to(code).emit('timer-start', { phase, duration, endsAt });
   return endsAt;
@@ -296,7 +358,7 @@ function startNightTimer(code) {
     }
     resolveNightPhase(code);
   }, Math.max(0, endsAt - Date.now()));
-  nightTimers.set(code, timer);
+  setTimerRecord(nightTimers, code, timer, 'night', endsAt);
   emitTimerStart(code, 'night', 60, endsAt);
 }
 
@@ -314,25 +376,25 @@ function startVotingTimer(code) {
     }
     resolveVotingPhase(code);
   }, Math.max(0, endsAt - Date.now()));
-  votingTimers.set(code, timer);
+  setTimerRecord(votingTimers, code, timer, 'voting', endsAt);
   emitTimerStart(code, 'voting', 60, endsAt);
 }
 
 function clearAllTimers(code) {
   if (roleRevealTimers.has(code)) {
-    clearTimeout(roleRevealTimers.get(code));
+    clearTimeout(roleRevealTimers.get(code).timeout);
     roleRevealTimers.delete(code);
   }
   if (nightTimers.has(code)) {
-    clearTimeout(nightTimers.get(code));
+    clearTimeout(nightTimers.get(code).timeout);
     nightTimers.delete(code);
   }
   if (votingTimers.has(code)) {
-    clearTimeout(votingTimers.get(code));
+    clearTimeout(votingTimers.get(code).timeout);
     votingTimers.delete(code);
   }
   if (morningTimers.has(code)) {
-    clearTimeout(morningTimers.get(code));
+    clearTimeout(morningTimers.get(code).timeout);
     morningTimers.delete(code);
   }
 }
@@ -352,7 +414,7 @@ function resolveNightPhase(code) {
   if (result.privateMessages) {
     for (const [playerId, messages] of Object.entries(result.privateMessages)) {
       messages.forEach((message) => {
-        io.to(playerId).emit('private-chat-message', { message });
+        io.to(getPlayerChannel(playerId)).emit('private-chat-message', { message });
       });
     }
   }
@@ -376,7 +438,7 @@ function resolveNightPhase(code) {
       });
       startVotingTimer(code);
     }, Math.max(0, endsAt - Date.now()));
-    morningTimers.set(code, timer);
+    setTimerRecord(morningTimers, code, timer, 'morning', endsAt);
     emitTimerStart(code, 'morning', 120, endsAt);
   }
 }

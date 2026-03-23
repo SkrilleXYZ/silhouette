@@ -41,6 +41,7 @@
 
   const MAX_ROOM_PLAYERS = 16;
   const PROFILE_STORAGE_KEY = 'silhouette.profile';
+  const PLAYER_SESSION_STORAGE_KEY = 'silhouette.playerSessionId';
   const ROLE_REVEAL_ITEM_HEIGHT = 72;
   const AVATAR_ASSET_VERSION = '20260324c';
   const ROLE_DEFINITIONS = {
@@ -163,6 +164,145 @@
     window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
   }
 
+  function getOrCreatePlayerSessionId() {
+    let playerSessionId = '';
+    try {
+      playerSessionId = window.localStorage.getItem(PLAYER_SESSION_STORAGE_KEY) || '';
+      if (!playerSessionId) {
+        playerSessionId = window.crypto?.randomUUID
+          ? window.crypto.randomUUID()
+          : `player-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+        window.localStorage.setItem(PLAYER_SESSION_STORAGE_KEY, playerSessionId);
+      }
+    } catch (error) {
+      playerSessionId = `player-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    }
+    return playerSessionId;
+  }
+
+  function getRoomCodeFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return String(params.get('room') || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+  }
+
+  function setRoomUrl(code) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', code);
+    window.history.replaceState({}, '', url);
+  }
+
+  function clearRoomUrl() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('room');
+    window.history.replaceState({}, '', url);
+  }
+
+  function applyRoomCodeToInput(code) {
+    const roomCodeInput = document.getElementById('home-room-code-input');
+    if (roomCodeInput) roomCodeInput.value = String(code || '').toUpperCase();
+  }
+
+  function restoreRoomSession(response) {
+    if (!response?.success) return false;
+
+    state.playerId = response.playerId || state.playerId;
+    state.roomCode = response.room?.code || state.roomCode;
+    state.roomData = response.room || state.roomData;
+    state.playerData = response.player || state.playerData;
+    state.isHost = !!(response.room && state.playerId === response.room.hostId);
+    state.chatMessages = response.room?.chatMessages || [];
+    state.gamePhase = response.room?.state || null;
+    state.hasActed = !!response.player?.hasSubmittedAction;
+    state.hasVoted = !!response.player?.hasVoted;
+    state.privateChatMessages = [];
+    state.chatOverlayOpen = false;
+    state.searchResult = null;
+    state.selectedAction = null;
+    state.selectedTarget = null;
+    state.totalAlive = response.room?.aliveCount || 0;
+    setRoomUrl(state.roomCode);
+    applyRoomCodeToInput(state.roomCode);
+
+    if (response.timer?.endsAt) {
+      const remaining = Math.max(0, Math.ceil((response.timer.endsAt - Date.now()) / 1000));
+      startTimer(remaining, response.timer.endsAt);
+    } else {
+      clearTimerInterval();
+    }
+
+    if (response.room?.state === 'lobby') {
+      showScreen('room');
+      showNav();
+      renderRoom();
+      return true;
+    }
+
+    if (response.room?.state === 'ended' && response.winner && response.allPlayers) {
+      hideNav();
+      showGameOver(response.winner, response.allPlayers);
+      return true;
+    }
+
+    showScreen('game');
+    hideNav();
+    updateRoleCard();
+    updatePhaseUI(response.room?.state, response.room?.nightCount || 0);
+    renderGameContent(response.room?.state);
+    updateAliveCount();
+    renderGamePlayerList();
+    renderChatBox();
+
+    if (response.room?.roleRevealEndsAt && response.room.roleRevealEndsAt > Date.now()) {
+      startRoleReveal(response.player, response.room.roleRevealEndsAt, Math.max(0, response.room.roleRevealEndsAt - Date.now()));
+    } else {
+      stopRoleReveal(false);
+    }
+
+    return true;
+  }
+
+  function tryAutoRejoin() {
+    const roomCode = state.roomCode || getRoomCodeFromUrl();
+    if (!roomCode || !state.playerId || !state.profileConfirmed || !state.username) return;
+
+    state.socket.emit('rejoin-room', {
+      code: roomCode,
+      playerId: state.playerId,
+      username: state.username,
+      avatarIndex: state.selectedAvatarIndex,
+    }, (response) => {
+      if (response?.success) {
+        restoreRoomSession(response);
+        return;
+      }
+
+      applyRoomCodeToInput(roomCode);
+      if (response?.error === 'Player not found') {
+        state.socket.emit('join-room', {
+          code: roomCode,
+          playerId: state.playerId,
+          username: state.username,
+          avatarIndex: state.selectedAvatarIndex,
+        }, (joinResponse) => {
+          if (!joinResponse?.success) return;
+          state.playerId = joinResponse.playerId;
+          state.roomCode = joinResponse.room.code;
+          state.roomData = joinResponse.room;
+          state.isHost = !!(joinResponse.room && state.playerId === joinResponse.room.hostId);
+          setRoomUrl(state.roomCode);
+          showScreen('room');
+          showNav();
+          renderRoom();
+        });
+        return;
+      }
+      if (response?.error === 'Room not found') {
+        state.roomCode = null;
+        clearRoomUrl();
+      }
+    });
+  }
+
   function renderProfilePanel() {
     const nameInput = document.getElementById('profile-name-input');
     const preview = document.getElementById('profile-avatar-preview');
@@ -255,6 +395,7 @@
     state.socket.on('connect', () => {
       console.log('Connected to server:', state.socket.id);
       state.connectionToastVisible = false;
+      tryAutoRejoin();
     });
 
     state.socket.on('disconnect', (reason) => {
@@ -1539,13 +1680,15 @@
         }
         const profile = validateProfile();
         if (!profile) return;
-        state.socket.emit('create-room', { username: profile.username, avatarIndex: profile.avatarIndex }, (response) => {
+        state.socket.emit('create-room', { playerId: state.playerId, username: profile.username, avatarIndex: profile.avatarIndex }, (response) => {
           const errorEl = document.getElementById('profile-error');
           if (response.success) {
             state.playerId = response.playerId;
             state.roomCode = response.room.code;
             state.roomData = response.room;
             state.isHost = true;
+            setRoomUrl(state.roomCode);
+            applyRoomCodeToInput(state.roomCode);
             showScreen('room');
             renderRoom();
           } else if (errorEl) {
@@ -1564,13 +1707,15 @@
         }
         const profile = validateProfile({ requireCode: true });
         if (!profile) return;
-        state.socket.emit('join-room', { code: profile.code, username: profile.username, avatarIndex: profile.avatarIndex }, (response) => {
+        state.socket.emit('join-room', { code: profile.code, playerId: state.playerId, username: profile.username, avatarIndex: profile.avatarIndex }, (response) => {
           const errorEl = document.getElementById('profile-error');
           if (response.success) {
             state.playerId = response.playerId;
             state.roomCode = response.room.code;
             state.roomData = response.room;
             state.isHost = false;
+            setRoomUrl(state.roomCode);
+            applyRoomCodeToInput(state.roomCode);
             showScreen('room');
             renderRoom();
           } else if (errorEl) {
@@ -1585,6 +1730,8 @@
         state.roomCode = null;
         state.roomData = null;
         state.isHost = false;
+        clearRoomUrl();
+        applyRoomCodeToInput('');
         showScreen('home');
         showNav();
       });
@@ -1655,6 +1802,8 @@
       state.allPlayersWithRoles = [];
       state.playerListOpen = false;
       clearTimerInterval();
+      clearRoomUrl();
+      applyRoomCodeToInput('');
       showScreen('home');
       showNav();
       document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -1666,13 +1815,16 @@
 
   function init() {
     const profile = loadProfile();
+    state.playerId = getOrCreatePlayerSessionId();
     state.username = profile.name;
     state.selectedAvatarIndex = profile.avatarIndex;
     state.profileConfirmed = profile.confirmed;
+    state.roomCode = getRoomCodeFromUrl();
     connectSocket();
     initEventListeners();
     renderProfilePanel();
-    showScreen('home');
+    applyRoomCodeToInput(state.roomCode);
+    showScreen(state.roomCode ? 'online' : 'home');
     showNav();
   }
 
