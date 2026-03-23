@@ -175,6 +175,20 @@
     'Avatar 9.png',
   ];
   const LOBBY_AVATAR_IMAGES = LOBBY_AVATAR_FILES.map((fileName) => `./assets/avatars/${encodeURIComponent(fileName)}?v=${AVATAR_ASSET_VERSION}`);
+  const PLAYER_CHAT_ACCENTS = [
+    8,
+    28,
+    52,
+    76,
+    112,
+    148,
+    182,
+    210,
+    238,
+    268,
+    300,
+    336,
+  ];
 
   function getLobbyAvatarSrc(index) {
     return LOBBY_AVATAR_IMAGES[index % LOBBY_AVATAR_IMAGES.length];
@@ -465,8 +479,12 @@
   function getPlayerChatStyle(message) {
     if (!message || message.type === 'system') return '';
     const source = String(message.senderId || message.senderName || 'player');
-    const seed = source.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-    const hue = seed % 360;
+    let hash = 5381;
+    for (let index = 0; index < source.length; index++) {
+      hash = ((hash << 5) + hash) ^ source.charCodeAt(index);
+    }
+    const normalizedHash = Math.abs(hash >>> 0);
+    const hue = PLAYER_CHAT_ACCENTS[normalizedHash % PLAYER_CHAT_ACCENTS.length];
     return `--chat-accent:${hue};`;
   }
 
@@ -1220,6 +1238,22 @@
     return `Alive players: ${renderedNames}.`;
   }
 
+  function formatPlayerNameReference(name) {
+    const cleanName = String(name || '').trim();
+    if (!cleanName) return '';
+
+    const player = state.roomData?.players?.find((candidate) => candidate.name === cleanName);
+    if (!player) return escapeHtml(cleanName);
+
+    const style = getPlayerChatStyle({
+      type: 'player',
+      senderId: player.id,
+      senderName: player.name,
+    });
+
+    return `<span class="chat-player-ref"${style ? ` style="${style}"` : ''}>${escapeHtml(cleanName)}</span>`;
+  }
+
   function getSystemMessageVariantClass(message) {
     if (!message || message.type !== 'system') return '';
     const text = String(message.text || '').trim();
@@ -1256,24 +1290,29 @@
 
     if (message.private && message.type === 'system') {
       const text = String(message.text || '').trim();
+      const sheriffSearchMatch = text.match(/^Your investigation found that (.*?) is the (.*?)\.$/i);
+      if (sheriffSearchMatch) {
+        return `Your investigation found that ${formatPlayerNameReference(sheriffSearchMatch[1])} is the ${escapeHtml(sheriffSearchMatch[2])}.`;
+      }
+
       const killedMatch = text.match(/^(.*?) has killed someone in the last 2 rounds\.$/i);
       if (killedMatch) {
-        return `${escapeHtml(killedMatch[1])} <span class="chat-result-highlight is-positive">has killed someone in the last 2 rounds.</span>`;
+        return `${formatPlayerNameReference(killedMatch[1])} <span class="chat-result-highlight is-positive">has killed someone in the last 2 rounds.</span>`;
       }
 
       const notKilledMatch = text.match(/^(.*?) has not killed anyone in the last 2 rounds\.$/i);
       if (notKilledMatch) {
-        return `${escapeHtml(notKilledMatch[1])} <span class="chat-result-highlight is-negative">has not killed anyone in the last 2 rounds.</span>`;
+        return `${formatPlayerNameReference(notKilledMatch[1])} <span class="chat-result-highlight is-negative">has not killed anyone in the last 2 rounds.</span>`;
       }
 
       const interactedMatch = text.match(/^(.*?) interacted with (.*?) tonight\.$/i);
       if (interactedMatch) {
-        return `${escapeHtml(interactedMatch[1])} <span class="chat-result-highlight is-tracker">interacted with ${escapeHtml(interactedMatch[2])} tonight.</span>`;
+        return `${formatPlayerNameReference(interactedMatch[1])} <span class="chat-result-highlight is-tracker">interacted with ${formatPlayerNameReference(interactedMatch[2])} tonight.</span>`;
       }
 
       const noInteractionMatch = text.match(/^(.*?) did not interact with anyone tonight\.$/i);
       if (noInteractionMatch) {
-        return `${escapeHtml(noInteractionMatch[1])} <span class="chat-result-highlight is-tracker-muted">did not interact with anyone tonight.</span>`;
+        return `${formatPlayerNameReference(noInteractionMatch[1])} <span class="chat-result-highlight is-tracker-muted">did not interact with anyone tonight.</span>`;
       }
     }
 
