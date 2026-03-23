@@ -208,6 +208,35 @@ class GameLogic {
 
     let index = 0;
 
+    if (count === 5) {
+      const assassin = room.players.get(shuffled[index]);
+      assassin.role = 'Assassin';
+      assassin.faction = 'Assassin';
+      index++;
+
+      const sheriff = room.players.get(shuffled[index]);
+      sheriff.role = 'Sheriff';
+      sheriff.faction = 'Crew';
+      index++;
+
+      const vitalist = room.players.get(shuffled[index]);
+      vitalist.role = 'Vitalist';
+      vitalist.faction = 'Crew';
+      index++;
+
+      const villager = room.players.get(shuffled[index]);
+      villager.role = 'Villager';
+      villager.faction = 'Crew';
+      index++;
+
+      const jester = room.players.get(shuffled[index]);
+      jester.role = 'Jester';
+      jester.faction = 'Neutral';
+
+      room.playerOrder = shuffled;
+      return room;
+    }
+
     for (let i = 0; i < assassinCount; i++) {
       const player = room.players.get(shuffled[index]);
       player.role = 'Assassin';
@@ -343,6 +372,7 @@ class GameLogic {
     for (const [id, player] of room.players) {
       if (!player.alive) continue;
       if (player.role === 'Villager') continue;
+      if (player.role === 'Jester') continue;
       if (!room.nightActions[id]) return false;
     }
     return true;

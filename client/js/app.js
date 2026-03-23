@@ -102,13 +102,11 @@
         },
       ],
     },
-  };
-  const ROLE_GUIDE_DEFINITIONS = {
-    ...ROLE_DEFINITIONS,
     Jester: {
       faction: 'Neutral',
       subfaction: 'Evil',
       description: 'Act like an Assassin to get voted out. Try to avoid dying.',
+      revealText: 'A pale-pink grin hides your chaos. Fool the table into ending you.',
       abilities: [
         {
           name: 'Trickster',
@@ -118,6 +116,7 @@
       ],
     },
   };
+  const ROLE_GUIDE_DEFINITIONS = ROLE_DEFINITIONS;
   const ROLE_GUIDE_SECTIONS = [
     { key: 'Crew', label: 'Crew', icon: 'Crew' },
     { key: 'Assassin', label: 'Assassin', icon: 'Assassin' },
@@ -1258,7 +1257,7 @@
     const player = state.playerData;
     if (!player) return;
 
-    if (player.role === 'Villager') {
+    if (player.role === 'Villager' || player.role === 'Jester') {
       container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">You have no abilities. Wait for dawn...</p></div>';
       return;
     }
@@ -1492,7 +1491,7 @@
     const player = state.playerData;
     if (!player) return;
 
-    if (player.role === 'Villager') {
+    if (player.role === 'Villager' || player.role === 'Jester') {
       container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">You have no abilities. Wait for dawn...</p></div><div id="phase-chat-panel"></div>';
       renderChatBox();
       return;
@@ -2060,7 +2059,7 @@
     const player = state.playerData;
     if (!player) return;
 
-    if (player.role === 'Villager') {
+    if (player.role === 'Villager' || player.role === 'Jester') {
       container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">You have no abilities. Wait for dawn...</p></div><div id="phase-chat-panel"></div>';
       renderChatBox();
       return;
@@ -2497,7 +2496,7 @@
     const player = state.playerData;
     if (!player) return;
 
-    if (player.role === 'Villager') {
+    if (player.role === 'Villager' || player.role === 'Jester') {
       container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">You have no abilities. Wait for dawn...</p></div><div id="phase-chat-panel"></div>';
       renderChatBox();
       return;
