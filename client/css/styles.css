@@ -674,7 +674,8 @@ body {
   margin-top: 0;
   margin-left: 0;
   position: absolute;
-  top: 0;
+  top: 50%;
+  transform: translateY(-40%);
   right: 0;
   font-size: 0.68rem;
   letter-spacing: 1.2px;
