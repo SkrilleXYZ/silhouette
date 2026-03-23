@@ -846,7 +846,7 @@
     gameContainer.classList.add('role-reveal-active');
     overlay.classList.add('active');
     overlay.setAttribute('aria-hidden', 'false');
-    panel.className = `role-reveal-panel ${roleThemeClass}`;
+    panel.className = 'role-reveal-panel';
 
     result.className = 'role-reveal-result pending';
     result.innerHTML = '<strong>Shadows decide...</strong>The reel is still spinning.';
@@ -875,9 +875,9 @@
       if (revealItems[selectedIndex]) {
         revealItems[selectedIndex].classList.add('is-selected');
       }
+      panel.className = `role-reveal-panel ${roleThemeClass} settled`;
       result.className = `role-reveal-result ${roleThemeClass}`;
       result.innerHTML = `<strong>${player.role}</strong>${roleInfo.revealText}`;
-      panel.classList.add('settled');
     }, spinDuration);
   }
 
@@ -906,16 +906,16 @@
         revealItems[selectedIndex].classList.add('is-selected');
       }
       if (result?.dataset?.role) {
+        panel.className = `role-reveal-panel ${result.dataset.theme || ''} settled`.trim();
         result.className = `role-reveal-result ${result.dataset.theme || result.dataset.faction || ''}`.trim();
         result.innerHTML = `<strong>${result.dataset.role}</strong>${result.dataset.revealText || ''}`;
       }
-      panel.classList.add('settled');
       window.setTimeout(() => {
         overlay.classList.remove('active');
         overlay.setAttribute('aria-hidden', 'true');
       }, 220);
     } else {
-      panel.classList.remove('settled');
+      panel.className = 'role-reveal-panel';
       overlay.classList.remove('active');
       overlay.setAttribute('aria-hidden', 'true');
     }
