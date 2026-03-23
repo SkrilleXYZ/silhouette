@@ -3307,23 +3307,38 @@ body {
 }
 
 .chat-summary-line.summary-shoot {
-  background: hsla(20, 100%, 52%, 0.18);
-  border-color: hsla(28, 100%, 68%, 0.42);
+  background: linear-gradient(135deg, hsla(43, 83%, 44%, 0.22), hsla(35, 78%, 18%, 0.28));
+  border-color: hsla(43, 92%, 62%, 0.46);
+  color: hsl(46, 100%, 95%);
+  box-shadow: inset 0 1px 0 rgba(255, 227, 148, 0.08), 0 0 0 1px rgba(255, 208, 80, 0.08);
 }
 
 .chat-summary-line.summary-search {
-  background: hsla(188, 92%, 50%, 0.16);
-  border-color: hsla(188, 92%, 62%, 0.4);
+  background: linear-gradient(135deg, hsla(43, 83%, 38%, 0.18), hsla(40, 72%, 16%, 0.24));
+  border-color: hsla(43, 92%, 58%, 0.4);
+  color: hsl(45, 90%, 94%);
+  box-shadow: inset 0 1px 0 rgba(255, 227, 148, 0.06), 0 0 0 1px rgba(255, 208, 80, 0.06);
+}
+
+.chat-summary-line.summary-examine {
+  background: linear-gradient(135deg, hsla(269, 68%, 42%, 0.2), hsla(267, 56%, 16%, 0.28));
+  border-color: hsla(271, 92%, 72%, 0.42);
+  color: hsl(274, 100%, 95%);
+  box-shadow: inset 0 1px 0 rgba(223, 186, 255, 0.07), 0 0 0 1px rgba(185, 132, 255, 0.08);
 }
 
 .chat-summary-line.summary-protect {
-  background: hsla(156, 78%, 46%, 0.16);
-  border-color: hsla(156, 82%, 60%, 0.38);
+  background: linear-gradient(135deg, hsla(145, 78%, 34%, 0.2), hsla(142, 70%, 14%, 0.28));
+  border-color: hsla(145, 86%, 58%, 0.42);
+  color: hsl(146, 100%, 95%);
+  box-shadow: inset 0 1px 0 rgba(166, 255, 198, 0.08), 0 0 0 1px rgba(85, 255, 149, 0.08);
 }
 
 .chat-summary-line.summary-kill {
-  background: hsla(0, 78%, 42%, 0.18);
-  border-color: hsla(0, 84%, 56%, 0.42);
+  background: linear-gradient(135deg, hsla(0, 76%, 36%, 0.24), hsla(0, 70%, 13%, 0.3));
+  border-color: hsla(0, 86%, 58%, 0.44);
+  color: hsl(0, 100%, 95%);
+  box-shadow: inset 0 1px 0 rgba(255, 164, 170, 0.08), 0 0 0 1px rgba(255, 72, 84, 0.08);
 }
 
 .chat-empty {

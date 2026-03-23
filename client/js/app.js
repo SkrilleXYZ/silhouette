@@ -1169,7 +1169,8 @@
     if (/alive players:/i.test(text)) return 'summary-alive';
     if (/was found dead|was eliminated by vote/i.test(text)) return 'summary-death';
     if (/used their gun/i.test(text)) return 'summary-shoot';
-    if (/investigating someone|examining someone/i.test(text)) return 'summary-search';
+    if (/Sheriff is investigating someone/i.test(text)) return 'summary-search';
+    if (/Investigator is examining someone/i.test(text)) return 'summary-examine';
     if (/protected someone/i.test(text)) return 'summary-protect';
     if (/moved through the shadows/i.test(text)) return 'summary-kill';
     return '';
