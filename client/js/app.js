@@ -1186,6 +1186,19 @@
       return `${title}${lines ? `<div class="chat-summary-lines">${lines}</div>` : ''}`;
     }
 
+    if (message.private && message.type === 'system') {
+      const text = String(message.text || '').trim();
+      const killedMatch = text.match(/^(.*?) has killed someone in the last 2 rounds\.$/i);
+      if (killedMatch) {
+        return `${escapeHtml(killedMatch[1])} <span class="chat-result-highlight is-positive">has killed someone in the last 2 rounds.</span>`;
+      }
+
+      const notKilledMatch = text.match(/^(.*?) has not killed anyone in the last 2 rounds\.$/i);
+      if (notKilledMatch) {
+        return `${escapeHtml(notKilledMatch[1])} <span class="chat-result-highlight is-negative">has not killed anyone in the last 2 rounds.</span>`;
+      }
+    }
+
     return escapeHtml(message.text).replace(/\n/g, '<br>');
   }
 

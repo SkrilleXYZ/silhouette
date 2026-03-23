@@ -3271,6 +3271,20 @@ body {
   text-shadow: none;
 }
 
+.chat-result-highlight {
+  font-weight: 700;
+}
+
+.chat-result-highlight.is-positive {
+  color: hsl(146, 92%, 72%);
+  text-shadow: 0 0 14px rgba(85, 255, 149, 0.16);
+}
+
+.chat-result-highlight.is-negative {
+  color: hsl(0, 90%, 73%);
+  text-shadow: 0 0 14px rgba(255, 72, 84, 0.14);
+}
+
 .chat-summary-title {
   margin-bottom: 10px;
 }
