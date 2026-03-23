@@ -697,12 +697,43 @@
     if (normalizedRole === 'vitalist') return 'vitalist';
     if (normalizedRole === 'assassin') return 'assassin';
     if (normalizedRole === 'villager') return 'villager';
-    if (normalizedRole === 'jester') return 'neutral';
+    if (normalizedRole === 'jester') return 'jester';
     return String(fallbackFaction || 'Crew').trim().toLowerCase();
   }
 
   function getRoleBadgeClass(role, faction) {
     return `role-theme-${getRoleThemeClass(role, faction)}`;
+  }
+
+  function getRoleGuideDefinition(role) {
+    return ROLE_GUIDE_DEFINITIONS[role] || getRoleDefinition(role);
+  }
+
+  function getWinnerPresentation(winnerName) {
+    const normalizedWinner = String(winnerName || '').trim();
+    if (normalizedWinner === 'Crew') {
+      return {
+        label: 'Crew Wins',
+        glowClass: 'crew-win',
+        textClass: 'crew-text',
+      };
+    }
+    if (normalizedWinner === 'Assassin') {
+      return {
+        label: 'Assassins Win',
+        glowClass: 'assassin-win',
+        textClass: 'assassin-text',
+      };
+    }
+
+    const roleInfo = getRoleGuideDefinition(normalizedWinner);
+    const themeClass = getRoleThemeClass(normalizedWinner, roleInfo?.faction || 'Neutral');
+    return {
+      label: `${normalizedWinner} Wins`,
+      glowClass: `${themeClass}-win`,
+      textClass: `${themeClass}-text`,
+      isSoloWin: true,
+    };
   }
 
   function getRoleDefinition(role) {
@@ -1724,12 +1755,14 @@
     const title = document.getElementById('gameover-faction');
     const reason = document.getElementById('gameover-reason');
     const playersList = document.getElementById('gameover-players');
-    const winnerLabel = winner.winner === 'Assassin' ? 'Assassins Win' : 'Crew Wins';
+    const winnerPresentation = getWinnerPresentation(winner?.winner);
 
-    glow.className = `gameover-glow ${winner.winner === 'Crew' ? 'crew-win' : 'assassin-win'}`;
-    title.className = `gameover-faction ${winner.winner === 'Crew' ? 'crew-text' : 'assassin-text'}`;
-    title.textContent = winnerLabel.toUpperCase();
-    reason.textContent = winner.reason;
+    glow.className = `gameover-glow ${winnerPresentation.glowClass}`;
+    title.className = `gameover-faction ${winnerPresentation.textClass}`;
+    title.textContent = winnerPresentation.label.toUpperCase();
+    reason.textContent = winnerPresentation.isSoloWin
+      ? (winner.reason || 'Everyone else loses.')
+      : winner.reason;
 
     playersList.innerHTML = players.map(p => `
       <div class="gameover-player ${!p.alive ? 'dead' : ''}">
