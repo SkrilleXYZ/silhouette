@@ -14,6 +14,12 @@ class GameLogic {
       : this.assignAvatarIndex({ players: new Map() });
   }
 
+  sanitizePlayerColorHue(colorHue) {
+    if (!Number.isFinite(colorHue)) return null;
+    const normalized = Math.round(Number(colorHue));
+    return ((normalized % 360) + 360) % 360;
+  }
+
   resolveUniquePlayerName(room, requestedName) {
     const baseName = this.normalizePlayerName(requestedName);
     if (!baseName) return '';
@@ -66,7 +72,7 @@ class GameLogic {
     return code;
   }
 
-  createRoom(hostId, hostName, avatarIndex = null) {
+  createRoom(hostId, hostName, avatarIndex = null, colorHue = null) {
     const code = this.generateRoomCode();
     const room = {
       code,
@@ -104,6 +110,7 @@ class GameLogic {
       id: hostId,
       name: normalizedHostName,
       avatarIndex: Number.isInteger(avatarIndex) ? this.sanitizeAvatarIndex(avatarIndex) : this.assignAvatarIndex(room),
+      colorHue: this.sanitizePlayerColorHue(colorHue),
       role: null,
       faction: null,
       alive: true,
@@ -114,7 +121,7 @@ class GameLogic {
     return room;
   }
 
-  joinRoom(code, playerId, playerName, avatarIndex = null) {
+  joinRoom(code, playerId, playerName, avatarIndex = null, colorHue = null) {
     const room = this.rooms.get(code);
     if (!room) return { error: 'Room not found' };
     if (room.state !== 'lobby') return { error: 'Game already in progress' };
@@ -126,6 +133,7 @@ class GameLogic {
       id: playerId,
       name: resolvedName,
       avatarIndex: Number.isInteger(avatarIndex) ? this.sanitizeAvatarIndex(avatarIndex) : this.assignAvatarIndex(room),
+      colorHue: this.sanitizePlayerColorHue(colorHue),
       role: null,
       faction: null,
       alive: true,
@@ -135,7 +143,7 @@ class GameLogic {
     return { room };
   }
 
-  reconnectPlayer(code, playerId, playerName = null, avatarIndex = null) {
+  reconnectPlayer(code, playerId, playerName = null, avatarIndex = null, colorHue = null) {
     const room = this.rooms.get(code);
     if (!room) return { error: 'Room not found' };
 
@@ -148,6 +156,9 @@ class GameLogic {
     }
     if (Number.isInteger(avatarIndex)) {
       player.avatarIndex = this.sanitizeAvatarIndex(avatarIndex);
+    }
+    if (Number.isFinite(colorHue)) {
+      player.colorHue = this.sanitizePlayerColorHue(colorHue);
     }
 
     player.connected = true;
@@ -809,6 +820,7 @@ class GameLogic {
         id,
         name: player.name,
         avatarIndex: player.avatarIndex,
+        colorHue: player.colorHue ?? null,
         alive: player.alive,
         connected: player.connected,
         isHost: id === room.hostId,
@@ -1032,6 +1044,7 @@ class GameLogic {
       players.push({
         id,
         name: player.name,
+        colorHue: player.colorHue ?? null,
         role: player.role,
         faction: player.faction,
         alive: player.alive

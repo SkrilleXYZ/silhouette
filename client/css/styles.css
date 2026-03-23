@@ -328,12 +328,61 @@ body {
 
 .profile-name-group {
   max-width: none;
-  margin-bottom: 18px;
+  margin-bottom: 0;
+  flex: 1;
 }
 
 .profile-panel-body {
   display: flex;
   flex-direction: column;
+}
+
+.profile-name-row {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.profile-color-picker {
+  width: 52px;
+  min-width: 52px;
+  position: relative;
+  border-radius: 16px;
+  border: 1px solid var(--border-light);
+  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-color-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.profile-color-wheel {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, rgba(255,255,255,0.94) 0 22%, transparent 24% 100%),
+    conic-gradient(
+      #ff5252 0deg,
+      #ffb347 58deg,
+      #fff36b 102deg,
+      #67ff8f 155deg,
+      #5cf1ff 210deg,
+      #6b85ff 258deg,
+      #d56cff 312deg,
+      #ff6fad 360deg
+    );
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.18), 0 0 18px rgba(255,255,255,0.05);
 }
 
 .profile-panel-compact {
@@ -362,6 +411,8 @@ body {
   line-height: 1.1;
   margin-bottom: 0;
   word-break: break-word;
+  color: hsla(var(--chat-accent, 195), 82%, 86%, 0.98);
+  text-shadow: 0 0 12px hsla(var(--chat-accent, 195), 82%, 58%, 0.14);
 }
 
 .profile-avatar-section {

@@ -82,9 +82,15 @@
                 </div>
               </div>
               <div id="profile-panel-body" class="profile-panel-body">
-                <div class="input-group profile-name-group">
-                  <input type="text" id="profile-name-input" class="text-input" placeholder="Player name..." maxlength="16" autocomplete="off">
-                  <div class="input-line"></div>
+                <div class="profile-name-row">
+                  <div class="input-group profile-name-group">
+                    <input type="text" id="profile-name-input" class="text-input" placeholder="Player name..." maxlength="16" autocomplete="off">
+                    <div class="input-line"></div>
+                  </div>
+                  <label class="profile-color-picker" for="profile-name-color" title="Choose username color">
+                    <input type="color" id="profile-name-color" class="profile-color-input" aria-label="Choose username color">
+                    <span class="profile-color-wheel" aria-hidden="true"></span>
+                  </label>
                 </div>
                 <div class="profile-avatar-section">
                   <div class="profile-avatar-label">Choose Avatar</div>
