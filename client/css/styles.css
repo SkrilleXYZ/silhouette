@@ -4494,7 +4494,7 @@ body {
 .chat-channel-tabs {
   display: flex;
   gap: 8px;
-  padding: 10px 14px 8px;
+  padding: 12px 14px 10px;
   margin-top: 0;
   margin-bottom: 0;
   transform: none;
@@ -4502,8 +4502,12 @@ body {
   z-index: 4;
   flex: 0 0 auto;
   pointer-events: auto;
-  background: rgba(0, 0, 0, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.08));
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.phase-chat-panel .chat-channel-tabs {
+  padding-top: 14px;
 }
 
 .chat-channel-tab {
@@ -4812,6 +4816,84 @@ body {
   box-shadow: inset 0 1px 0 rgba(180, 255, 206, 0.08), 0 0 0 1px rgba(85, 255, 149, 0.06);
 }
 
+.chat-message.system.private.system-result-mirror {
+  border-color: rgba(164, 222, 255, 0.38);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(224, 245, 255, 0.18), transparent 16%),
+    radial-gradient(circle at 18% 112%, rgba(38, 82, 110, 0.26), transparent 42%),
+    linear-gradient(135deg, rgba(20, 36, 48, 0.98), rgba(8, 14, 20, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(241, 250, 255, 0.07),
+    0 0 0 1px rgba(164, 222, 255, 0.05),
+    0 16px 28px -24px rgba(164, 222, 255, 0.24);
+  overflow: hidden;
+}
+
+.chat-message.system.private.system-result-vitalist {
+  border-color: rgba(96, 255, 156, 0.38);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(199, 255, 220, 0.18), transparent 16%),
+    radial-gradient(circle at 18% 112%, rgba(26, 92, 44, 0.28), transparent 42%),
+    linear-gradient(135deg, rgba(12, 44, 24, 0.98), rgba(6, 16, 10, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(222, 255, 232, 0.06),
+    0 0 0 1px rgba(96, 255, 156, 0.05),
+    0 16px 28px -24px rgba(96, 255, 156, 0.24);
+  overflow: hidden;
+}
+
+.chat-message.system.private.system-result-survivalist {
+  border-color: rgba(255, 173, 96, 0.38);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(255, 224, 180, 0.18), transparent 16%),
+    radial-gradient(circle at 18% 112%, rgba(104, 58, 18, 0.28), transparent 42%),
+    linear-gradient(135deg, rgba(52, 30, 10, 0.98), rgba(18, 10, 4, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 235, 206, 0.06),
+    0 0 0 1px rgba(255, 173, 96, 0.05),
+    0 16px 28px -24px rgba(255, 173, 96, 0.24);
+  overflow: hidden;
+}
+
+.chat-message.system.private.system-result-guardian-angel {
+  border-color: rgba(255, 228, 176, 0.4);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(255, 246, 214, 0.2), transparent 16%),
+    radial-gradient(circle at 18% 112%, rgba(126, 94, 34, 0.28), transparent 42%),
+    linear-gradient(135deg, rgba(54, 44, 18, 0.98), rgba(20, 14, 6, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 248, 228, 0.07),
+    0 0 0 1px rgba(255, 228, 176, 0.05),
+    0 16px 28px -24px rgba(255, 228, 176, 0.24);
+  overflow: hidden;
+}
+
+.chat-message.system.private.system-result-executioner-shift {
+  border-color: rgba(255, 198, 88, 0.4);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(255, 228, 166, 0.18), transparent 16%),
+    radial-gradient(circle at 18% 112%, rgba(118, 72, 18, 0.28), transparent 42%),
+    linear-gradient(135deg, rgba(56, 34, 10, 0.98), rgba(18, 12, 4, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 238, 204, 0.06),
+    0 0 0 1px rgba(255, 198, 88, 0.05),
+    0 16px 28px -24px rgba(255, 198, 88, 0.24);
+  overflow: hidden;
+}
+
+.chat-message.system.private.system-result-guardian-shift {
+  border-color: rgba(196, 236, 255, 0.4);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(238, 249, 255, 0.18), transparent 16%),
+    radial-gradient(circle at 18% 112%, rgba(54, 88, 112, 0.28), transparent 42%),
+    linear-gradient(135deg, rgba(22, 36, 50, 0.98), rgba(8, 12, 18, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(246, 252, 255, 0.06),
+    0 0 0 1px rgba(196, 236, 255, 0.05),
+    0 16px 28px -24px rgba(196, 236, 255, 0.22);
+  overflow: hidden;
+}
+
 .chat-message.system.private.system-result-blackout {
   border-color: rgba(124, 134, 150, 0.34);
   background:
@@ -4856,6 +4938,30 @@ body {
   background:
     linear-gradient(112deg, transparent 0%, rgba(255, 219, 138, 0.06) 42%, transparent 66%),
     linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.18) 100%);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.chat-message.system.private.system-result-silenced {
+  border-color: rgba(214, 64, 64, 0.38);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(255, 184, 184, 0.16), transparent 16%),
+    radial-gradient(circle at 18% 112%, rgba(92, 18, 18, 0.28), transparent 42%),
+    linear-gradient(135deg, rgba(42, 10, 10, 0.98), rgba(16, 4, 4, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 220, 220, 0.06),
+    0 0 0 1px rgba(214, 64, 64, 0.05),
+    0 16px 28px -24px rgba(214, 64, 64, 0.24);
+  overflow: hidden;
+}
+
+.chat-message.system.private.system-result-silenced::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(112deg, transparent 0%, rgba(255, 210, 210, 0.06) 42%, transparent 66%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(22, 4, 4, 0.2) 100%);
   opacity: 0.9;
   pointer-events: none;
 }
@@ -5018,6 +5124,42 @@ body {
   text-shadow: none;
 }
 
+.chat-message.system.private.system-result-mirror .chat-message-meta,
+.chat-message.system.private.system-result-mirror .chat-message-text {
+  color: hsl(198, 100%, 95%);
+  text-shadow: 0 1px 8px rgba(224, 245, 255, 0.08);
+}
+
+.chat-message.system.private.system-result-vitalist .chat-message-meta,
+.chat-message.system.private.system-result-vitalist .chat-message-text {
+  color: hsl(146, 100%, 95%);
+  text-shadow: 0 1px 8px rgba(199, 255, 220, 0.08);
+}
+
+.chat-message.system.private.system-result-survivalist .chat-message-meta,
+.chat-message.system.private.system-result-survivalist .chat-message-text {
+  color: hsl(34, 100%, 94%);
+  text-shadow: 0 1px 8px rgba(255, 224, 180, 0.08);
+}
+
+.chat-message.system.private.system-result-guardian-angel .chat-message-meta,
+.chat-message.system.private.system-result-guardian-angel .chat-message-text {
+  color: hsl(46, 100%, 95%);
+  text-shadow: 0 1px 8px rgba(255, 246, 214, 0.08);
+}
+
+.chat-message.system.private.system-result-executioner-shift .chat-message-meta,
+.chat-message.system.private.system-result-executioner-shift .chat-message-text {
+  color: hsl(42, 100%, 95%);
+  text-shadow: 0 1px 8px rgba(255, 228, 166, 0.08);
+}
+
+.chat-message.system.private.system-result-guardian-shift .chat-message-meta,
+.chat-message.system.private.system-result-guardian-shift .chat-message-text {
+  color: hsl(198, 100%, 95%);
+  text-shadow: 0 1px 8px rgba(238, 249, 255, 0.08);
+}
+
 .chat-message.system.private.system-result-blackout .chat-message-meta,
 .chat-message.system.private.system-result-blackout .chat-message-text {
   color: hsl(212, 42%, 95%);
@@ -5028,6 +5170,12 @@ body {
 .chat-message.system.private.system-result-blackmail .chat-message-text {
   color: hsl(42, 100%, 94%);
   text-shadow: 0 1px 8px rgba(255, 201, 93, 0.08);
+}
+
+.chat-message.system.private.system-result-silenced .chat-message-meta,
+.chat-message.system.private.system-result-silenced .chat-message-text {
+  color: hsl(0, 100%, 95%);
+  text-shadow: 0 1px 8px rgba(255, 184, 184, 0.08);
 }
 
 .chat-message.system.private.system-result-hypnotic .chat-message-meta,

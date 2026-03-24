@@ -1721,6 +1721,9 @@
     if (/You have been blackmailed\.$/i.test(text) && String(message.source || '').trim() === 'Blackmailer') {
       return ' system-result-blackmail';
     }
+    if (/You have been silenced by the Silencer\.$/i.test(text) && String(message.source || '').trim() === 'Silencer') {
+      return ' system-result-silenced';
+    }
     if (/You have been hypnotised by the Hypnotic\.$/i.test(text) && String(message.source || '').trim() === 'Hypnotic') {
       return ' system-result-hypnotic';
     }
@@ -1729,6 +1732,24 @@
     }
     if (/.* confesses to murdering .*\.$/i.test(text) && String(message.source || '').trim() === 'Redflag') {
       return ' system-result-redflag';
+    }
+    if (/A mirrored shield reflected a killing blow away from you\.$/i.test(text) && String(message.source || '').trim() === 'Mirror Caster') {
+      return ' system-result-mirror';
+    }
+    if (/You were protected by the Vitalist during the night\.$/i.test(text) && String(message.source || '').trim() === 'Vitalist') {
+      return ' system-result-vitalist';
+    }
+    if (/You protected yourself from death during the night\.$/i.test(text) && String(message.source || '').trim() === 'Survivalist') {
+      return ' system-result-survivalist';
+    }
+    if (/A Guardian Angel blessed you through the night\.$/i.test(text) && String(message.source || '').trim() === 'Guardian Angel') {
+      return ' system-result-guardian-angel';
+    }
+    if (/Your target has died\. You have become the Amnesiac\.$/i.test(text) && String(message.source || '').trim() === 'Executioner') {
+      return ' system-result-executioner-shift';
+    }
+    if (/Your target has died\. You have become the Amnesiac\.$/i.test(text) && String(message.source || '').trim() === 'Guardian Angel') {
+      return ' system-result-guardian-shift';
     }
     if (/You were protected by the Vitalist during the night\.$/i.test(text)) {
       return ' system-result-protect';
@@ -3159,6 +3180,18 @@
     });
   }
 
+  function bindChatChannelTabs(root) {
+    if (!root) return;
+    root.querySelectorAll('[data-chat-channel]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const nextChannel = button.dataset.chatChannel || 'public';
+        if (nextChannel === state.currentChatChannel) return;
+        state.currentChatChannel = nextChannel;
+        renderChatBox();
+      });
+    });
+  }
+
   function ensureChatOverlay() {
     let overlay = document.getElementById('chat-fullscreen-overlay');
     if (overlay) return overlay;
@@ -3296,13 +3329,7 @@
         });
       }
 
-      overlay.querySelectorAll('[data-chat-channel]').forEach((button) => {
-        button.addEventListener('click', () => {
-          state.currentChatChannel = button.dataset.chatChannel || 'public';
-          renderChatBox();
-        });
-      });
-
+      bindChatChannelTabs(overlay);
       bindChatComposer(document.getElementById('chat-overlay-form'), canChat, activeChannel);
       return;
     }
@@ -3355,6 +3382,7 @@
       });
     }
 
+    bindChatChannelTabs(panel);
     bindChatComposer(document.getElementById('chat-form'), canChat, activeChannel);
   }
 
