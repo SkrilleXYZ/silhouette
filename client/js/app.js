@@ -66,6 +66,19 @@
         },
       ],
     },
+    Veteran: {
+      faction: 'Crew',
+      subfaction: 'Killing',
+      description: 'Become unkillable for the night and kill anyone who interacts with you. Can be used 4 times.',
+      revealText: 'Muted metal steadies your pulse. Stand watch and punish anyone who comes too close.',
+      abilities: [
+        {
+          name: 'Instinct',
+          type: 'Night',
+          description: 'Become unkillable for the night and kill anyone who interacts with you. Can be used 4 times.',
+        },
+      ],
+    },
     Vitalist: {
       faction: 'Crew',
       subfaction: 'Protection',
@@ -169,7 +182,6 @@
     'Avatar 24.png',
     'Avatar 25.png',
     'Avatar 3.png',
-    'Avatar 4.png',
     'Avatar 5.png',
     'Avatar 6.png',
     'Avatar 7.png',
@@ -824,6 +836,7 @@
   function getRoleThemeClass(role, fallbackFaction = 'Crew') {
     const normalizedRole = String(role || '').trim().toLowerCase();
     if (normalizedRole === 'sheriff') return 'sheriff';
+    if (normalizedRole === 'veteran') return 'veteran';
     if (normalizedRole === 'vitalist') return 'vitalist';
     if (normalizedRole === 'investigator') return 'investigator';
     if (normalizedRole === 'tracker') return 'tracker';
@@ -901,6 +914,10 @@
       .replace(
         'Cannot protect the same player twice in a row.',
         '<span class="roles-guide-ability-highlight">Cannot protect the same player twice in a row.</span>'
+      )
+      .replace(
+        'Can be used 4 times.',
+        '<span class="roles-guide-ability-highlight">Can be used 4 times.</span>'
       );
   }
 
@@ -2806,6 +2823,9 @@
     } else if (player.role === 'Tracker') {
       state.selectedAction = 'track';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="track">Track</button></div>';
+    } else if (player.role === 'Veteran') {
+      state.selectedAction = 'instinct';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="instinct">Instinct</button></div>';
     } else if (player.role === 'Vitalist') {
       state.selectedAction = 'protect';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">Protect</button></div>';
@@ -2818,9 +2838,11 @@
     if (player.role === 'Sheriff') actionDesc = 'Choose to shoot or investigate a player';
     else if (player.role === 'Investigator') actionDesc = 'Choose a player to examine for recent kills';
     else if (player.role === 'Tracker') actionDesc = 'Choose a player to track for nighttime interactions';
+    else if (player.role === 'Veteran') actionDesc = `Stand watch tonight. ${player.veteranUsesRemaining ?? 4} of 4 uses remaining`;
     else if (player.role === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
     else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
 
+    const isTargetlessRole = player.role === 'Veteran';
     let restrictionNote = '';
     if (player.role === 'Investigator' && investigatorLockedTargetId) {
       const lockedTarget = state.roomData?.players?.find((candidate) => candidate.id === investigatorLockedTargetId);
@@ -2832,6 +2854,10 @@
       if (lockedTarget) {
         restrictionNote = `<div class="medic-restriction">Cannot track <strong>${lockedTarget.name}</strong> twice in a row</div>`;
       }
+    } else if (player.role === 'Veteran') {
+      restrictionNote = (player.veteranUsesRemaining ?? 4) > 0
+        ? '<div class="medic-restriction">You become unkillable tonight and anyone who targets you dies.</div>'
+        : '<div class="medic-restriction">You have no Instinct uses remaining.</div>';
     }
 
     container.innerHTML = `
@@ -2840,6 +2866,7 @@
         <div class="action-subtitle">${actionDesc}</div>
         ${actionsHTML}
         ${restrictionNote}
+        ${isTargetlessRole ? '' : `
         <div class="target-label">SELECT TARGET</div>
         <div class="target-list chat-target-list" id="target-list">
           ${targets.map(t => {
@@ -2848,9 +2875,9 @@
               || (player.role === 'Tracker' && t.id === trackerLockedTargetId);
             return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`;
           }).join('')}
-        </div>
+        </div>`}
         <div class="chat-local-actions">
-          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || !state.selectedTarget ? 'disabled' : ''}>Confirm</button>
+          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !state.selectedTarget) || (player.role === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0) ? 'disabled' : ''}>Confirm</button>
           <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>
         </div>
       </div>
@@ -2887,8 +2914,9 @@
     const confirmBtn = document.getElementById('btn-confirm-action');
     if (confirmBtn) {
       confirmBtn.addEventListener('click', () => {
-        if (!state.selectedAction || !state.selectedTarget) return;
-        state.socket.emit('night-action', { action: state.selectedAction, targetId: state.selectedTarget }, (response) => {
+        if (!state.selectedAction) return;
+        if (!isTargetlessRole && !state.selectedTarget) return;
+        state.socket.emit('night-action', { action: state.selectedAction, targetId: isTargetlessRole ? null : state.selectedTarget }, (response) => {
           if (response.success) {
             state.hasActed = true;
             renderNightPhase(container);

@@ -31,6 +31,9 @@
   --sheriff: hsl(42, 92%, 62%);
   --sheriff-dim: hsl(36, 58%, 18%);
   --sheriff-glow: hsla(42, 92%, 62%, 0.34);
+  --veteran: hsl(56, 28%, 72%);
+  --veteran-dim: hsl(72, 18%, 22%);
+  --veteran-glow: hsla(56, 28%, 72%, 0.3);
   --assassin: hsl(0, 86%, 58%);
   --assassin-dim: hsl(0, 62%, 18%);
   --assassin-glow: hsla(0, 86%, 58%, 0.34);
@@ -2479,6 +2482,9 @@ body {
 .role-card.role-theme-sheriff .role-card-glow { background: radial-gradient(circle, var(--sheriff) 0%, transparent 70%); }
 .role-card.role-theme-sheriff .role-card-inner { border-color: rgba(255, 208, 80, 0.42); box-shadow: inset 0 0 0 1px rgba(255, 208, 80, 0.08), 0 0 22px rgba(219, 167, 45, 0.12); }
 
+.role-card.role-theme-veteran .role-card-glow { background: radial-gradient(circle, var(--veteran) 0%, transparent 70%); }
+.role-card.role-theme-veteran .role-card-inner { border-color: rgba(188, 192, 139, 0.42); box-shadow: inset 0 0 0 1px rgba(188, 192, 139, 0.08), 0 0 22px rgba(143, 150, 98, 0.12); }
+
 .role-card.assassin .role-card-glow,
 .role-card.role-theme-assassin .role-card-glow { background: radial-gradient(circle, var(--assassin) 0%, transparent 70%); }
 
@@ -2507,6 +2513,8 @@ body {
 .role-card.role-theme-jester .role-faction { color: var(--jester); }
 
 .role-card.role-theme-sheriff .role-faction { color: var(--sheriff); }
+
+.role-card.role-theme-veteran .role-faction { color: var(--veteran); }
 
 .role-card.assassin .role-faction,
 .role-card.role-theme-assassin .role-faction { color: var(--assassin); }
@@ -2542,6 +2550,8 @@ body {
 
 .role-card.role-theme-sheriff .role-divider { background: var(--sheriff); }
 
+.role-card.role-theme-veteran .role-divider { background: var(--veteran); }
+
 .role-card.assassin .role-divider,
 .role-card.role-theme-assassin .role-divider { background: var(--assassin); }
 
@@ -2568,6 +2578,11 @@ body {
 .role-card.role-theme-sheriff .role-name {
   color: hsl(42, 100%, 84%);
   text-shadow: 0 0 18px rgba(255, 201, 72, 0.24);
+}
+
+.role-card.role-theme-veteran .role-name {
+  color: hsl(58, 36%, 84%);
+  text-shadow: 0 0 18px rgba(188, 192, 139, 0.22);
 }
 
 .role-card.role-theme-assassin .role-name {
@@ -2687,6 +2702,12 @@ body {
     linear-gradient(180deg, rgba(28, 20, 8, 0.98), rgba(11, 8, 5, 0.98));
 }
 
+.role-reveal-panel.role-theme-veteran {
+  background:
+    radial-gradient(circle at top, rgba(188, 192, 139, 0.22), transparent 48%),
+    linear-gradient(180deg, rgba(24, 24, 12, 0.98), rgba(10, 10, 6, 0.98));
+}
+
 .role-reveal-panel.role-theme-vitalist {
   background:
     radial-gradient(circle at top, rgba(57, 255, 123, 0.2), transparent 48%),
@@ -2723,6 +2744,10 @@ body {
 
 .role-reveal-panel.role-theme-sheriff.settled {
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.58), 0 0 34px rgba(229, 179, 60, 0.18);
+}
+
+.role-reveal-panel.role-theme-veteran.settled {
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.58), 0 0 34px rgba(188, 192, 139, 0.16);
 }
 
 .role-reveal-panel.role-theme-vitalist.settled {
@@ -2870,6 +2895,12 @@ body {
   box-shadow: inset 0 0 0 1px rgba(255, 208, 80, 0.12), 0 0 14px rgba(227, 178, 51, 0.14);
 }
 
+.role-reveal-item.role-theme-veteran.is-selected {
+  border-color: rgba(188, 192, 139, 0.55);
+  background: linear-gradient(180deg, rgba(188, 192, 139, 0.08), rgba(188, 192, 139, 0.02));
+  box-shadow: inset 0 0 0 1px rgba(188, 192, 139, 0.12), 0 0 14px rgba(188, 192, 139, 0.12);
+}
+
 .role-reveal-item.role-theme-vitalist.is-selected {
   border-color: rgba(85, 255, 149, 0.55);
   background: linear-gradient(180deg, rgba(85, 255, 149, 0.08), rgba(85, 255, 149, 0.02));
@@ -2945,6 +2976,11 @@ body {
   color: var(--sheriff);
 }
 
+.role-reveal-item.role-theme-veteran .role-reveal-name,
+.role-reveal-item.role-theme-veteran .role-reveal-faction {
+  color: var(--veteran);
+}
+
 .role-reveal-item.role-theme-vitalist .role-reveal-name,
 .role-reveal-item.role-theme-vitalist .role-reveal-faction {
   color: var(--vitalist);
@@ -3001,6 +3037,11 @@ body {
 .role-reveal-result.role-theme-sheriff strong {
   color: var(--sheriff);
   text-shadow: 0 0 18px rgba(255, 208, 80, 0.28);
+}
+
+.role-reveal-result.role-theme-veteran strong {
+  color: var(--veteran);
+  text-shadow: 0 0 18px rgba(188, 192, 139, 0.24);
 }
 
 .role-reveal-result.role-theme-vitalist strong {
@@ -5465,6 +5506,12 @@ body {
   color: var(--sheriff);
 }
 
+#screen-roles .roles-guide-card.role-theme-veteran,
+#screen-roles .roles-guide-card.role-theme-veteran .roles-guide-card-icon {
+  border-color: rgba(188, 192, 139, 0.72);
+  color: var(--veteran);
+}
+
 #screen-roles .roles-guide-card.role-theme-assassin,
 #screen-roles .roles-guide-card.role-theme-assassin .roles-guide-card-icon {
   border-color: rgba(127, 29, 29, 0.72);
@@ -5504,6 +5551,10 @@ body {
   box-shadow: 0 0 20px -10px rgba(245, 158, 11, 0.5);
 }
 
+#screen-roles .roles-guide-card.role-theme-veteran:hover {
+  box-shadow: 0 0 20px -10px rgba(188, 192, 139, 0.46);
+}
+
 #screen-roles .roles-guide-card.role-theme-assassin:hover {
   box-shadow: 0 0 20px -10px rgba(239, 68, 68, 0.5);
 }
@@ -5530,6 +5581,10 @@ body {
 
 #screen-roles .roles-guide-card.role-theme-sheriff .roles-guide-ability-highlight {
   color: var(--sheriff);
+}
+
+#screen-roles .roles-guide-card.role-theme-veteran .roles-guide-ability-highlight {
+  color: var(--veteran);
 }
 
 #screen-roles .roles-guide-card.role-theme-assassin .roles-guide-ability-highlight {

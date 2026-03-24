@@ -113,6 +113,7 @@ class GameLogic {
       colorHex: this.sanitizePlayerColorHex(colorHex),
       role: null,
       faction: null,
+      veteranUsesRemaining: 4,
       alive: true,
       connected: true
     });
@@ -136,6 +137,7 @@ class GameLogic {
       colorHex: this.sanitizePlayerColorHex(colorHex),
       role: null,
       faction: null,
+      veteranUsesRemaining: 4,
       alive: true,
       connected: true
     });
@@ -225,6 +227,12 @@ class GameLogic {
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
 
+    for (const playerId of shuffled) {
+      const player = room.players.get(playerId);
+      if (!player) continue;
+      player.veteranUsesRemaining = 4;
+    }
+
     let index = 0;
 
     if (count === 5) {
@@ -244,7 +252,7 @@ class GameLogic {
       index++;
 
       const crewInfo = room.players.get(shuffled[index]);
-      crewInfo.role = this.pickRandomRole(['Villager', 'Investigator', 'Tracker']);
+      crewInfo.role = this.pickRandomRole(['Villager', 'Investigator', 'Tracker', 'Veteran']);
       crewInfo.faction = 'Crew';
       index++;
 
@@ -272,6 +280,13 @@ class GameLogic {
     medic.role = 'Vitalist';
     medic.faction = 'Crew';
     index++;
+
+    if (index < shuffled.length) {
+      const specialCrew = room.players.get(shuffled[index]);
+      specialCrew.role = this.pickRandomRole(['Villager', 'Investigator', 'Tracker', 'Veteran']);
+      specialCrew.faction = 'Crew';
+      index++;
+    }
 
     while (index < shuffled.length) {
       const player = room.players.get(shuffled[index]);
@@ -312,6 +327,7 @@ class GameLogic {
     for (const [, player] of room.players) {
       player.role = null;
       player.faction = null;
+      player.veteranUsesRemaining = 4;
       player.alive = true;
       player.connected = true;
     }
@@ -348,13 +364,14 @@ class GameLogic {
     const player = room.players.get(playerId);
     if (!player || !player.alive) return { error: 'Invalid player' };
 
-    const target = room.players.get(targetId);
-    if (!target || !target.alive) return { error: 'Invalid target' };
-
     if (player.role === 'Sheriff') {
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
       if (action !== 'shoot' && action !== 'search') return { error: 'Invalid action for Sheriff' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
     } else if (player.role === 'Investigator') {
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
       if (action !== 'examine') return { error: 'Invalid action for Investigator' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
       const recentTargets = room.lastInvestigatorTargets[playerId] || [];
@@ -362,18 +379,27 @@ class GameLogic {
         return { error: 'You cannot target the same player 3 times in a row' };
       }
     } else if (player.role === 'Tracker') {
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
       if (action !== 'track') return { error: 'Invalid action for Tracker' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
       if (room.lastTrackerTargets[playerId] === targetId) {
         return { error: 'You cannot target the same player twice in a row' };
       }
     } else if (player.role === 'Vitalist') {
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
       if (action !== 'protect') return { error: 'Invalid action for Vitalist' };
       // Cannot protect the same player twice in a row
       if (targetId === room.lastMedicTarget) {
         return { error: 'You cannot protect the same player two nights in a row' };
       }
+    } else if (player.role === 'Veteran') {
+      if (action !== 'instinct') return { error: 'Invalid action for Veteran' };
+      if ((player.veteranUsesRemaining ?? 4) <= 0) return { error: 'You have no Instinct uses remaining' };
     } else if (player.role === 'Assassin') {
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
       if (action !== 'kill') return { error: 'Invalid action for Assassin' };
       if (target.faction === 'Assassin') return { error: 'Cannot kill teammates' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
@@ -381,7 +407,7 @@ class GameLogic {
       return { error: 'You have no night abilities' };
     }
 
-    room.nightActions[playerId] = { action, targetId };
+    room.nightActions[playerId] = { action, targetId: action === 'instinct' ? null : targetId };
 
     return { success: true, room };
   }
@@ -424,6 +450,7 @@ class GameLogic {
     const privateMessages = {};
     const killersThisNight = new Set();
     const recentKillers = new Set((room.recentKillers || []).flat());
+    const veteranAlertIds = new Set();
 
     // Track who the medic protected this night
     let medicTargetThisNight = null;
@@ -431,6 +458,10 @@ class GameLogic {
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       if (!player) continue;
+      if (action.action === 'instinct' && player.role === 'Veteran') {
+        veteranAlertIds.add(playerId);
+        player.veteranUsesRemaining = Math.max(0, (player.veteranUsesRemaining ?? 4) - 1);
+      }
       if (action.action === 'protect' && action.targetId) {
         protected_.add(action.targetId);
         medicTargetThisNight = action.targetId;
@@ -453,7 +484,9 @@ class GameLogic {
       if (!player) continue;
 
       if (action.action === 'kill' && player.role === 'Assassin' && action.targetId) {
-        if (!protected_.has(action.targetId)) {
+        if (veteranAlertIds.has(action.targetId)) {
+          killed.add(playerId);
+        } else if (!protected_.has(action.targetId)) {
           killed.add(action.targetId);
           killersThisNight.add(playerId);
         } else {
@@ -472,7 +505,9 @@ class GameLogic {
 
       if (action.action === 'shoot' && action.targetId) {
         const target = room.players.get(action.targetId);
-        if (target && target.faction === 'Crew') {
+        if (veteranAlertIds.has(action.targetId)) {
+          killed.add(playerId);
+        } else if (target && target.faction === 'Crew') {
           killed.add(playerId);
         } else if (!protected_.has(action.targetId)) {
           killed.add(action.targetId);
@@ -485,6 +520,10 @@ class GameLogic {
           }
         }
       } else if (action.action === 'search' && action.targetId) {
+        if (veteranAlertIds.has(action.targetId)) {
+          killed.add(playerId);
+          continue;
+        }
         const target = room.players.get(action.targetId);
         searchResults[playerId] = {
           targetId: action.targetId,
@@ -508,6 +547,11 @@ class GameLogic {
 
       const previousTargets = room.lastInvestigatorTargets[playerId] || [];
       if (action.action === 'examine' && action.targetId) {
+        if (veteranAlertIds.has(action.targetId)) {
+          killed.add(playerId);
+          nextInvestigatorTargets[playerId] = [...previousTargets.slice(-1), action.targetId];
+          continue;
+        }
         const target = room.players.get(action.targetId);
         const hasKilledRecently = killHistoryForInvestigators.has(action.targetId);
         searchResults[playerId] = {
@@ -539,6 +583,11 @@ class GameLogic {
       if (!player || player.role !== 'Tracker') continue;
 
       if (action.action === 'track' && action.targetId) {
+        if (veteranAlertIds.has(action.targetId)) {
+          killed.add(playerId);
+          nextTrackerTargets[playerId] = action.targetId;
+          continue;
+        }
         const trackedPlayer = room.players.get(action.targetId);
         const trackedAction = room.nightActions[action.targetId];
         const interactedTarget = trackedAction?.targetId
@@ -571,6 +620,14 @@ class GameLogic {
       }
     }
     room.lastTrackerTargets = nextTrackerTargets;
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      if (!player || player.role !== 'Vitalist') continue;
+      if (action.action === 'protect' && action.targetId && veteranAlertIds.has(action.targetId)) {
+        killed.add(playerId);
+      }
+    }
 
     for (const deadId of killed) {
       const deadPlayer = room.players.get(deadId);
@@ -872,6 +929,7 @@ class GameLogic {
     if (action === 'examine') return 'Investigator is examining someone.';
     if (action === 'track') return 'Tracker is following someone.';
     if (action === 'protect') return 'Vitalist has protected someone.';
+    if (action === 'instinct') return 'Veteran is standing watch.';
     if (action === 'kill') return 'An Assassin has moved through the shadows.';
     return null;
   }
@@ -1019,6 +1077,7 @@ class GameLogic {
       lastMedicTarget: player.role === 'Vitalist' ? room.lastMedicTarget : null,
       lastInvestigatorTargets: player.role === 'Investigator' ? (room.lastInvestigatorTargets[playerId] || []) : [],
       lastTrackerTarget: player.role === 'Tracker' ? (room.lastTrackerTargets[playerId] || null) : null,
+      veteranUsesRemaining: player.role === 'Veteran' ? (player.veteranUsesRemaining ?? 4) : null,
     };
   }
 
