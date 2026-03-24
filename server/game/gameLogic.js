@@ -4,7 +4,7 @@ class GameLogic {
     this.avatarCount = 29;
     this.roleCatalog = {
       Crew: {
-        Info: ['Villager', 'Investigator', 'Tracker'],
+        Info: ['Villager', 'Investigator', 'Tracker', 'Stalker'],
         Protection: ['Vitalist', 'Mirror Caster'],
         Killing: ['Sheriff', 'Veteran'],
       },
@@ -113,6 +113,7 @@ class GameLogic {
       lastMirrorTargets: {},
       lastInvestigatorTargets: {},
       lastTrackerTargets: {},
+      lastStalkerTargets: {},
       recentKillers: [],
       roleRevealEndsAt: 0,
     };
@@ -294,20 +295,14 @@ class GameLogic {
       index++;
     }
 
-    const sheriff = room.players.get(shuffled[index]);
-    sheriff.role = 'Sheriff';
-    sheriff.faction = 'Crew';
+    this.assignRoleFromSlot(room, shuffled[index], 'Crew', 'Killing');
     index++;
 
-    const medic = room.players.get(shuffled[index]);
-    medic.role = 'Vitalist';
-    medic.faction = 'Crew';
+    this.assignRoleFromSlot(room, shuffled[index], 'Crew', 'Protection');
     index++;
 
     if (index < shuffled.length) {
-      const specialCrew = room.players.get(shuffled[index]);
-      specialCrew.role = this.pickRandomRole(['Villager', 'Investigator', 'Tracker', 'Veteran', 'Mirror Caster']);
-      specialCrew.faction = 'Crew';
+      this.assignRoleFromSlot(room, shuffled[index], 'Crew', 'Info');
       index++;
     }
 
@@ -337,6 +332,9 @@ class GameLogic {
     room.currentPhaseSummaryId = null;
     room.lastMedicTarget = null;
     room.lastMirrorTargets = {};
+    room.lastInvestigatorTargets = {};
+    room.lastTrackerTargets = {};
+    room.lastStalkerTargets = {};
     room.roleRevealEndsAt = 0;
 
     this.beginPhaseSummary(code, 'Night 1 has begun. Chat is locked until morning.');
@@ -374,6 +372,7 @@ class GameLogic {
     room.lastMirrorTargets = {};
     room.lastInvestigatorTargets = {};
     room.lastTrackerTargets = {};
+    room.lastStalkerTargets = {};
     room.recentKillers = [];
     room.roleRevealEndsAt = 0;
 
@@ -410,6 +409,14 @@ class GameLogic {
       if (action !== 'track') return { error: 'Invalid action for Tracker' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
       if (room.lastTrackerTargets[playerId] === targetId) {
+        return { error: 'You cannot target the same player twice in a row' };
+      }
+    } else if (player.role === 'Stalker') {
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
+      if (action !== 'stalk') return { error: 'Invalid action for Stalker' };
+      if (targetId === playerId) return { error: 'Cannot target yourself' };
+      if (room.lastStalkerTargets[playerId] === targetId) {
         return { error: 'You cannot target the same player twice in a row' };
       }
     } else if (player.role === 'Vitalist') {
@@ -601,6 +608,7 @@ class GameLogic {
     const nextInvestigatorTargets = {};
     const killHistoryForInvestigators = new Set([...recentKillers, ...killersThisNight]);
     const nextTrackerTargets = {};
+    const nextStalkerTargets = {};
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       if (!player || player.role !== 'Investigator') continue;
@@ -680,6 +688,53 @@ class GameLogic {
       }
     }
     room.lastTrackerTargets = nextTrackerTargets;
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      if (!player || player.role !== 'Stalker') continue;
+
+      if (action.action === 'stalk' && action.targetId) {
+        if (veteranAlertIds.has(action.targetId)) {
+          killed.add(playerId);
+          nextStalkerTargets[playerId] = action.targetId;
+          continue;
+        }
+        const stalkedPlayer = room.players.get(action.targetId);
+        const visitors = Object.entries(room.nightActions)
+          .filter(([visitorId, visitorAction]) => (
+            visitorId !== playerId
+            && visitorAction?.action
+            && visitorAction.action !== 'skip'
+            && visitorAction.targetId === action.targetId
+          ))
+          .map(([visitorId]) => room.players.get(visitorId))
+          .filter(Boolean);
+
+        searchResults[playerId] = {
+          targetId: action.targetId,
+          targetName: stalkedPlayer?.name || 'Unknown',
+          resultType: 'stalk',
+          visitorIds: visitors.map((visitor) => visitor.id),
+          visitorNames: visitors.map((visitor) => visitor.name),
+        };
+
+        if (!privateMessages[playerId]) privateMessages[playerId] = [];
+        privateMessages[playerId].push(
+          this.createPrivateSystemMessage(
+            code,
+            visitors.length
+              ? `${stalkedPlayer.name} was interacted with by ${visitors.map((visitor) => visitor.name).join(', ')} tonight.`
+              : `${stalkedPlayer.name} was not interacted with by anyone tonight.`,
+            'Stalker'
+          )
+        );
+
+        nextStalkerTargets[playerId] = action.targetId;
+      } else {
+        nextStalkerTargets[playerId] = null;
+      }
+    }
+    room.lastStalkerTargets = nextStalkerTargets;
 
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
@@ -1004,6 +1059,7 @@ class GameLogic {
     if (action === 'search') return 'Sheriff is investigating someone.';
     if (action === 'examine') return 'Investigator is examining someone.';
     if (action === 'track') return 'Tracker is following someone.';
+    if (action === 'stalk') return 'Stalker is shadowing someone.';
     if (action === 'protect') return 'Vitalist has protected someone.';
     if (action === 'mirror') return 'Mirror Caster has woven a reflective shield.';
     if (action === 'instinct') return 'Veteran is standing watch.';
@@ -1155,6 +1211,7 @@ class GameLogic {
       lastMirrorTarget: player.role === 'Mirror Caster' ? (room.lastMirrorTargets[playerId] || null) : null,
       lastInvestigatorTargets: player.role === 'Investigator' ? (room.lastInvestigatorTargets[playerId] || []) : [],
       lastTrackerTarget: player.role === 'Tracker' ? (room.lastTrackerTargets[playerId] || null) : null,
+      lastStalkerTarget: player.role === 'Stalker' ? (room.lastStalkerTargets[playerId] || null) : null,
       veteranUsesRemaining: player.role === 'Veteran' ? (player.veteranUsesRemaining ?? 4) : null,
       mirrorUsesRemaining: player.role === 'Mirror Caster' ? (player.mirrorUsesRemaining ?? 4) : null,
     };

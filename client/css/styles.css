@@ -22,6 +22,9 @@
   --tracker: hsl(195, 100%, 72%);
   --tracker-dim: hsl(198, 58%, 18%);
   --tracker-glow: hsla(195, 100%, 72%, 0.36);
+  --stalker: hsl(148, 54%, 58%);
+  --stalker-dim: hsl(148, 34%, 16%);
+  --stalker-glow: hsla(148, 54%, 58%, 0.3);
   --investigator: hsl(267, 86%, 76%);
   --investigator-dim: hsl(268, 42%, 20%);
   --investigator-glow: hsla(267, 86%, 76%, 0.34);
@@ -2476,6 +2479,9 @@ body {
 .role-card.role-theme-tracker .role-card-glow { background: radial-gradient(circle, var(--tracker) 0%, transparent 70%); }
 .role-card.role-theme-tracker .role-card-inner { border-color: rgba(122, 226, 255, 0.38); box-shadow: inset 0 0 0 1px rgba(122, 226, 255, 0.08), 0 0 24px rgba(74, 192, 230, 0.12); }
 
+.role-card.role-theme-stalker .role-card-glow { background: radial-gradient(circle, var(--stalker) 0%, transparent 70%); }
+.role-card.role-theme-stalker .role-card-inner { border-color: rgba(78, 180, 127, 0.38); box-shadow: inset 0 0 0 1px rgba(78, 180, 127, 0.08), 0 0 24px rgba(52, 132, 90, 0.12); }
+
 .role-card.role-theme-investigator .role-card-glow { background: radial-gradient(circle, var(--investigator) 0%, transparent 70%); }
 .role-card.role-theme-investigator .role-card-inner { border-color: rgba(185, 132, 255, 0.36); box-shadow: inset 0 0 0 1px rgba(185, 132, 255, 0.08), 0 0 24px rgba(151, 106, 223, 0.12); }
 
@@ -2513,6 +2519,8 @@ body {
 .role-card.role-theme-vitalist .role-faction { color: var(--vitalist); }
 
 .role-card.role-theme-tracker .role-faction { color: var(--tracker); }
+
+.role-card.role-theme-stalker .role-faction { color: var(--stalker); }
 
 .role-card.role-theme-investigator .role-faction { color: var(--investigator); }
 
@@ -2552,6 +2560,8 @@ body {
 
 .role-card.role-theme-tracker .role-divider { background: var(--tracker); }
 
+.role-card.role-theme-stalker .role-divider { background: var(--stalker); }
+
 .role-card.role-theme-investigator .role-divider { background: var(--investigator); }
 
 .role-card.role-theme-jester .role-divider { background: var(--jester); }
@@ -2573,6 +2583,11 @@ body {
 .role-card.role-theme-tracker .role-name {
   color: hsl(194, 100%, 91%);
   text-shadow: 0 0 18px rgba(122, 226, 255, 0.28);
+}
+
+.role-card.role-theme-stalker .role-name {
+  color: hsl(146, 54%, 86%);
+  text-shadow: 0 0 18px rgba(84, 182, 129, 0.24);
 }
 
 .role-card.role-theme-investigator .role-name {
@@ -2741,6 +2756,12 @@ body {
     linear-gradient(180deg, rgba(8, 22, 28, 0.98), rgba(5, 11, 16, 0.98));
 }
 
+.role-reveal-panel.role-theme-stalker {
+  background:
+    radial-gradient(circle at top, rgba(84, 182, 129, 0.2), transparent 48%),
+    linear-gradient(180deg, rgba(8, 19, 14, 0.98), rgba(5, 10, 8, 0.98));
+}
+
 .role-reveal-panel.role-theme-investigator {
   background:
     radial-gradient(circle at top, rgba(185, 132, 255, 0.2), transparent 48%),
@@ -2781,6 +2802,10 @@ body {
 
 .role-reveal-panel.role-theme-tracker.settled {
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.58), 0 0 34px rgba(122, 226, 255, 0.18);
+}
+
+.role-reveal-panel.role-theme-stalker.settled {
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.58), 0 0 34px rgba(84, 182, 129, 0.18);
 }
 
 .role-reveal-panel.role-theme-investigator.settled {
@@ -2944,6 +2969,12 @@ body {
   box-shadow: inset 0 0 0 1px rgba(122, 226, 255, 0.12), 0 0 14px rgba(122, 226, 255, 0.14);
 }
 
+.role-reveal-item.role-theme-stalker.is-selected {
+  border-color: rgba(84, 182, 129, 0.55);
+  background: linear-gradient(180deg, rgba(84, 182, 129, 0.08), rgba(84, 182, 129, 0.02));
+  box-shadow: inset 0 0 0 1px rgba(84, 182, 129, 0.12), 0 0 14px rgba(84, 182, 129, 0.14);
+}
+
 .role-reveal-item.role-theme-investigator.is-selected {
   border-color: rgba(185, 132, 255, 0.55);
   background: linear-gradient(180deg, rgba(185, 132, 255, 0.08), rgba(185, 132, 255, 0.02));
@@ -3027,6 +3058,11 @@ body {
   color: var(--tracker);
 }
 
+.role-reveal-item.role-theme-stalker .role-reveal-name,
+.role-reveal-item.role-theme-stalker .role-reveal-faction {
+  color: var(--stalker);
+}
+
 .role-reveal-item.role-theme-investigator .role-reveal-name,
 .role-reveal-item.role-theme-investigator .role-reveal-faction {
   color: var(--investigator);
@@ -3093,6 +3129,11 @@ body {
 .role-reveal-result.role-theme-tracker strong {
   color: var(--tracker);
   text-shadow: 0 0 18px rgba(122, 226, 255, 0.28);
+}
+
+.role-reveal-result.role-theme-stalker strong {
+  color: var(--stalker);
+  text-shadow: 0 0 18px rgba(84, 182, 129, 0.24);
 }
 
 .role-reveal-result.role-theme-investigator strong {
@@ -4193,6 +4234,13 @@ body {
   box-shadow: inset 0 1px 0 rgba(194, 243, 255, 0.07), 0 0 0 1px rgba(122, 226, 255, 0.08);
 }
 
+.chat-summary-line.summary-stalk {
+  background: linear-gradient(135deg, hsla(148, 54%, 32%, 0.2), hsla(148, 34%, 14%, 0.28));
+  border-color: hsla(148, 54%, 58%, 0.42);
+  color: hsl(146, 60%, 94%);
+  box-shadow: inset 0 1px 0 rgba(184, 241, 205, 0.07), 0 0 0 1px rgba(84, 182, 129, 0.08);
+}
+
 .chat-summary-line.summary-examine {
   background: linear-gradient(135deg, hsla(269, 68%, 42%, 0.2), hsla(267, 56%, 16%, 0.28));
   border-color: hsla(271, 92%, 72%, 0.42);
@@ -4522,6 +4570,7 @@ body {
 .gameover-player-role.role-theme-villager { color: var(--villager); }
 .gameover-player-role.role-theme-vitalist { color: var(--vitalist); }
 .gameover-player-role.role-theme-tracker { color: var(--tracker); }
+.gameover-player-role.role-theme-stalker { color: var(--stalker); }
 .gameover-player-role.role-theme-investigator { color: var(--investigator); }
 .gameover-player-role.role-theme-jester { color: var(--jester); }
 .gameover-player-role.role-theme-sheriff { color: var(--sheriff); }
@@ -4556,6 +4605,7 @@ body {
 .gameover-player.won:has(.gameover-player-role.role-theme-villager),
 .gameover-player.won:has(.gameover-player-role.role-theme-vitalist),
 .gameover-player.won:has(.gameover-player-role.role-theme-tracker),
+.gameover-player.won:has(.gameover-player-role.role-theme-stalker),
 .gameover-player.won:has(.gameover-player-role.role-theme-investigator),
 .gameover-player.won:has(.gameover-player-role.role-theme-sheriff),
 .gameover-player.won:has(.gameover-player-role.role-theme-veteran),
@@ -5035,6 +5085,7 @@ body {
 .gpl-role.role-theme-vitalist { background: rgba(20, 74, 35, 0.92); color: hsl(132, 92%, 70%); box-shadow: 0 0 16px rgba(67, 239, 128, 0.12); }
 .gpl-role.role-theme-mirrorcaster { background: linear-gradient(135deg, rgba(58, 72, 90, 0.94), rgba(22, 56, 76, 0.94)); color: var(--mirrorcaster); box-shadow: 0 0 16px rgba(132, 205, 255, 0.14); }
 .gpl-role.role-theme-tracker { background: rgba(20, 67, 84, 0.92); color: hsl(195, 100%, 78%); box-shadow: 0 0 16px rgba(122, 226, 255, 0.14); }
+.gpl-role.role-theme-stalker { background: rgba(21, 56, 34, 0.92); color: var(--stalker); box-shadow: 0 0 16px rgba(84, 182, 129, 0.14); }
 .gpl-role.role-theme-investigator { background: rgba(53, 28, 88, 0.92); color: hsl(267, 100%, 86%); box-shadow: 0 0 16px rgba(185, 132, 255, 0.14); }
 .gpl-role.role-theme-jester { background: rgba(84, 41, 62, 0.92); color: hsl(336, 100%, 88%); box-shadow: 0 0 16px rgba(255, 193, 223, 0.14); }
 .gpl-role.role-theme-sheriff { background: rgba(72, 55, 14, 0.92); color: hsl(42, 100%, 76%); box-shadow: 0 0 16px rgba(227, 178, 51, 0.12); }
@@ -5595,6 +5646,12 @@ body {
   color: var(--tracker);
 }
 
+#screen-roles .roles-guide-card.role-theme-stalker,
+#screen-roles .roles-guide-card.role-theme-stalker .roles-guide-card-icon {
+  border-color: rgba(46, 125, 77, 0.72);
+  color: var(--stalker);
+}
+
 #screen-roles .roles-guide-card.role-theme-investigator,
 #screen-roles .roles-guide-card.role-theme-investigator .roles-guide-card-icon {
   border-color: rgba(109, 40, 217, 0.72);
@@ -5649,6 +5706,10 @@ body {
   box-shadow: 0 0 20px -10px rgba(6, 182, 212, 0.5);
 }
 
+#screen-roles .roles-guide-card.role-theme-stalker:hover {
+  box-shadow: 0 0 20px -10px rgba(84, 182, 129, 0.46);
+}
+
 #screen-roles .roles-guide-card.role-theme-investigator:hover {
   box-shadow: 0 0 20px -10px rgba(168, 85, 247, 0.5);
 }
@@ -5684,6 +5745,10 @@ body {
 
 #screen-roles .roles-guide-card.role-theme-tracker .roles-guide-ability-highlight {
   color: var(--tracker);
+}
+
+#screen-roles .roles-guide-card.role-theme-stalker .roles-guide-ability-highlight {
+  color: var(--stalker);
 }
 
 #screen-roles .roles-guide-card.role-theme-investigator .roles-guide-ability-highlight {

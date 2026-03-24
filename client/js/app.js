@@ -131,6 +131,19 @@
         },
       ],
     },
+    Stalker: {
+      faction: 'Crew',
+      subfaction: 'Info',
+      description: 'Stalk a player to learn who interacted with them at night. Cannot target the same player twice in a row.',
+      revealText: 'A deep forest hush follows your steps. Watch who slips into another player’s shadow.',
+      abilities: [
+        {
+          name: 'Stalk',
+          type: 'Night',
+          description: 'Stalk a player to learn who interacted with them at night. Cannot target the same player twice in a row.',
+        },
+      ],
+    },
     Villager: {
       faction: 'Crew',
       subfaction: 'Info',
@@ -854,6 +867,7 @@
     if (normalizedRole === 'vitalist') return 'vitalist';
     if (normalizedRole === 'investigator') return 'investigator';
     if (normalizedRole === 'tracker') return 'tracker';
+    if (normalizedRole === 'stalker') return 'stalker';
     if (normalizedRole === 'assassin') return 'assassin';
     if (normalizedRole === 'villager') return 'villager';
     if (normalizedRole === 'jester') return 'jester';
@@ -1361,6 +1375,7 @@
     if (/Sheriff is investigating someone/i.test(text)) return 'summary-search';
     if (/Investigator is examining someone/i.test(text)) return 'summary-examine';
     if (/Tracker is following someone/i.test(text)) return 'summary-track';
+    if (/Stalker is shadowing someone/i.test(text)) return 'summary-stalk';
     if (/protected someone/i.test(text)) return 'summary-protect';
     if (/moved through the shadows/i.test(text)) return 'summary-kill';
     return '';
@@ -1419,6 +1434,9 @@
       return ' system-result-examine';
     }
     if (/.* interacted with .* tonight\.$/i.test(text) || /.* did not interact with anyone tonight\.$/i.test(text)) {
+      return ' system-result-track';
+    }
+    if (/.* was interacted with by .* tonight\.$/i.test(text) || /.* was not interacted with by anyone tonight\.$/i.test(text)) {
       return ' system-result-track';
     }
     if (/You were protected by the Vitalist during the night\.$/i.test(text)) {
@@ -2846,6 +2864,9 @@
     const trackerLockedTargetId = player.role === 'Tracker'
       ? player.lastTrackerTarget
       : null;
+    const stalkerLockedTargetId = player.role === 'Stalker'
+      ? player.lastStalkerTarget
+      : null;
 
     let actionsHTML = '';
     if (player.role === 'Sheriff') {
@@ -2856,6 +2877,9 @@
     } else if (player.role === 'Tracker') {
       state.selectedAction = 'track';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="track">Track</button></div>';
+    } else if (player.role === 'Stalker') {
+      state.selectedAction = 'stalk';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="stalk">Stalk</button></div>';
     } else if (player.role === 'Veteran') {
       state.selectedAction = 'instinct';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="instinct">Instinct</button></div>';
@@ -2874,6 +2898,7 @@
     if (player.role === 'Sheriff') actionDesc = 'Choose to shoot or investigate a player';
     else if (player.role === 'Investigator') actionDesc = 'Choose a player to examine for recent kills';
     else if (player.role === 'Tracker') actionDesc = 'Choose a player to track for nighttime interactions';
+    else if (player.role === 'Stalker') actionDesc = 'Choose a player to stalk for incoming interactions';
     else if (player.role === 'Veteran') actionDesc = 'Stand watch tonight.';
     else if (player.role === 'Mirror Caster') actionDesc = 'Choose a player to mirror tonight';
     else if (player.role === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
@@ -2890,6 +2915,11 @@
       const lockedTarget = state.roomData?.players?.find((candidate) => candidate.id === trackerLockedTargetId);
       if (lockedTarget) {
         restrictionNote = `<div class="medic-restriction">Cannot track <strong>${lockedTarget.name}</strong> twice in a row</div>`;
+      }
+    } else if (player.role === 'Stalker' && stalkerLockedTargetId) {
+      const lockedTarget = state.roomData?.players?.find((candidate) => candidate.id === stalkerLockedTargetId);
+      if (lockedTarget) {
+        restrictionNote = `<div class="medic-restriction">Cannot stalk <strong>${lockedTarget.name}</strong> twice in a row</div>`;
       }
     } else if (player.role === 'Mirror Caster' && player.lastMirrorTarget) {
       const lockedTarget = state.roomData?.players?.find((candidate) => candidate.id === player.lastMirrorTarget);
@@ -2911,7 +2941,8 @@
             const isRestricted = (player.role === 'Vitalist' && t.id === player.lastMedicTarget)
               || (player.role === 'Mirror Caster' && t.id === player.lastMirrorTarget)
               || (player.role === 'Investigator' && t.id === investigatorLockedTargetId)
-              || (player.role === 'Tracker' && t.id === trackerLockedTargetId);
+              || (player.role === 'Tracker' && t.id === trackerLockedTargetId)
+              || (player.role === 'Stalker' && t.id === stalkerLockedTargetId);
             return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`;
           }).join('')}
         </div>`}
@@ -2939,6 +2970,8 @@
           if (player.role === 'Investigator') {
             showToast('You cannot target the same player 3 times in a row', 'error');
           } else if (player.role === 'Tracker') {
+            showToast('You cannot target the same player twice in a row', 'error');
+          } else if (player.role === 'Stalker') {
             showToast('You cannot target the same player twice in a row', 'error');
           } else if (player.role === 'Mirror Caster') {
             showToast('You cannot target the same player twice in a row', 'error');
