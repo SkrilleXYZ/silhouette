@@ -155,14 +155,14 @@ io.on('connection', (socket) => {
     callback({ success: true });
   });
 
-  socket.on('update-room-settings', ({ anonymousVotes, anonymousEjects, hiddenRoleList }, callback) => {
+  socket.on('update-room-settings', ({ anonymousVotes, anonymousEjects, hiddenRoleList, disableVillagerRole }, callback) => {
     const mapping = socketMap.get(socket.id);
     if (!mapping) {
       if (callback) callback({ success: false, error: 'Not in a room' });
       return;
     }
 
-    const result = game.updateRoomSettings(mapping.code, mapping.playerId, { anonymousVotes, anonymousEjects, hiddenRoleList });
+    const result = game.updateRoomSettings(mapping.code, mapping.playerId, { anonymousVotes, anonymousEjects, hiddenRoleList, disableVillagerRole });
     if (result.error) {
       if (callback) callback({ success: false, error: result.error });
       return;
@@ -173,13 +173,13 @@ io.on('connection', (socket) => {
     if (callback) callback({ success: true, room: publicData });
   });
 
-  socket.on('night-action', ({ action, targetId }, callback) => {
+  socket.on('night-action', ({ action, targetId, targetIds }, callback) => {
     const mapping = socketMap.get(socket.id);
     if (!mapping) {
       callback({ success: false, error: 'Not in a room' });
       return;
     }
-    const result = game.submitNightAction(mapping.code, mapping.playerId, action, targetId);
+    const result = game.submitNightAction(mapping.code, mapping.playerId, action, targetId, targetIds);
     if (result.error) {
       callback({ success: false, error: result.error });
       return;

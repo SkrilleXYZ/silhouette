@@ -4,7 +4,7 @@ class GameLogic {
     this.avatarCount = 29;
     this.roleCatalog = {
       Crew: {
-        Info: ['Villager', 'Investigator', 'Tracker', 'Stalker'],
+        Info: ['Villager', 'Investigator', 'Tracker', 'Stalker', 'Redflag', 'Traplord'],
         Protection: ['Vitalist', 'Mirror Caster'],
         Killing: ['Sheriff', 'Veteran'],
         Unbound: ['Silencer'],
@@ -111,6 +111,7 @@ class GameLogic {
       anonymousVotes: false,
       anonymousEjects: false,
       hiddenRoleList: false,
+      disableVillagerRole: false,
       playerOrder: [],
       lastAction: Date.now(),
       lastMedicTarget: null,
@@ -247,8 +248,17 @@ class GameLogic {
     return roles[Math.floor(Math.random() * roles.length)];
   }
 
-  pickRoleForSlot(faction, subfaction) {
-    const pool = this.roleCatalog?.[faction]?.[subfaction] || [];
+  getRolePoolForRoom(room, faction, subfaction) {
+    const basePool = this.roleCatalog?.[faction]?.[subfaction] || [];
+    if (!Array.isArray(basePool)) return [];
+    if (room?.disableVillagerRole && faction === 'Crew' && subfaction === 'Info') {
+      return basePool.filter((role) => role !== 'Villager');
+    }
+    return [...basePool];
+  }
+
+  pickRoleForSlot(room, faction, subfaction) {
+    const pool = this.getRolePoolForRoom(room, faction, subfaction);
     return this.pickRandomRole(pool);
   }
 
@@ -256,11 +266,27 @@ class GameLogic {
     const player = room.players.get(playerId);
     if (!player) return false;
 
-    const role = this.pickRoleForSlot(faction, subfaction);
+    const role = this.pickRoleForSlot(room, faction, subfaction);
     if (!role) return false;
 
     player.role = role;
     player.faction = faction;
+    return true;
+  }
+
+  assignFallbackCrewRole(room, playerId) {
+    const fallbackPool = [
+      ...this.getRolePoolForRoom(room, 'Crew', 'Info'),
+      ...this.getRolePoolForRoom(room, 'Crew', 'Protection'),
+      ...this.getRolePoolForRoom(room, 'Crew', 'Killing'),
+      ...this.getRolePoolForRoom(room, 'Crew', 'Unbound'),
+    ];
+    const role = this.pickRandomRole(fallbackPool);
+    if (!role) return false;
+    const player = room.players.get(playerId);
+    if (!player) return false;
+    player.role = role;
+    player.faction = 'Crew';
     return true;
   }
 
@@ -455,9 +481,14 @@ class GameLogic {
     }
 
     while (index < shuffled.length) {
-      const player = room.players.get(shuffled[index]);
-      player.role = 'Villager';
-      player.faction = 'Crew';
+      const playerId = shuffled[index];
+      if (room.disableVillagerRole) {
+        this.assignFallbackCrewRole(room, playerId);
+      } else {
+        const player = room.players.get(playerId);
+        player.role = 'Villager';
+        player.faction = 'Crew';
+      }
       index++;
     }
 
@@ -550,7 +581,7 @@ class GameLogic {
     return { room };
   }
 
-  submitNightAction(code, playerId, action, targetId) {
+  submitNightAction(code, playerId, action, targetId, targetIds = null) {
     const room = this.rooms.get(code);
     if (!room || room.state !== 'night') return { error: 'Not in night phase' };
     if (room.roleRevealEndsAt && Date.now() < room.roleRevealEndsAt) {
@@ -589,6 +620,16 @@ class GameLogic {
       if (targetId === playerId) return { error: 'Cannot target yourself' };
       if (room.lastStalkerTargets[playerId] === targetId) {
         return { error: 'You cannot target the same player twice in a row' };
+      }
+    } else if (player.role === 'Traplord') {
+      if (action !== 'trap') return { error: 'Invalid action for Traplord' };
+      if (!Array.isArray(targetIds)) return { error: 'Invalid targets' };
+      const normalizedTargetIds = [...new Set(targetIds.map((id) => String(id || '').trim()).filter(Boolean))];
+      if (normalizedTargetIds.length < 3) return { error: 'Choose at least 3 players' };
+      for (const selectedTargetId of normalizedTargetIds) {
+        const target = room.players.get(selectedTargetId);
+        if (!target || !target.alive) return { error: 'Invalid target' };
+        if (selectedTargetId === playerId) return { error: 'Cannot target yourself' };
       }
     } else if (player.role === 'Silencer') {
       const target = room.players.get(targetId);
@@ -630,7 +671,7 @@ class GameLogic {
       const inheritResult = this.inheritDeadRole(room, playerId, targetId);
       if (inheritResult.error) return inheritResult;
 
-      const passiveRoles = new Set(['Villager', 'Jester', 'Executioner', 'Amnesiac']);
+      const passiveRoles = new Set(['Villager', 'Jester', 'Executioner', 'Amnesiac', 'Redflag']);
       if (passiveRoles.has(inheritResult.player.role)) {
         room.nightActions[playerId] = { action: 'skip', targetId: null };
       } else {
@@ -793,6 +834,13 @@ class GameLogic {
         targetId: action === 'kill' ? targetId : (existingAction.targetId || null),
         queuedTargetId: null,
       };
+    } else if (player.role === 'Traplord') {
+      room.nightActions[playerId] = {
+        action,
+        targetId: null,
+        targetIds: [...new Set(targetIds.map((id) => String(id || '').trim()).filter(Boolean))],
+        queuedTargetId: null,
+      };
     } else {
       room.nightActions[playerId] = {
         action,
@@ -874,6 +922,7 @@ class GameLogic {
       if (player.role === 'Villager') continue;
       if (player.role === 'Jester') continue;
       if (player.role === 'Executioner') continue;
+      if (player.role === 'Redflag') continue;
       if (player.role === 'Tetherhex') {
         const tetherhexAction = room.nightActions[id];
         if (!tetherhexAction) return false;
@@ -937,6 +986,7 @@ class GameLogic {
     const searchResults = {};
     const privateMessages = {};
     const killersThisNight = new Set();
+    const killAttributions = new Map();
     const recentKillers = new Set((room.recentKillers || []).flat());
     const veteranAlertIds = new Set();
     const mirroredTargets = new Map();
@@ -947,10 +997,15 @@ class GameLogic {
     const blackmailedTargets = new Set();
     const nextPendingLongshots = [];
     const resolvingLongshots = [];
+    const registerKillAttribution = (victimId, killerId) => {
+      if (!victimId || !killerId) return;
+      killAttributions.set(victimId, killerId);
+    };
     const getInteractionTargetIds = (nightAction) => {
       if (!nightAction) return [];
       const targetIds = [];
       if (nightAction.targetId) targetIds.push(nightAction.targetId);
+      if (Array.isArray(nightAction.targetIds)) targetIds.push(...nightAction.targetIds);
       if (nightAction.action === 'longshot' && nightAction.queuedTargetId) targetIds.push(nightAction.queuedTargetId);
       if (nightAction.tranceUsedThisNight && nightAction.tranceTargetId) targetIds.push(nightAction.tranceTargetId);
       if (nightAction.malwareUsedThisNight && nightAction.malwareTargetId) targetIds.push(nightAction.malwareTargetId);
@@ -1127,6 +1182,7 @@ class GameLogic {
         );
       } else if (!protected_.has(shot.targetId) && !blessedTargets.has(shot.targetId) && !lifeguardedTargets.has(shot.targetId)) {
         killed.add(shot.targetId);
+        registerKillAttribution(shot.targetId, shot.shooterId);
       } else if (protected_.has(shot.targetId)) {
         if (!privateMessages[shot.targetId]) {
           privateMessages[shot.targetId] = [];
@@ -1170,6 +1226,7 @@ class GameLogic {
         } else if (!protected_.has(action.targetId) && !blessedTargets.has(action.targetId) && !lifeguardedTargets.has(action.targetId)) {
           killed.add(action.targetId);
           killersThisNight.add(playerId);
+          registerKillAttribution(action.targetId, playerId);
         } else if (protected_.has(action.targetId)) {
           if (!privateMessages[action.targetId]) {
             privateMessages[action.targetId] = [
@@ -1216,6 +1273,7 @@ class GameLogic {
         } else if (!protected_.has(action.targetId) && !blessedTargets.has(action.targetId) && !lifeguardedTargets.has(action.targetId)) {
           killed.add(action.targetId);
           killersThisNight.add(playerId);
+          registerKillAttribution(action.targetId, playerId);
         } else if (protected_.has(action.targetId)) {
           if (!privateMessages[action.targetId]) {
             privateMessages[action.targetId] = [
@@ -1418,6 +1476,41 @@ class GameLogic {
 
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
+      if (!player || player.role !== 'Traplord') continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
+
+      const trapTargetIds = Array.isArray(action.targetIds) ? action.targetIds.filter(Boolean) : [];
+      if (action.action !== 'trap' || trapTargetIds.length < 3) continue;
+
+      if (trapTargetIds.some((selectedTargetId) => veteranAlertIds.has(selectedTargetId))) {
+        killed.add(playerId);
+        continue;
+      }
+
+      if (!privateMessages[playerId]) privateMessages[playerId] = [];
+      if (blackoutFlashActive.size > 0) {
+        privateMessages[playerId].push(
+          this.createPrivateSystemMessage(code, 'You couldn\'t see anything last night.', 'Blackout')
+        );
+        continue;
+      }
+
+      const shuffledRoles = trapTargetIds
+        .map((selectedTargetId) => room.players.get(selectedTargetId)?.role)
+        .filter(Boolean)
+        .sort(() => Math.random() - 0.5);
+
+      privateMessages[playerId].push(
+        this.createPrivateSystemMessage(
+          code,
+          `Your trap uncovered these roles: ${shuffledRoles.join(', ')}.`,
+          'Traplord'
+        )
+      );
+    }
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
       if (!player || player.role !== 'Vitalist') continue;
       if (disabledAbilityTargets.has(playerId)) continue;
       if (action.action === 'protect' && action.targetId && veteranAlertIds.has(action.targetId)) {
@@ -1461,6 +1554,7 @@ class GameLogic {
         } else if (!protected_.has(action.targetId) && !blessedTargets.has(action.targetId) && !lifeguardedTargets.has(action.targetId)) {
           killed.add(action.targetId);
           killersThisNight.add(playerId);
+          registerKillAttribution(action.targetId, playerId);
         } else if (protected_.has(action.targetId)) {
           if (!privateMessages[action.targetId]) {
             privateMessages[action.targetId] = [];
@@ -1504,6 +1598,7 @@ class GameLogic {
         } else if (!protected_.has(action.targetId) && !blessedTargets.has(action.targetId) && !lifeguardedTargets.has(action.targetId)) {
           killed.add(action.targetId);
           killersThisNight.add(playerId);
+          registerKillAttribution(action.targetId, playerId);
         } else if (protected_.has(action.targetId)) {
           if (!privateMessages[action.targetId]) {
             privateMessages[action.targetId] = [];
@@ -1547,6 +1642,7 @@ class GameLogic {
         } else if (!protected_.has(action.targetId) && !blessedTargets.has(action.targetId) && !lifeguardedTargets.has(action.targetId)) {
           killed.add(action.targetId);
           killersThisNight.add(playerId);
+          registerKillAttribution(action.targetId, playerId);
         } else if (protected_.has(action.targetId)) {
           if (!privateMessages[action.targetId]) {
             privateMessages[action.targetId] = [];
@@ -1590,6 +1686,7 @@ class GameLogic {
         } else if (!protected_.has(action.targetId) && !blessedTargets.has(action.targetId) && !lifeguardedTargets.has(action.targetId)) {
           killed.add(action.targetId);
           killersThisNight.add(playerId);
+          registerKillAttribution(action.targetId, playerId);
         } else if (protected_.has(action.targetId)) {
           if (!privateMessages[action.targetId]) {
             privateMessages[action.targetId] = [];
@@ -1633,6 +1730,7 @@ class GameLogic {
         } else if (!protected_.has(action.targetId) && !blessedTargets.has(action.targetId) && !lifeguardedTargets.has(action.targetId)) {
           killed.add(action.targetId);
           killersThisNight.add(playerId);
+          registerKillAttribution(action.targetId, playerId);
         } else if (protected_.has(action.targetId)) {
           if (!privateMessages[action.targetId]) {
             privateMessages[action.targetId] = [];
@@ -1683,6 +1781,20 @@ class GameLogic {
           faction: deadPlayer.faction,
           public: true
         });
+        if (deadPlayer.role === 'Redflag') {
+          const killerId = killAttributions.get(deadId);
+          const killer = killerId ? room.players.get(killerId) : null;
+          if (killer) {
+            messages.push({
+              type: 'system',
+              text: `${killer.name} confesses to murdering ${deadPlayer.name}.`,
+              playerId: killerId,
+              targetId: deadId,
+              source: 'Redflag',
+              public: true
+            });
+          }
+        }
       }
     }
 
@@ -1772,6 +1884,9 @@ class GameLogic {
     }
     if (typeof settings.hiddenRoleList === 'boolean') {
       room.hiddenRoleList = settings.hiddenRoleList;
+    }
+    if (typeof settings.disableVillagerRole === 'boolean') {
+      room.disableVillagerRole = settings.disableVillagerRole;
     }
 
     room.lastAction = Date.now();
@@ -2063,6 +2178,7 @@ class GameLogic {
       anonymousVotes: room.anonymousVotes,
       anonymousEjects: room.anonymousEjects,
       hiddenRoleList: room.hiddenRoleList,
+      disableVillagerRole: room.disableVillagerRole,
       votingEligibleCount: players.filter((p) => p.alive && !room.blackmailedPlayers?.[p.id]).length,
     };
   }
@@ -2093,6 +2209,7 @@ class GameLogic {
     if (action === 'examine') return 'Investigator is examining someone.';
     if (action === 'track') return 'Tracker is following someone.';
     if (action === 'stalk') return 'Stalker is shadowing someone.';
+    if (action === 'trap') return 'Traplord is setting a trap.';
     if (action === 'protect') return 'Vitalist has protected someone.';
     if (action === 'quietus') return 'Silencer has hushed someone.';
     if (action === 'bless') return 'Guardian Angel has blessed their target.';

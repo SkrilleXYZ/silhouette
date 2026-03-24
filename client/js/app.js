@@ -43,6 +43,7 @@
     pendingRoleInheritance: null,
     chatDraft: '',
     chatOverlayDraft: '',
+    selectedTargets: [],
   };
 
   const MAX_ROOM_PLAYERS = 16;
@@ -144,6 +145,32 @@
           name: 'Stalk',
           type: 'Night',
           description: 'Stalk a player to learn who interacted with them at night. Cannot target the same player twice in a row.',
+        },
+      ],
+    },
+    Traplord: {
+      faction: 'Crew',
+      subfaction: 'Info',
+      description: 'Choose at least 3 players to learn their roles. The order is random.',
+      revealText: 'A violet snare glimmers in the dark. Set a wide trap and read what it catches.',
+      abilities: [
+        {
+          name: 'Trap',
+          type: 'Night',
+          description: 'Choose at least 3 players to learn their roles. The order is random.',
+        },
+      ],
+    },
+    Redflag: {
+      faction: 'Crew',
+      subfaction: 'Info',
+      description: 'Whoever kills you must confess the murder in the morning.',
+      revealText: 'Bright red warning burns through the dark. If they silence you forever, their name will surface at dawn.',
+      abilities: [
+        {
+          name: 'Confession',
+          type: 'Passive',
+          description: 'Whoever kills you must confess the murder in the morning.',
         },
       ],
     },
@@ -571,6 +598,7 @@
     state.searchResult = null;
     state.selectedAction = null;
     state.selectedTarget = null;
+    state.selectedTargets = [];
     state.totalAlive = response.room?.aliveCount || 0;
     setRoomUrl(state.roomCode);
     applyRoomCodeToInput(state.roomCode);
@@ -838,6 +866,9 @@
       state.totalAlive = 0;
       state.searchResult = null;
       state.privateChatMessages = [];
+      state.selectedAction = null;
+      state.selectedTarget = null;
+      state.selectedTargets = [];
       state.allPlayersWithRoles = [];
       showScreen('game');
       hideNav();
@@ -858,6 +889,7 @@
       state.totalAlive = room?.aliveCount || 0;
       state.selectedAction = null;
       state.selectedTarget = null;
+      state.selectedTargets = [];
       if (messages) state.morningMessages = messages;
       if (phase === 'night') stopRoleReveal(true);
       else if (phase !== 'vote-result') stopRoleReveal(false);
@@ -946,6 +978,7 @@
       state.privateChatMessages = [];
       state.selectedAction = null;
       state.selectedTarget = null;
+      state.selectedTargets = [];
       state.morningMessages = [];
       state.chatMessages = room.chatMessages || [];
       state.gamePhase = null;
@@ -1046,6 +1079,8 @@
     if (normalizedRole === 'investigator') return 'investigator';
     if (normalizedRole === 'tracker') return 'tracker';
     if (normalizedRole === 'stalker') return 'stalker';
+    if (normalizedRole === 'traplord') return 'traplord';
+    if (normalizedRole === 'redflag') return 'redflag';
     if (normalizedRole === 'silencer') return 'silencer';
     if (normalizedRole === 'assassin') return 'assassin';
     if (normalizedRole === 'sniper') return 'sniper';
@@ -1242,6 +1277,7 @@
 
   function buildRoleRevealSequence(finalRole) {
     const roles = Object.entries(ROLE_DEFINITIONS)
+      .filter(([role]) => !(state.roomData?.disableVillagerRole && role === 'Villager'))
       .filter(([, roleInfo]) => !roleInfo.hiddenFromReveal)
       .map(([role]) => role);
     const sequence = [];
@@ -1467,6 +1503,11 @@
       hiddenRoleListToggle.checked = !!data.hiddenRoleList;
       hiddenRoleListToggle.disabled = !(state.isHost || state.playerId === data.hostId);
     }
+    const disableVillagerRoleToggle = document.getElementById('toggle-disable-villager-role');
+    if (disableVillagerRoleToggle) {
+      disableVillagerRoleToggle.checked = !!data.disableVillagerRole;
+      disableVillagerRoleToggle.disabled = !(state.isHost || state.playerId === data.hostId);
+    }
 
     const list = document.getElementById('players-list');
     list.innerHTML = '';
@@ -1632,6 +1673,9 @@
     if (/.* was interacted by .* tonight\.$/i.test(text) || /.* was not interacted by anyone tonight\.$/i.test(text)) {
       return ' system-result-track';
     }
+    if (/Your trap uncovered these roles: .*?\.$/i.test(text) && String(message.source || '').trim() === 'Traplord') {
+      return ' system-result-trap';
+    }
     if (/You couldn\'t see anything last night\.$/i.test(text) && String(message.source || '').trim() === 'Blackout') {
       return ' system-result-blackout';
     }
@@ -1643,6 +1687,9 @@
     }
     if (/You have been hacked by the Overload\.$/i.test(text) && String(message.source || '').trim() === 'Overload') {
       return ' system-result-overload';
+    }
+    if (/.* confesses to murdering .*\.$/i.test(text) && String(message.source || '').trim() === 'Redflag') {
+      return ' system-result-redflag';
     }
     if (/You were protected by the Vitalist during the night\.$/i.test(text)) {
       return ' system-result-protect';
@@ -1662,6 +1709,13 @@
         return `<div class="chat-summary-line${lineClass ? ` ${lineClass}` : ''}">${lineHtml}</div>`;
       }).join('');
       return `${title}${lines ? `<div class="chat-summary-lines">${lines}</div>` : ''}`;
+    }
+
+    if (message.type === 'system') {
+      const redflagConfessionMatch = String(message.text || '').trim().match(/^(.*?) confesses to murdering (.*?)\.$/i);
+      if (redflagConfessionMatch && String(message.source || '').trim() === 'Redflag') {
+        return `${formatPlayerNameReference(redflagConfessionMatch[1])} confesses to murdering ${formatPlayerNameReference(redflagConfessionMatch[2])}.`;
+      }
     }
 
     if (message.private && message.type === 'system') {
@@ -1707,6 +1761,20 @@
       const noVisitorMatch = text.match(/^(.*?) was not interacted by anyone tonight\.$/i);
       if (noVisitorMatch) {
         return `${formatPlayerNameReference(noVisitorMatch[1])} <span class="chat-result-highlight is-tracker-muted">was not interacted by anyone tonight.</span>`;
+      }
+
+      const trapMatch = text.match(/^Your trap uncovered these roles: (.*?)\.$/i);
+      if (trapMatch) {
+        const roleList = trapMatch[1]
+          .split(',')
+          .map((role) => role.trim())
+          .filter(Boolean)
+          .map((role) => {
+            const roleInfo = getRoleDefinition(role);
+            return `<span class="search-target-role ${getRoleBadgeClass(role, roleInfo.faction)}">${escapeHtml(role)}</span>`;
+          })
+          .join(', ');
+        return `Your trap uncovered these roles: ${roleList}.`;
       }
     }
 
@@ -2635,6 +2703,15 @@
       });
     });
 
+    document.getElementById('toggle-disable-villager-role').addEventListener('change', (event) => {
+      state.socket.emit('update-room-settings', { disableVillagerRole: event.target.checked }, (response) => {
+        if (!response.success) {
+          showToast(response.error || 'Could not update room settings', 'error');
+          event.target.checked = !!state.roomData?.disableVillagerRole;
+        }
+      });
+    });
+
     document.getElementById('btn-back-home').addEventListener('click', () => {
       state.roomCode = null;
       state.roomData = null;
@@ -2647,6 +2724,7 @@
       state.searchResult = null;
       state.selectedAction = null;
       state.selectedTarget = null;
+      state.selectedTargets = [];
       state.morningMessages = [];
       state.gamePhase = null;
       state.allPlayersWithRoles = [];
@@ -3219,6 +3297,7 @@
       player.role === 'Villager'
       || player.role === 'Jester'
       || player.role === 'Executioner'
+      || player.role === 'Redflag'
       || (player.role === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0)
       || (player.role === 'Mirror Caster' && (player.mirrorUsesRemaining ?? 4) <= 0)
     ) {
@@ -3278,6 +3357,9 @@
     const overloadLockedTargetId = player.role === 'Overload' && state.selectedAction === 'malware'
       ? player.lastOverloadTarget
       : null;
+    const traplordSelectedTargets = player.role === 'Traplord'
+      ? (Array.isArray(state.selectedTargets) ? state.selectedTargets : [])
+      : [];
     const blackoutCanFlashTonight = player.role === 'Blackout'
       ? (player.blackoutFlashUsesRemaining ?? 3) > 0
         && !player.blackoutFlashUsedThisNight
@@ -3329,6 +3411,15 @@
       }
     }
 
+    if (player.role === 'Traplord') {
+      state.selectedAction = 'trap';
+      if (!Array.isArray(state.selectedTargets)) {
+        state.selectedTargets = [];
+      }
+    } else if (Array.isArray(state.selectedTargets) && state.selectedTargets.length) {
+      state.selectedTargets = [];
+    }
+
     let actionsHTML = '';
     if (player.role === 'Sheriff') {
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'shoot' ? 'selected' : ''}" data-action="shoot">Shoot</button><button class="action-btn ${state.selectedAction === 'search' ? 'selected' : ''}" data-action="search">Search</button></div>`;
@@ -3341,6 +3432,9 @@
     } else if (player.role === 'Stalker') {
       state.selectedAction = 'stalk';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="stalk">Stalk</button></div>';
+    } else if (player.role === 'Traplord') {
+      state.selectedAction = 'trap';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="trap">Trap</button></div>';
     } else if (player.role === 'Silencer') {
       state.selectedAction = 'quietus';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="quietus">Quietus</button></div>';
@@ -3385,6 +3479,7 @@
     else if (player.role === 'Investigator') actionDesc = 'Choose a player to examine for recent kills';
     else if (player.role === 'Tracker') actionDesc = 'Choose a player to track for nighttime interactions';
     else if (player.role === 'Stalker') actionDesc = 'Choose a player to stalk for incoming interactions';
+    else if (player.role === 'Traplord') actionDesc = 'Choose at least 3 players. You will learn their roles in random order.';
     else if (player.role === 'Silencer') actionDesc = 'Choose a player to silence until the next night.';
     else if (player.role === 'Amnesiac') actionDesc = 'Choose a dead player to inherit their role';
     else if (player.role === 'Guardian Angel') actionDesc = player.guardianAngelTargetName
@@ -3428,13 +3523,14 @@
       || player.role === 'Guardian Angel'
       || player.role === 'Survivalist'
       || (player.role === 'Blackout' && state.selectedAction === 'flash');
+    const isMultiTargetRole = player.role === 'Traplord';
     container.innerHTML = `
       <div class="action-panel">
         <div class="action-title">YOUR NIGHT ACTION</div>
         <div class="action-subtitle">${actionDesc}</div>
         ${actionsHTML}
         ${isTargetlessRole ? '' : `
-        <div class="target-label">SELECT TARGET</div>
+        <div class="target-label">${isMultiTargetRole ? `SELECT AT LEAST 3 TARGETS${traplordSelectedTargets.length ? ` (${traplordSelectedTargets.length} SELECTED)` : ''}` : 'SELECT TARGET'}</div>
         <div class="target-list chat-target-list" id="target-list">
           ${targets.map(t => {
             const isRestricted = (player.role === 'Vitalist' && t.id === player.lastMedicTarget)
@@ -3446,11 +3542,14 @@
               || (player.role === 'Silencer' && t.id === silencerLockedTargetId)
               || (player.role === 'Hypnotic' && t.id === hypnoticLockedTargetId)
               || (player.role === 'Overload' && t.id === overloadLockedTargetId);
-            return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`;
+            const isSelected = isMultiTargetRole
+              ? traplordSelectedTargets.includes(t.id)
+              : state.selectedTarget === t.id;
+            return `<div class="target-item ${isSelected ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`;
           }).join('')}
         </div>`}
         <div class="chat-local-actions">
-          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !state.selectedTarget) || (player.role === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) ? 'disabled' : ''}>${player.role === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : player.role === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : player.role === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : player.role === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 5}/5` : player.role === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : 'Confirm'}</button>
+          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) || (isMultiTargetRole && traplordSelectedTargets.length < 3) || (player.role === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) ? 'disabled' : ''}>${player.role === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : player.role === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : player.role === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : player.role === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 5}/5` : player.role === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : isMultiTargetRole ? `Confirm ${traplordSelectedTargets.length}/3+` : 'Confirm'}</button>
           <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>
         </div>
       </div>
@@ -3464,6 +3563,7 @@
         btn.classList.add('action-activate');
         state.selectedAction = btn.dataset.action;
         state.selectedTarget = null;
+        state.selectedTargets = [];
         renderNightPhase(container);
       });
     });
@@ -3492,7 +3592,14 @@
           }
           return;
         }
-        state.selectedTarget = item.dataset.target;
+        if (isMultiTargetRole) {
+          const targetId = item.dataset.target;
+          state.selectedTargets = traplordSelectedTargets.includes(targetId)
+            ? traplordSelectedTargets.filter((selectedId) => selectedId !== targetId)
+            : [...traplordSelectedTargets, targetId];
+        } else {
+          state.selectedTarget = item.dataset.target;
+        }
         renderNightPhase(container);
       });
     });
@@ -3501,14 +3608,22 @@
     if (confirmBtn) {
       confirmBtn.addEventListener('click', () => {
         if (!state.selectedAction) return;
-        if (!isTargetlessRole && !state.selectedTarget) return;
-        state.socket.emit('night-action', { action: state.selectedAction, targetId: isTargetlessRole ? null : state.selectedTarget }, (response) => {
+        if (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) return;
+        if (isMultiTargetRole && traplordSelectedTargets.length < 3) return;
+        state.socket.emit('night-action', {
+          action: state.selectedAction,
+          targetId: isTargetlessRole || isMultiTargetRole ? null : state.selectedTarget,
+          targetIds: isMultiTargetRole ? traplordSelectedTargets : null,
+        }, (response) => {
           if (response.success) {
             if (response.player) {
               const previousPlayer = state.playerData;
               queueAmnesiacInheritanceTransition(previousPlayer, response.player);
               state.playerData = response.player;
               state.hasActed = !!response.player.hasSubmittedAction;
+              if (response.player.role === 'Traplord') {
+                state.selectedTargets = [];
+              }
               if (response.player.role === 'Blackout' && state.selectedAction === 'flash' && !response.player.hasSubmittedAction) {
                 state.selectedAction = 'kill';
                 state.selectedTarget = null;
