@@ -12,7 +12,7 @@ class GameLogic {
         Power: ['Assassin'],
       },
       Neutral: {
-        Evil: ['Jester'],
+        Evil: ['Jester', 'Executioner'],
       },
     };
   }
@@ -130,6 +130,7 @@ class GameLogic {
       faction: null,
       veteranUsesRemaining: 4,
       mirrorUsesRemaining: 4,
+      executionerTargetId: null,
       alive: true,
       connected: true
     });
@@ -155,6 +156,7 @@ class GameLogic {
       faction: null,
       veteranUsesRemaining: 4,
       mirrorUsesRemaining: 4,
+      executionerTargetId: null,
       alive: true,
       connected: true
     });
@@ -242,6 +244,29 @@ class GameLogic {
     return true;
   }
 
+  assignExecutionerTargets(room) {
+    if (!room) return;
+
+    const players = Array.from(room.players.values());
+    const executioners = players.filter((player) => player.role === 'Executioner');
+
+    for (const executioner of executioners) {
+      const possibleTargets = players.filter((player) => player.id !== executioner.id);
+      const target = this.pickRandomRole(possibleTargets);
+      executioner.executionerTargetId = target?.id || null;
+    }
+  }
+
+  convertExecutionerToAmnesiac(room, playerId) {
+    const player = room?.players?.get(playerId);
+    if (!player || player.role !== 'Executioner') return false;
+
+    player.role = 'Amnesiac';
+    player.faction = 'Neutral';
+    player.executionerTargetId = null;
+    return true;
+  }
+
   assignRoles(code) {
     const room = this.rooms.get(code);
     if (!room) return null;
@@ -266,6 +291,7 @@ class GameLogic {
       if (!player) continue;
       player.veteranUsesRemaining = 4;
       player.mirrorUsesRemaining = 4;
+      player.executionerTargetId = null;
     }
 
     let index = 0;
@@ -285,6 +311,7 @@ class GameLogic {
       }
 
       room.playerOrder = shuffled;
+      this.assignExecutionerTargets(room);
       return room;
     }
 
@@ -292,6 +319,11 @@ class GameLogic {
       const player = room.players.get(shuffled[index]);
       player.role = 'Assassin';
       player.faction = 'Assassin';
+      index++;
+    }
+
+    if (index < shuffled.length) {
+      this.assignRoleFromSlot(room, shuffled[index], 'Neutral', 'Evil');
       index++;
     }
 
@@ -314,6 +346,7 @@ class GameLogic {
     }
 
     room.playerOrder = shuffled;
+    this.assignExecutionerTargets(room);
     return room;
   }
 
@@ -351,6 +384,7 @@ class GameLogic {
       player.faction = null;
       player.veteranUsesRemaining = 4;
       player.mirrorUsesRemaining = 4;
+      player.executionerTargetId = null;
       player.alive = true;
       player.connected = true;
     }
@@ -475,6 +509,8 @@ class GameLogic {
       if (!player.alive) continue;
       if (player.role === 'Villager') continue;
       if (player.role === 'Jester') continue;
+      if (player.role === 'Executioner') continue;
+      if (player.role === 'Amnesiac') continue;
       if (player.role === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0) continue;
       if (player.role === 'Mirror Caster' && (player.mirrorUsesRemaining ?? 4) <= 0) continue;
       if (!room.nightActions[id]) return false;
@@ -723,8 +759,8 @@ class GameLogic {
           this.createPrivateSystemMessage(
             code,
             visitors.length
-              ? `${stalkedPlayer.name} was interacted with by ${visitors.map((visitor) => visitor.name).join(', ')} tonight.`
-              : `${stalkedPlayer.name} was not interacted with by anyone tonight.`,
+              ? `${stalkedPlayer.name} was interacted by ${visitors.map((visitor) => visitor.name).join(', ')} tonight.`
+              : `${stalkedPlayer.name} was not interacted by anyone tonight.`,
             'Stalker'
           )
         );
@@ -767,6 +803,17 @@ class GameLogic {
           faction: deadPlayer.faction,
           public: true
         });
+      }
+    }
+
+    for (const [, player] of room.players) {
+      if (!player.alive || player.role !== 'Executioner') continue;
+      if (player.executionerTargetId && killed.has(player.executionerTargetId)) {
+        this.convertExecutionerToAmnesiac(room, player.id);
+        if (!privateMessages[player.id]) privateMessages[player.id] = [];
+        privateMessages[player.id].push(
+          this.createPrivateSystemMessage(code, 'Your target has died. You have become the Amnesiac.', 'Executioner')
+        );
       }
     }
 
@@ -908,6 +955,30 @@ class GameLogic {
         faction: player.faction,
         public: true
       };
+
+      const executionerWinner = Array.from(room.players.values()).find((candidate) => (
+        candidate.role === 'Executioner'
+        && candidate.executionerTargetId === eliminated
+      ));
+
+      if (executionerWinner) {
+        room.eliminatedToday = eliminated;
+        room.votes = {};
+        this.appendToPhaseSummary(code, message.text);
+        room.state = 'ended';
+        room.winner = {
+          winner: 'Executioner',
+          reason: `${executionerWinner.name} got their target voted out. Everyone else loses.`,
+        };
+
+        return {
+          room,
+          message,
+          voteCounts,
+          eliminated,
+          winner: room.winner
+        };
+      }
 
       if (player.role === 'Jester') {
         room.eliminatedToday = eliminated;
@@ -1207,6 +1278,10 @@ class GameLogic {
       teammates,
       hasSubmittedAction: !!room.nightActions[playerId],
       hasVoted: !!room.votes[playerId],
+      executionerTargetId: player.role === 'Executioner' ? (player.executionerTargetId || null) : null,
+      executionerTargetName: player.role === 'Executioner' && player.executionerTargetId
+        ? (room.players.get(player.executionerTargetId)?.name || null)
+        : null,
       lastMedicTarget: player.role === 'Vitalist' ? room.lastMedicTarget : null,
       lastMirrorTarget: player.role === 'Mirror Caster' ? (room.lastMirrorTargets[playerId] || null) : null,
       lastInvestigatorTargets: player.role === 'Investigator' ? (room.lastInvestigatorTargets[playerId] || []) : [],

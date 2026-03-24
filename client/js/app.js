@@ -183,6 +183,34 @@
         },
       ],
     },
+    Executioner: {
+      faction: 'Neutral',
+      subfaction: 'Evil',
+      description: 'A random player becomes your target. Get them voted out. If your target dies, you become an Amnesiac.',
+      revealText: 'Amber judgment burns in your hands. Guide the vote onto your marked target.',
+      abilities: [
+        {
+          name: 'Verdict',
+          type: 'Passive',
+          description: 'A random player becomes your target. Get them voted out. If your target dies, you become an Amnesiac.',
+        },
+      ],
+    },
+    Amnesiac: {
+      faction: 'Neutral',
+      subfaction: 'Evil',
+      hiddenFromGuide: true,
+      hiddenFromReveal: true,
+      description: 'Your old target is gone. You remember fragments, but no active power remains.',
+      revealText: 'Your purpose slips away, leaving only echoes in the dark.',
+      abilities: [
+        {
+          name: 'Forgotten',
+          type: 'Passive',
+          description: 'You have no active ability.',
+        },
+      ],
+    },
   };
   const ROLE_GUIDE_DEFINITIONS = ROLE_DEFINITIONS;
   const ROLE_GUIDE_SECTIONS = [
@@ -871,6 +899,8 @@
     if (normalizedRole === 'assassin') return 'assassin';
     if (normalizedRole === 'villager') return 'villager';
     if (normalizedRole === 'jester') return 'jester';
+    if (normalizedRole === 'executioner') return 'executioner';
+    if (normalizedRole === 'amnesiac') return 'amnesiac';
     return String(fallbackFaction || 'Crew').trim().toLowerCase();
   }
 
@@ -928,7 +958,7 @@
 
   function getRolesForFaction(faction) {
     return Object.entries(ROLE_GUIDE_DEFINITIONS)
-      .filter(([, roleInfo]) => roleInfo.faction === faction)
+      .filter(([, roleInfo]) => roleInfo.faction === faction && !roleInfo.hiddenFromGuide)
       .map(([role, roleInfo]) => ({ role, ...roleInfo }));
   }
 
@@ -1050,7 +1080,9 @@
   }
 
   function buildRoleRevealSequence(finalRole) {
-    const roles = Object.keys(ROLE_DEFINITIONS);
+    const roles = Object.entries(ROLE_DEFINITIONS)
+      .filter(([, roleInfo]) => !roleInfo.hiddenFromReveal)
+      .map(([role]) => role);
     const sequence = [];
     let lastRole = null;
 
@@ -1436,7 +1468,7 @@
     if (/.* interacted with .* tonight\.$/i.test(text) || /.* did not interact with anyone tonight\.$/i.test(text)) {
       return ' system-result-track';
     }
-    if (/.* was interacted with by .* tonight\.$/i.test(text) || /.* was not interacted with by anyone tonight\.$/i.test(text)) {
+    if (/.* was interacted by .* tonight\.$/i.test(text) || /.* was not interacted by anyone tonight\.$/i.test(text)) {
       return ' system-result-track';
     }
     if (/You were protected by the Vitalist during the night\.$/i.test(text)) {
@@ -1463,7 +1495,9 @@
       const text = String(message.text || '').trim();
       const sheriffSearchMatch = text.match(/^Your investigation found that (.*?) is the (.*?)\.$/i);
       if (sheriffSearchMatch) {
-        return `Your investigation found that ${formatPlayerNameReference(sheriffSearchMatch[1])} is the ${escapeHtml(sheriffSearchMatch[2])}.`;
+        const revealedRole = sheriffSearchMatch[2];
+        const revealedRoleInfo = getRoleDefinition(revealedRole);
+        return `Your investigation found that ${formatPlayerNameReference(sheriffSearchMatch[1])} is the <span class="search-target-role ${getRoleBadgeClass(revealedRole, revealedRoleInfo.faction)}">${escapeHtml(revealedRole)}</span>.`;
       }
 
       const killedMatch = text.match(/^(.*?) has killed someone in the last 2 rounds\.$/i);
@@ -1484,6 +1518,22 @@
       const noInteractionMatch = text.match(/^(.*?) did not interact with anyone tonight\.$/i);
       if (noInteractionMatch) {
         return `${formatPlayerNameReference(noInteractionMatch[1])} <span class="chat-result-highlight is-tracker-muted">did not interact with anyone tonight.</span>`;
+      }
+
+      const stalkedByMatch = text.match(/^(.*?) was interacted by (.*?) tonight\.$/i);
+      if (stalkedByMatch) {
+        const visitorNames = stalkedByMatch[2]
+          .split(',')
+          .map((name) => name.trim())
+          .filter(Boolean)
+          .map((name) => formatPlayerNameReference(name))
+          .join(', ');
+        return `${formatPlayerNameReference(stalkedByMatch[1])} <span class="chat-result-highlight is-tracker">was interacted by ${visitorNames} tonight.</span>`;
+      }
+
+      const noVisitorMatch = text.match(/^(.*?) was not interacted by anyone tonight\.$/i);
+      if (noVisitorMatch) {
+        return `${formatPlayerNameReference(noVisitorMatch[1])} <span class="chat-result-highlight is-tracker-muted">was not interacted by anyone tonight.</span>`;
       }
     }
 
@@ -2052,7 +2102,15 @@
     card.className = `role-card ${player.faction?.toLowerCase() || ''} ${getRoleBadgeClass(player.role, player.faction)}`;
     faction.textContent = player.faction?.toUpperCase() || '';
     roleName.textContent = player.role?.toUpperCase() || '';
-    desc.textContent = roleInfo.description;
+    if (player.role === 'Executioner' && player.executionerTargetName) {
+      const targetPlayer = state.roomData?.players?.find((candidate) => candidate.id === player.executionerTargetId);
+      const targetStyle = targetPlayer
+        ? getPlayerChatStyle({ type: 'player', senderId: targetPlayer.id, senderName: targetPlayer.name, colorHex: targetPlayer.colorHex })
+        : '';
+      desc.innerHTML = `${escapeHtml(roleInfo.description)} Target: <span class="chat-player-ref"${targetStyle ? ` style="${targetStyle}"` : ''}>${escapeHtml(player.executionerTargetName)}</span>.`;
+    } else {
+      desc.textContent = roleInfo.description;
+    }
 
     if (player.faction === 'Assassin' && player.teammates && player.teammates.length > 0) {
       teammates.style.display = 'block';
@@ -2399,10 +2457,19 @@
     if (
       player.role === 'Villager'
       || player.role === 'Jester'
+      || player.role === 'Executioner'
+      || player.role === 'Amnesiac'
       || (player.role === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0)
       || (player.role === 'Mirror Caster' && (player.mirrorUsesRemaining ?? 4) <= 0)
     ) {
-      container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">You have no abilities. Wait for dawn...</p></div><div id="phase-chat-panel"></div>';
+      const executionerTargetPlayer = state.roomData?.players?.find((candidate) => candidate.id === player.executionerTargetId);
+      const executionerTargetStyle = executionerTargetPlayer
+        ? getPlayerChatStyle({ type: 'player', senderId: executionerTargetPlayer.id, senderName: executionerTargetPlayer.name, colorHex: executionerTargetPlayer.colorHex })
+        : '';
+      const waitingSubtext = player.role === 'Executioner' && player.executionerTargetName
+        ? `Your target is <span class="chat-player-ref"${executionerTargetStyle ? ` style="${executionerTargetStyle}"` : ''}>${escapeHtml(player.executionerTargetName)}</span>. Get them voted out.`
+        : 'You have no abilities. Wait for dawn...';
+      container.innerHTML = `<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">${waitingSubtext}</p></div><div id="phase-chat-panel"></div>`;
       renderChatBox();
       return;
     }
@@ -2905,35 +2972,11 @@
     else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
 
     const isTargetlessRole = player.role === 'Veteran';
-    let restrictionNote = '';
-    if (player.role === 'Investigator' && investigatorLockedTargetId) {
-      const lockedTarget = state.roomData?.players?.find((candidate) => candidate.id === investigatorLockedTargetId);
-      if (lockedTarget) {
-        restrictionNote = `<div class="medic-restriction">Cannot examine <strong>${lockedTarget.name}</strong> a third time in a row</div>`;
-      }
-    } else if (player.role === 'Tracker' && trackerLockedTargetId) {
-      const lockedTarget = state.roomData?.players?.find((candidate) => candidate.id === trackerLockedTargetId);
-      if (lockedTarget) {
-        restrictionNote = `<div class="medic-restriction">Cannot track <strong>${lockedTarget.name}</strong> twice in a row</div>`;
-      }
-    } else if (player.role === 'Stalker' && stalkerLockedTargetId) {
-      const lockedTarget = state.roomData?.players?.find((candidate) => candidate.id === stalkerLockedTargetId);
-      if (lockedTarget) {
-        restrictionNote = `<div class="medic-restriction">Cannot stalk <strong>${lockedTarget.name}</strong> twice in a row</div>`;
-      }
-    } else if (player.role === 'Mirror Caster' && player.lastMirrorTarget) {
-      const lockedTarget = state.roomData?.players?.find((candidate) => candidate.id === player.lastMirrorTarget);
-      if (lockedTarget) {
-        restrictionNote = `<div class="medic-restriction">Cannot mirror <strong>${lockedTarget.name}</strong> twice in a row</div>`;
-      }
-    }
-
     container.innerHTML = `
       <div class="action-panel">
         <div class="action-title">YOUR NIGHT ACTION</div>
         <div class="action-subtitle">${actionDesc}</div>
         ${actionsHTML}
-        ${restrictionNote}
         ${isTargetlessRole ? '' : `
         <div class="target-label">SELECT TARGET</div>
         <div class="target-list chat-target-list" id="target-list">
