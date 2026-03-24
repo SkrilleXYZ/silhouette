@@ -1789,7 +1789,7 @@
     const player = state.playerData;
     if (!player) return;
 
-    if (player.role === 'Villager' || player.role === 'Jester') {
+    if (player.role === 'Villager' || player.role === 'Jester' || (player.role === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0)) {
       container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">You have no abilities. Wait for dawn...</p></div><div id="phase-chat-panel"></div>';
       renderChatBox();
       return;
@@ -2848,7 +2848,7 @@
     if (player.role === 'Sheriff') actionDesc = 'Choose to shoot or investigate a player';
     else if (player.role === 'Investigator') actionDesc = 'Choose a player to examine for recent kills';
     else if (player.role === 'Tracker') actionDesc = 'Choose a player to track for nighttime interactions';
-    else if (player.role === 'Veteran') actionDesc = `Stand watch tonight. ${player.veteranUsesRemaining ?? 4} of 4 uses remaining`;
+    else if (player.role === 'Veteran') actionDesc = 'Stand watch tonight.';
     else if (player.role === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
     else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
 
@@ -2864,10 +2864,6 @@
       if (lockedTarget) {
         restrictionNote = `<div class="medic-restriction">Cannot track <strong>${lockedTarget.name}</strong> twice in a row</div>`;
       }
-    } else if (player.role === 'Veteran') {
-      restrictionNote = (player.veteranUsesRemaining ?? 4) > 0
-        ? '<div class="medic-restriction">You become unkillable tonight and anyone who targets you dies.</div>'
-        : '<div class="medic-restriction">You have no Instinct uses remaining.</div>';
     }
 
     container.innerHTML = `
@@ -2887,8 +2883,8 @@
           }).join('')}
         </div>`}
         <div class="chat-local-actions">
-          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !state.selectedTarget) || (player.role === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0) ? 'disabled' : ''}>Confirm</button>
-          <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>
+          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !state.selectedTarget) ? 'disabled' : ''}>Confirm</button>
+          ${player.role === 'Veteran' ? `<span class="ability-use-counter">${player.veteranUsesRemaining ?? 4}/4</span>` : '<button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>'}
         </div>
       </div>
       <div id="phase-chat-panel"></div>`;

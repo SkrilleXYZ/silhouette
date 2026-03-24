@@ -453,6 +453,7 @@ class GameLogic {
       if (!player.alive) continue;
       if (player.role === 'Villager') continue;
       if (player.role === 'Jester') continue;
+      if (player.role === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0) continue;
       if (!room.nightActions[id]) return false;
     }
     return true;
