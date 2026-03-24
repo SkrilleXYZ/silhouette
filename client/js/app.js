@@ -79,6 +79,19 @@
         },
       ],
     },
+    'Mirror Caster': {
+      faction: 'Crew',
+      subfaction: 'Protection',
+      description: 'Shield a player to reflect killing damage back to the attacker. Can target yourself. Cannot target the same player twice in a row. Can be used 4 times.',
+      revealText: 'Silver-blue glass ripples in your hands. Bend lethal force back where it came from.',
+      abilities: [
+        {
+          name: 'Mirror',
+          type: 'Night',
+          description: 'Shield a player to prevent them from dying by reflecting the damage back to the killer. Can target yourself. Cannot target the same player twice in a row. Can be used 4 times.',
+        },
+      ],
+    },
     Vitalist: {
       faction: 'Crew',
       subfaction: 'Protection',
@@ -837,6 +850,7 @@
     const normalizedRole = String(role || '').trim().toLowerCase();
     if (normalizedRole === 'sheriff') return 'sheriff';
     if (normalizedRole === 'veteran') return 'veteran';
+    if (normalizedRole === 'mirror caster') return 'mirrorcaster';
     if (normalizedRole === 'vitalist') return 'vitalist';
     if (normalizedRole === 'investigator') return 'investigator';
     if (normalizedRole === 'tracker') return 'tracker';
@@ -918,6 +932,10 @@
       .replace(
         'Cannot target the same player twice in a row.',
         '<span class="roles-guide-ability-highlight">Cannot target the same player twice in a row.</span>'
+      )
+      .replace(
+        'Can target yourself.',
+        '<span class="roles-guide-ability-highlight">Can target yourself.</span>'
       )
       .replace(
         'Cannot protect the same player twice in a row.',
@@ -2030,7 +2048,7 @@
     if (!state.roomData || !state.playerData) return [];
     return state.roomData.players.filter(p => {
       if (!p.alive) return false;
-      if (p.id === state.playerId) return state.playerData.role === 'Vitalist';
+      if (p.id === state.playerId) return state.playerData.role === 'Vitalist' || state.playerData.role === 'Mirror Caster';
       if (state.playerData.role === 'Assassin') {
         const isTeammate = state.playerData.teammates?.some(t => t.id === p.id);
         if (isTeammate) return false;
@@ -2360,7 +2378,12 @@
     const player = state.playerData;
     if (!player) return;
 
-    if (player.role === 'Villager' || player.role === 'Jester') {
+    if (
+      player.role === 'Villager'
+      || player.role === 'Jester'
+      || (player.role === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0)
+      || (player.role === 'Mirror Caster' && (player.mirrorUsesRemaining ?? 4) <= 0)
+    ) {
       container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">You have no abilities. Wait for dawn...</p></div><div id="phase-chat-panel"></div>';
       renderChatBox();
       return;
@@ -2836,6 +2859,9 @@
     } else if (player.role === 'Veteran') {
       state.selectedAction = 'instinct';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="instinct">Instinct</button></div>';
+    } else if (player.role === 'Mirror Caster') {
+      state.selectedAction = 'mirror';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="mirror">Mirror</button></div>';
     } else if (player.role === 'Vitalist') {
       state.selectedAction = 'protect';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">Protect</button></div>';
@@ -2849,6 +2875,7 @@
     else if (player.role === 'Investigator') actionDesc = 'Choose a player to examine for recent kills';
     else if (player.role === 'Tracker') actionDesc = 'Choose a player to track for nighttime interactions';
     else if (player.role === 'Veteran') actionDesc = 'Stand watch tonight.';
+    else if (player.role === 'Mirror Caster') actionDesc = 'Choose a player to mirror tonight';
     else if (player.role === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
     else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
 
@@ -2864,6 +2891,11 @@
       if (lockedTarget) {
         restrictionNote = `<div class="medic-restriction">Cannot track <strong>${lockedTarget.name}</strong> twice in a row</div>`;
       }
+    } else if (player.role === 'Mirror Caster' && player.lastMirrorTarget) {
+      const lockedTarget = state.roomData?.players?.find((candidate) => candidate.id === player.lastMirrorTarget);
+      if (lockedTarget) {
+        restrictionNote = `<div class="medic-restriction">Cannot mirror <strong>${lockedTarget.name}</strong> twice in a row</div>`;
+      }
     }
 
     container.innerHTML = `
@@ -2877,14 +2909,15 @@
         <div class="target-list chat-target-list" id="target-list">
           ${targets.map(t => {
             const isRestricted = (player.role === 'Vitalist' && t.id === player.lastMedicTarget)
+              || (player.role === 'Mirror Caster' && t.id === player.lastMirrorTarget)
               || (player.role === 'Investigator' && t.id === investigatorLockedTargetId)
               || (player.role === 'Tracker' && t.id === trackerLockedTargetId);
             return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`;
           }).join('')}
         </div>`}
         <div class="chat-local-actions">
-          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !state.selectedTarget) ? 'disabled' : ''}>Confirm</button>
-          ${player.role === 'Veteran' ? `<span class="ability-use-counter">${player.veteranUsesRemaining ?? 4}/4</span>` : '<button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>'}
+          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !state.selectedTarget) ? 'disabled' : ''}>${player.role === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : player.role === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : 'Confirm'}</button>
+          <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>
         </div>
       </div>
       <div id="phase-chat-panel"></div>`;
@@ -2906,6 +2939,8 @@
           if (player.role === 'Investigator') {
             showToast('You cannot target the same player 3 times in a row', 'error');
           } else if (player.role === 'Tracker') {
+            showToast('You cannot target the same player twice in a row', 'error');
+          } else if (player.role === 'Mirror Caster') {
             showToast('You cannot target the same player twice in a row', 'error');
           } else {
             showToast('You cannot protect the same player two nights in a row', 'error');
