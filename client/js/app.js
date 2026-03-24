@@ -43,7 +43,11 @@
     pendingRoleInheritance: null,
     chatDraft: '',
     chatOverlayDraft: '',
+    assassinChatDraft: '',
+    assassinChatOverlayDraft: '',
     selectedTargets: [],
+    assassinChatMessages: [],
+    currentChatChannel: 'public',
   };
 
   const MAX_ROOM_PLAYERS = 16;
@@ -345,13 +349,13 @@
     'Guardian Angel': {
       faction: 'Neutral',
       subfaction: 'Benign',
-      description: 'A random player becomes your target. Bless them to protect them from getting killed that round. Can be used 4 times. If your target dies or gets voted out, you become an Amnesiac.',
+      description: 'Protect your target until the end to win with them.',
       revealText: 'Warm white gold gathers around you. Watch over your chosen soul and rise or fall with their fate.',
       abilities: [
         {
           name: 'Blessing',
           type: 'Night',
-          description: 'Protect your target from getting killed that round. Can be used 4 times. If your target dies or gets voted out, you become an Amnesiac.',
+          description: 'Protect your target from getting killed that round. Can be used 4 times.',
         },
       ],
     },
@@ -590,10 +594,16 @@
     state.playerData = response.player || state.playerData;
     state.isHost = !!(response.room && state.playerId === response.room.hostId);
     state.chatMessages = response.room?.chatMessages || [];
+    state.assassinChatMessages = response.assassinChatMessages || [];
     state.gamePhase = response.room?.state || null;
     state.hasActed = !!response.player?.hasSubmittedAction;
     state.hasVoted = !!response.player?.hasVoted;
     state.privateChatMessages = [];
+    state.chatDraft = '';
+    state.chatOverlayDraft = '';
+    state.assassinChatDraft = '';
+    state.assassinChatOverlayDraft = '';
+    state.currentChatChannel = 'public';
     state.chatOverlayOpen = false;
     state.searchResult = null;
     state.selectedAction = null;
@@ -856,16 +866,22 @@
       if (state.currentScreen === 'room') renderRoom();
     });
 
-    state.socket.on('game-started', ({ player, room, revealEndsAt, revealDurationMs }) => {
+    state.socket.on('game-started', ({ player, room, assassinChatMessages, revealEndsAt, revealDurationMs }) => {
       state.playerData = player;
       state.roomData = room;
       state.chatMessages = room.chatMessages || [];
+      state.assassinChatMessages = assassinChatMessages || [];
       state.hasActed = false;
       state.hasVoted = false;
       state.votesCast = 0;
       state.totalAlive = 0;
       state.searchResult = null;
       state.privateChatMessages = [];
+      state.chatDraft = '';
+      state.chatOverlayDraft = '';
+      state.assassinChatDraft = '';
+      state.assassinChatOverlayDraft = '';
+      state.currentChatChannel = 'public';
       state.selectedAction = null;
       state.selectedTarget = null;
       state.selectedTargets = [];
@@ -890,6 +906,9 @@
       state.selectedAction = null;
       state.selectedTarget = null;
       state.selectedTargets = [];
+      if (state.playerData?.faction !== 'Assassin' || state.playerData?.alive === false) {
+        state.currentChatChannel = 'public';
+      }
       if (messages) state.morningMessages = messages;
       if (phase === 'night') stopRoleReveal(true);
       else if (phase !== 'vote-result') stopRoleReveal(false);
@@ -904,6 +923,9 @@
       const previousPlayer = state.playerData;
       queueAmnesiacInheritanceTransition(previousPlayer, player);
       state.playerData = player;
+      if (player.faction !== 'Assassin' || player.alive === false) {
+        state.currentChatChannel = 'public';
+      }
       state.hasActed = player.hasSubmittedAction;
       state.hasVoted = player.hasVoted;
       if (state.currentScreen === 'game' && state.gamePhase) {
@@ -918,6 +940,12 @@
     state.socket.on('chat-message', ({ message }) => {
       state.chatMessages.push(message);
       if (state.chatMessages.length > 150) state.chatMessages = state.chatMessages.slice(-150);
+      renderChatBox();
+    });
+
+    state.socket.on('assassin-chat-message', ({ message }) => {
+      state.assassinChatMessages.push(message);
+      if (state.assassinChatMessages.length > 120) state.assassinChatMessages = state.assassinChatMessages.slice(-120);
       renderChatBox();
     });
 
@@ -976,13 +1004,23 @@
       state.totalAlive = 0;
       state.searchResult = null;
       state.privateChatMessages = [];
+      state.chatDraft = '';
+      state.chatOverlayDraft = '';
+      state.assassinChatDraft = '';
+      state.assassinChatOverlayDraft = '';
       state.selectedAction = null;
       state.selectedTarget = null;
       state.selectedTargets = [];
       state.morningMessages = [];
       state.chatMessages = room.chatMessages || [];
+      state.assassinChatMessages = [];
+      state.chatDraft = '';
+      state.chatOverlayDraft = '';
+      state.assassinChatDraft = '';
+      state.assassinChatOverlayDraft = '';
       state.gamePhase = null;
       state.chatOverlayOpen = false;
+      state.currentChatChannel = 'public';
       state.allPlayersWithRoles = [];
       state.playerListOpen = false;
       clearTimerInterval();
@@ -2374,7 +2412,7 @@
       if (player.role === 'Executioner') {
         desc.innerHTML = `Get <span class="chat-player-ref"${targetStyle ? ` style="${targetStyle}"` : ''}>${escapeHtml(targetName)}</span> voted out. Make sure they don't die.`;
       } else {
-        desc.innerHTML = `${escapeHtml(roleInfo.description)} Target: <span class="chat-player-ref"${targetStyle ? ` style="${targetStyle}"` : ''}>${escapeHtml(targetName)}</span>.`;
+        desc.innerHTML = `Protect <span class="chat-player-ref"${targetStyle ? ` style="${targetStyle}"` : ''}>${escapeHtml(targetName)}</span> until the end to win with them.`;
       }
     } else {
       desc.textContent = roleInfo.description;
@@ -3031,7 +3069,20 @@
     return '';
   }
 
-  function getRenderableChatMessages() {
+  function canUseAssassinChat() {
+    return state.playerData?.faction === 'Assassin' && state.playerData?.alive !== false;
+  }
+
+  function getActiveChatChannel() {
+    if (state.currentChatChannel === 'assassin' && canUseAssassinChat()) return 'assassin';
+    return 'public';
+  }
+
+  function getRenderableChatMessages(channel = 'public') {
+    if (channel === 'assassin') {
+      return [...(state.assassinChatMessages || [])].sort((a, b) => a.createdAt - b.createdAt);
+    }
+
     const viewerIsDead = state.playerData?.alive === false;
     return [...(state.chatMessages || []), ...(state.privateChatMessages || [])]
       .filter((message) => {
@@ -3067,13 +3118,30 @@
 
   function syncChatDraftFromDom() {
     const inlineInput = document.getElementById('chat-input');
-    if (inlineInput) state.chatDraft = inlineInput.value;
+    if (inlineInput) setChatDraftValue(false, getActiveChatChannel(), inlineInput.value);
 
     const overlayInput = document.getElementById('chat-overlay-input');
-    if (overlayInput) state.chatOverlayDraft = overlayInput.value;
+    if (overlayInput) setChatDraftValue(true, getActiveChatChannel(), overlayInput.value);
   }
 
-  function bindChatComposer(form, canChat) {
+  function getChatDraftValue(isOverlayForm, channel) {
+    if (channel === 'assassin') {
+      return isOverlayForm ? (state.assassinChatOverlayDraft || '') : (state.assassinChatDraft || '');
+    }
+    return isOverlayForm ? (state.chatOverlayDraft || '') : (state.chatDraft || '');
+  }
+
+  function setChatDraftValue(isOverlayForm, channel, value) {
+    if (channel === 'assassin') {
+      if (isOverlayForm) state.assassinChatOverlayDraft = value;
+      else state.assassinChatDraft = value;
+      return;
+    }
+    if (isOverlayForm) state.chatOverlayDraft = value;
+    else state.chatDraft = value;
+  }
+
+  function bindChatComposer(form, canChat, channel = 'public') {
     if (!form || !canChat) return;
 
     const isOverlayForm = form.id === 'chat-overlay-form';
@@ -3081,8 +3149,7 @@
 
     if (input) {
       input.addEventListener('input', () => {
-        if (isOverlayForm) state.chatOverlayDraft = input.value;
-        else state.chatDraft = input.value;
+        setChatDraftValue(isOverlayForm, channel, input.value);
       });
     }
 
@@ -3091,11 +3158,11 @@
       const text = input ? input.value.trim() : '';
       if (!text) return;
 
-      state.socket.emit('send-chat-message', { text }, (response) => {
+      const eventName = channel === 'assassin' ? 'send-assassin-chat-message' : 'send-chat-message';
+      state.socket.emit(eventName, { text }, (response) => {
         if (response.success) {
           if (input) input.value = '';
-          if (isOverlayForm) state.chatOverlayDraft = '';
-          else state.chatDraft = '';
+          setChatDraftValue(isOverlayForm, channel, '');
         } else {
           showToast(response.error || 'Message failed to send', 'error');
         }
@@ -3121,23 +3188,39 @@
     if (!panel) return;
 
     const mode = getChatMode();
-    const canChat = mode === 'morning' || mode === 'voting';
+    const activeChannel = getActiveChatChannel();
+    const assassinChatAvailable = canUseAssassinChat();
+    const canPublicChat = (mode === 'morning' || mode === 'voting') && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced;
+    const canAssassinChat = assassinChatAvailable && mode !== 'hidden' && mode !== 'ended' && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced;
+    const canChat = activeChannel === 'assassin' ? canAssassinChat : canPublicChat;
     const isMorningFullscreen = mode === 'morning' && state.chatOverlayOpen;
     const isExpandedMode = mode === 'morning' && !isMorningFullscreen;
     const isDockedMode = mode !== 'hidden' && !isExpandedMode;
     const isOverlayOpen = state.chatOverlayOpen;
-    const subtitle = canChat
-      ? 'Chat is open for discussion.'
-      : mode === 'readonly'
-        ? 'Waiting for the next phase...'
-        : 'Chat is visible but locked until morning.';
+    const subtitle = activeChannel === 'assassin'
+      ? (canAssassinChat
+        ? 'Private assassin coordination.'
+        : state.playerData?.isBlackmailed
+          ? 'You have been blackmailed'
+          : state.playerData?.isSilenced
+            ? 'You have been silenced'
+            : 'Assassin chat is unavailable.')
+      : (canPublicChat
+        ? 'Chat is open for discussion.'
+        : mode === 'readonly'
+          ? 'Waiting for the next phase...'
+          : state.playerData?.isBlackmailed
+            ? 'You have been blackmailed'
+            : state.playerData?.isSilenced
+              ? 'You have been silenced'
+              : 'Chat is visible but locked until morning.');
     const gameContainer = document.querySelector('.game-container');
-    const messages = getRenderableChatMessages();
+    const messages = getRenderableChatMessages(activeChannel);
     const overlay = ensureChatOverlay();
     const isStandaloneOverlay = isDockedMode && isOverlayOpen;
     const isDeadSpectator = state.playerData?.alive === false;
 
-    panel.className = `phase-chat-panel ${isStandaloneOverlay ? 'chat-overlay-anchor' : isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isDeadSpectator ? ' chat-dead' : ''}`;
+    panel.className = `phase-chat-panel ${isStandaloneOverlay ? 'chat-overlay-anchor' : isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}`;
     if (gameContainer) {
       gameContainer.classList.toggle('chat-overlay-active', isStandaloneOverlay);
     }
@@ -3149,6 +3232,13 @@
       return;
     }
 
+    const tabsMarkup = assassinChatAvailable
+      ? `<div class="chat-channel-tabs">
+          <button class="chat-channel-tab${activeChannel === 'public' ? ' active' : ''}" data-chat-channel="public" type="button">Public</button>
+          <button class="chat-channel-tab${activeChannel === 'assassin' ? ' active' : ''}" data-chat-channel="assassin" type="button">Assassin</button>
+        </div>`
+      : '';
+
     if (isDockedMode && !isOverlayOpen) {
       overlay.innerHTML = '';
       panel.innerHTML = `
@@ -3159,8 +3249,8 @@
             </svg>
           </span>
           <span class="chat-dock-copy">
-            <span class="chat-dock-title">Open Chat</span>
-            <span class="chat-dock-subtitle">${canChat ? 'Discussion and actions' : state.playerData?.isBlackmailed ? 'You have been blackmailed' : state.playerData?.isSilenced ? 'You have been silenced' : 'View updates'}</span>
+            <span class="chat-dock-title">${activeChannel === 'assassin' ? 'Open Assassin Chat' : 'Open Chat'}</span>
+            <span class="chat-dock-subtitle">${activeChannel === 'assassin' ? (canAssassinChat ? 'Private assassin coordination' : 'Assassin chat unavailable') : canPublicChat ? 'Discussion and actions' : state.playerData?.isBlackmailed ? 'You have been blackmailed' : state.playerData?.isSilenced ? 'You have been silenced' : 'View updates'}</span>
           </span>
         </button>`;
       const openBtn = document.getElementById('chat-open-btn');
@@ -3179,17 +3269,18 @@
     if (isStandaloneOverlay) {
       panel.innerHTML = '';
       overlay.innerHTML = `
-        <div class="chat-fullscreen-shell${canChat ? '' : ' chat-locked'}${isDeadSpectator ? ' chat-dead' : ''}">
+        <div class="chat-fullscreen-shell${canChat ? '' : ' chat-locked'}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}">
           ${localPanel}
           <div class="chat-panel-header">
             <div>
-              <div class="chat-panel-title">Room Chat</div>
+              <div class="chat-panel-title">${activeChannel === 'assassin' ? 'Assassin Chat' : 'Room Chat'}</div>
               <div class="chat-panel-subtitle">${subtitle}</div>
             </div>
             <div class="chat-header-actions">
               <button class="chat-close-btn" id="chat-overlay-close-btn" type="button">Close</button>
             </div>
           </div>
+          ${tabsMarkup}
           <div class="chat-messages" id="chat-overlay-messages">${items}</div>
           <form class="chat-input-row" id="chat-overlay-form">
             <input
@@ -3197,8 +3288,8 @@
               class="chat-input"
               type="text"
               maxlength="280"
-              value="${escapeHtml(state.chatOverlayDraft || '')}"
-              placeholder="${state.playerData?.isBlackmailed ? 'You have been blackmailed' : state.playerData?.isSilenced ? 'You have been silenced' : canChat ? 'Type a message...' : 'Chat is locked at night'}"
+              value="${escapeHtml(getChatDraftValue(true, activeChannel))}"
+              placeholder="${state.playerData?.isBlackmailed ? 'You have been blackmailed' : state.playerData?.isSilenced ? 'You have been silenced' : canChat ? `Message ${activeChannel === 'assassin' ? 'the assassins' : 'the room'}...` : activeChannel === 'assassin' ? 'Assassin chat unavailable' : 'Chat is locked at night'}"
               ${canChat ? '' : 'disabled'}
             />
             <button class="btn btn-primary chat-send-btn" type="submit" ${canChat ? '' : 'disabled'}>Send</button>
@@ -3216,7 +3307,14 @@
         });
       }
 
-      bindChatComposer(document.getElementById('chat-overlay-form'), canChat);
+      overlay.querySelectorAll('[data-chat-channel]').forEach((button) => {
+        button.addEventListener('click', () => {
+          state.currentChatChannel = button.dataset.chatChannel || 'public';
+          renderChatBox();
+        });
+      });
+
+      bindChatComposer(document.getElementById('chat-overlay-form'), canChat, activeChannel);
       return;
     }
 
@@ -3226,7 +3324,7 @@
       ${localPanel}
       <div class="chat-panel-header">
         <div>
-          <div class="chat-panel-title">Room Chat</div>
+          <div class="chat-panel-title">${activeChannel === 'assassin' ? 'Assassin Chat' : 'Room Chat'}</div>
           <div class="chat-panel-subtitle">${subtitle}</div>
         </div>
         <div class="chat-header-actions">
@@ -3234,6 +3332,7 @@
           ${isDockedMode ? '<button class="chat-close-btn" id="chat-close-btn" type="button">Close</button>' : ''}
         </div>
       </div>
+      ${tabsMarkup}
       <div class="chat-messages" id="chat-messages">${items}</div>
       <form class="chat-input-row" id="chat-form">
         <input
@@ -3241,8 +3340,8 @@
           class="chat-input"
           type="text"
           maxlength="280"
-          value="${escapeHtml(state.chatDraft || '')}"
-          placeholder="${state.playerData?.isBlackmailed ? 'You have been blackmailed' : state.playerData?.isSilenced ? 'You have been silenced' : canChat ? 'Type a message...' : 'Chat is locked at night'}"
+          value="${escapeHtml(getChatDraftValue(false, activeChannel))}"
+          placeholder="${state.playerData?.isBlackmailed ? 'You have been blackmailed' : state.playerData?.isSilenced ? 'You have been silenced' : canChat ? `Message ${activeChannel === 'assassin' ? 'the assassins' : 'the room'}...` : activeChannel === 'assassin' ? 'Assassin chat unavailable' : 'Chat is locked at night'}"
           ${canChat ? '' : 'disabled'}
         />
         <button class="btn btn-primary chat-send-btn" type="submit" ${canChat ? '' : 'disabled'}>Send</button>
@@ -3267,7 +3366,7 @@
       });
     }
 
-    bindChatComposer(document.getElementById('chat-form'), canChat);
+    bindChatComposer(document.getElementById('chat-form'), canChat, activeChannel);
   }
 
   function renderGameContent(phase) {
@@ -3310,7 +3409,7 @@
         ? getPlayerChatStyle({ type: 'player', senderId: executionerTargetPlayer.id, senderName: executionerTargetPlayer.name, colorHex: executionerTargetPlayer.colorHex })
         : '';
       const waitingSubtext = player.role === 'Executioner' && player.executionerTargetName
-        ? `Get <span class="chat-player-ref"${executionerTargetStyle ? ` style="${executionerTargetStyle}"` : ''}>${escapeHtml(player.executionerTargetName)}</span> voted out. Make sure they don't die.`
+        ? 'Wait for dawn...'
         : player.role === 'Amnesiac'
           ? 'No dead players can be remembered yet. Wait for dawn...'
           : 'You have no abilities. Wait for dawn...';
@@ -3359,6 +3458,12 @@
       : null;
     const traplordSelectedTargets = player.role === 'Traplord'
       ? (Array.isArray(state.selectedTargets) ? state.selectedTargets : [])
+      : [];
+    const guardianAngelFixedTargetId = player.role === 'Guardian Angel'
+      ? (player.guardianAngelTargetId || null)
+      : null;
+    const guardianAngelTargets = guardianAngelFixedTargetId
+      ? targets.filter((target) => target.id === guardianAngelFixedTargetId)
       : [];
     const blackoutCanFlashTonight = player.role === 'Blackout'
       ? (player.blackoutFlashUsesRemaining ?? 3) > 0
@@ -3418,6 +3523,11 @@
       }
     } else if (Array.isArray(state.selectedTargets) && state.selectedTargets.length) {
       state.selectedTargets = [];
+    }
+
+    if (player.role === 'Guardian Angel') {
+      state.selectedAction = 'bless';
+      state.selectedTarget = guardianAngelFixedTargetId;
     }
 
     let actionsHTML = '';
@@ -3520,9 +3630,9 @@
     else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
 
     const isTargetlessRole = player.role === 'Veteran'
-      || player.role === 'Guardian Angel'
       || player.role === 'Survivalist'
       || (player.role === 'Blackout' && state.selectedAction === 'flash');
+    const displayedTargets = player.role === 'Guardian Angel' ? guardianAngelTargets : targets;
     const isMultiTargetRole = player.role === 'Traplord';
     container.innerHTML = `
       <div class="action-panel">
@@ -3532,7 +3642,7 @@
         ${isTargetlessRole ? '' : `
         <div class="target-label">${isMultiTargetRole ? `SELECT AT LEAST 3 TARGETS${traplordSelectedTargets.length ? ` (${traplordSelectedTargets.length} SELECTED)` : ''}` : 'SELECT TARGET'}</div>
         <div class="target-list chat-target-list" id="target-list">
-          ${targets.map(t => {
+          ${displayedTargets.map(t => {
             const isRestricted = (player.role === 'Vitalist' && t.id === player.lastMedicTarget)
               || (player.role === 'Mirror Caster' && t.id === player.lastMirrorTarget)
               || (player.role === 'Investigator' && t.id === investigatorLockedTargetId)
@@ -3562,7 +3672,7 @@
         void btn.offsetWidth;
         btn.classList.add('action-activate');
         state.selectedAction = btn.dataset.action;
-        state.selectedTarget = null;
+        state.selectedTarget = player.role === 'Guardian Angel' ? guardianAngelFixedTargetId : null;
         state.selectedTargets = [];
         renderNightPhase(container);
       });
@@ -3777,3 +3887,9 @@
 
 
 
+    panel.querySelectorAll('[data-chat-channel]').forEach((button) => {
+      button.addEventListener('click', () => {
+        state.currentChatChannel = button.dataset.chatChannel || 'public';
+        renderChatBox();
+      });
+    });

@@ -92,6 +92,7 @@ io.on('connection', (socket) => {
       room: publicData,
       player: game.getPlayerData(normalizedCode, playerId),
       playerId,
+      assassinChatMessages: game.getAssassinChatMessagesForPlayer(normalizedCode, playerId),
       allPlayers: publicData.state === 'ended' ? game.getAllPlayersWithRoles(normalizedCode) : null,
       winner: result.room?.winner || null,
       timer: getActiveTimerState(normalizedCode),
@@ -135,6 +136,7 @@ io.on('connection', (socket) => {
       io.to(getPlayerChannel(playerId)).emit('game-started', {
         player: playerData,
         room: game.getRoomPublicData(mapping.code),
+        assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, playerId),
         revealEndsAt,
         revealDurationMs: ROLE_REVEAL_DELAY_MS
       });
@@ -278,6 +280,30 @@ io.on('connection', (socket) => {
     }
 
     io.to(mapping.code).emit('chat-message', { message: result.message });
+    if (callback) callback({ success: true, message: result.message });
+  });
+
+  socket.on('send-assassin-chat-message', ({ text }, callback) => {
+    const mapping = socketMap.get(socket.id);
+    if (!mapping) {
+      if (callback) callback({ success: false, error: 'Not in a room' });
+      return;
+    }
+
+    const result = game.addAssassinChatMessage(mapping.code, mapping.playerId, text);
+    if (result.error) {
+      if (callback) callback({ success: false, error: result.error });
+      return;
+    }
+
+    const room = game.getRoom(mapping.code);
+    if (room) {
+      for (const [playerId, player] of room.players) {
+        if (player.faction !== 'Assassin' || !player.alive) continue;
+        io.to(getPlayerChannel(playerId)).emit('assassin-chat-message', { message: result.message });
+      }
+    }
+
     if (callback) callback({ success: true, message: result.message });
   });
 

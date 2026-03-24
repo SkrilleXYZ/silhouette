@@ -107,6 +107,7 @@ class GameLogic {
       nightTimer: null,
       morningMessages: [],
       chatMessages: [],
+      assassinChatMessages: [],
       currentPhaseSummaryId: null,
       anonymousVotes: false,
       anonymousEjects: false,
@@ -510,6 +511,7 @@ class GameLogic {
     room.nightActions = {};
     room.morningMessages = [];
     room.chatMessages = [];
+    room.assassinChatMessages = [];
     room.currentPhaseSummaryId = null;
     room.lastMedicTarget = null;
     room.lastMirrorTargets = {};
@@ -559,6 +561,7 @@ class GameLogic {
     room.nightCount = 0;
     room.morningMessages = [];
     room.chatMessages = [];
+    room.assassinChatMessages = [];
     room.currentPhaseSummaryId = null;
     room.playerOrder = [];
     room.lastAction = Date.now();
@@ -2357,6 +2360,48 @@ class GameLogic {
     room.lastAction = Date.now();
 
     return { success: true, message };
+  }
+
+  addAssassinChatMessage(code, playerId, text) {
+    const room = this.rooms.get(code);
+    if (!room) return { error: 'Room not found' };
+    if (room.state === 'lobby' || room.state === 'ended') {
+      return { error: 'Assassin chat is only available during the game' };
+    }
+
+    const player = room.players.get(playerId);
+    if (!player) return { error: 'Player not found' };
+    if (!player.alive) return { error: 'Dead players cannot use assassin chat' };
+    if (player.faction !== 'Assassin') return { error: 'Only assassins can use assassin chat' };
+    if (room.blackmailedPlayers?.[playerId]) return { error: 'You have been blackmailed' };
+    if (room.silencedPlayers?.[playerId]) return { error: 'You have been silenced' };
+
+    const cleanText = String(text || '').trim().replace(/\s+/g, ' ');
+    if (!cleanText) return { error: 'Message cannot be empty' };
+    if (cleanText.length > 280) return { error: 'Message is too long' };
+
+    const message = {
+      ...this.createChatMessage('player', player.name, cleanText, playerId, room.state),
+      team: 'assassin',
+    };
+
+    room.assassinChatMessages.push(message);
+    if (room.assassinChatMessages.length > 120) {
+      room.assassinChatMessages = room.assassinChatMessages.slice(-120);
+    }
+    room.lastAction = Date.now();
+
+    return { success: true, message };
+  }
+
+  getAssassinChatMessagesForPlayer(code, playerId) {
+    const room = this.rooms.get(code);
+    if (!room) return [];
+
+    const player = room.players.get(playerId);
+    if (!player || player.faction !== 'Assassin' || !player.alive) return [];
+
+    return room.assassinChatMessages.slice(-120);
   }
 
   getPlayerData(code, playerId) {
