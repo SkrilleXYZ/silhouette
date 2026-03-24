@@ -41,6 +41,8 @@
     currentRolesFaction: 'Crew',
     profilePaletteView: 'avatars',
     pendingRoleInheritance: null,
+    chatDraft: '',
+    chatOverlayDraft: '',
   };
 
   const MAX_ROOM_PLAYERS = 16;
@@ -184,6 +186,42 @@
         },
       ],
     },
+    Hypnotic: {
+      faction: 'Assassin',
+      subfaction: 'Concealing',
+      description: 'Disable a player\'s abilities for the night, or eliminate a player. Cannot target the same player twice in a row with Trance.',
+      revealText: 'Pink-magenta haze settles over the room. Veil a target in trance or strike when the time is right.',
+      abilities: [
+        {
+          name: 'Trance',
+          type: 'Night',
+          description: 'Disable a player\'s abilities for the night. Cannot target the same player twice in a row.',
+        },
+        {
+          name: 'Kill',
+          type: 'Night',
+          description: 'Eliminate a player.',
+        },
+      ],
+    },
+    Blackout: {
+      faction: 'Assassin',
+      subfaction: 'Concealing',
+      description: 'Blind every information role for the night, or eliminate a player. Flash cannot be used twice in a row and can be used 3 times.',
+      revealText: 'Dark metal swallows the room. Blind every watcher, then strike through the silence.',
+      abilities: [
+        {
+          name: 'Flash',
+          type: 'Night',
+          description: 'Make information roles useless by blinding everyone. Cannot be used twice in a row. Can be used 3 times.',
+        },
+        {
+          name: 'Kill',
+          type: 'Night',
+          description: 'Eliminate a player.',
+        },
+      ],
+    },
     Jester: {
       faction: 'Neutral',
       subfaction: 'Evil',
@@ -220,6 +258,19 @@
           name: 'Blessing',
           type: 'Night',
           description: 'Protect your target from getting killed that round. Can be used 4 times. If your target dies or gets voted out, you become an Amnesiac.',
+        },
+      ],
+    },
+    Survivalist: {
+      faction: 'Neutral',
+      subfaction: 'Benign',
+      description: 'Protect yourself from getting killed. Can be used 5 times. Survive until the end of the game no matter who wins.',
+      revealText: 'Warm gold-orange fire wraps around you. Endure the whole game and claim victory beside whoever remains.',
+      abilities: [
+        {
+          name: 'Lifeguard',
+          type: 'Night',
+          description: 'Protect yourself from getting killed. Can be used 5 times.',
         },
       ],
     },
@@ -930,10 +981,13 @@
     if (normalizedRole === 'stalker') return 'stalker';
     if (normalizedRole === 'assassin') return 'assassin';
     if (normalizedRole === 'sniper') return 'sniper';
+    if (normalizedRole === 'hypnotic') return 'hypnotic';
+    if (normalizedRole === 'blackout') return 'blackout';
     if (normalizedRole === 'villager') return 'villager';
     if (normalizedRole === 'jester') return 'jester';
     if (normalizedRole === 'executioner') return 'executioner';
     if (normalizedRole === 'guardian angel') return 'guardianangel';
+    if (normalizedRole === 'survivalist') return 'survivalist';
     if (normalizedRole === 'amnesiac') return 'amnesiac';
     return String(fallbackFaction || 'Crew').trim().toLowerCase();
   }
@@ -2248,6 +2302,7 @@
     const winnerPresentation = getWinnerPresentation(winner?.winner);
     const winningSide = String(winner?.winner || '').trim();
     const guardianAngelWinnerIds = new Set(winner?.guardianAngelWinnerIds || []);
+    const survivalistWinnerIds = new Set(winner?.survivalistWinnerIds || []);
 
     glow.className = `gameover-glow ${winnerPresentation.glowClass}`;
     title.className = `gameover-faction ${winnerPresentation.textClass}`;
@@ -2257,7 +2312,7 @@
       : winner.reason;
 
     playersList.innerHTML = players.map((p, index) => `
-      <div class="gameover-player ${(guardianAngelWinnerIds.has(p.id) || (winningSide === 'Crew' && p.faction === 'Crew') || (winningSide === 'Assassin' && p.faction === 'Assassin') || winningSide === p.role) ? 'won' : 'lost'}" style="--gameover-delay:${320 + (index * 60)}ms;">
+      <div class="gameover-player ${(survivalistWinnerIds.has(p.id) || guardianAngelWinnerIds.has(p.id) || (winningSide === 'Crew' && p.faction === 'Crew') || (winningSide === 'Assassin' && p.faction === 'Assassin') || winningSide === p.role) ? 'won' : 'lost'}" style="--gameover-delay:${320 + (index * 60)}ms;">
         <span class="gameover-player-name" style="${getPlayerChatStyle({ type: 'player', senderId: p.id, senderName: p.name, colorHex: p.colorHex || p.colorHue })}">${p.name}</span>
         <span class="gameover-player-role ${getRoleBadgeClass(p.role, p.faction)}">
           ${p.role}
@@ -2559,6 +2614,7 @@
       || player.role === 'Jester'
       || player.role === 'Executioner'
       || (player.role === 'Guardian Angel' && (player.guardianAngelUsesRemaining ?? 4) <= 0)
+      || (player.role === 'Survivalist' && (player.survivalistUsesRemaining ?? 5) <= 0)
       || (player.role === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0)
       || (player.role === 'Mirror Caster' && (player.mirrorUsesRemaining ?? 4) <= 0)
     ) {
@@ -2578,6 +2634,8 @@
         ? `Your target is <span class="chat-player-ref"${executionerTargetStyle ? ` style="${executionerTargetStyle}"` : ''}>${escapeHtml(player.executionerTargetName)}</span>. Get them voted out.`
         : player.role === 'Guardian Angel' && player.guardianAngelTargetName
           ? `Your target is <span class="chat-player-ref"${guardianAngelTargetStyle ? ` style="${guardianAngelTargetStyle}"` : ''}>${escapeHtml(player.guardianAngelTargetName)}</span>. Your blessings are spent, so watch over them from the sidelines.`
+        : player.role === 'Survivalist'
+          ? 'Your Lifeguard uses are spent. Survive with your wits from here.'
         : player.role === 'Amnesiac'
           ? 'No dead players can be remembered yet. Wait for dawn...'
           : 'You have no abilities. Wait for dawn...';
@@ -2829,18 +2887,37 @@
       : '<div class="chat-empty">No messages yet.</div>';
   }
 
+  function syncChatDraftFromDom() {
+    const inlineInput = document.getElementById('chat-input');
+    if (inlineInput) state.chatDraft = inlineInput.value;
+
+    const overlayInput = document.getElementById('chat-overlay-input');
+    if (overlayInput) state.chatOverlayDraft = overlayInput.value;
+  }
+
   function bindChatComposer(form, canChat) {
     if (!form || !canChat) return;
 
+    const isOverlayForm = form.id === 'chat-overlay-form';
+    const input = form.querySelector('.chat-input');
+
+    if (input) {
+      input.addEventListener('input', () => {
+        if (isOverlayForm) state.chatOverlayDraft = input.value;
+        else state.chatDraft = input.value;
+      });
+    }
+
     form.addEventListener('submit', (event) => {
       event.preventDefault();
-      const input = form.querySelector('.chat-input');
       const text = input ? input.value.trim() : '';
       if (!text) return;
 
       state.socket.emit('send-chat-message', { text }, (response) => {
         if (response.success) {
           if (input) input.value = '';
+          if (isOverlayForm) state.chatOverlayDraft = '';
+          else state.chatDraft = '';
         } else {
           showToast(response.error || 'Message failed to send', 'error');
         }
@@ -2860,6 +2937,8 @@
   }
 
   function renderChatBox() {
+    syncChatDraftFromDom();
+
     const panel = document.getElementById('phase-chat-panel');
     if (!panel) return;
 
@@ -2940,6 +3019,7 @@
               class="chat-input"
               type="text"
               maxlength="280"
+              value="${escapeHtml(state.chatOverlayDraft || '')}"
               placeholder="${canChat ? 'Type a message...' : 'Chat is locked at night'}"
               ${canChat ? '' : 'disabled'}
             />
@@ -2983,6 +3063,7 @@
           class="chat-input"
           type="text"
           maxlength="280"
+          value="${escapeHtml(state.chatDraft || '')}"
           placeholder="${canChat ? 'Type a message...' : 'Chat is locked at night'}"
           ${canChat ? '' : 'disabled'}
         />
@@ -3082,6 +3163,23 @@
     const stalkerLockedTargetId = player.role === 'Stalker'
       ? player.lastStalkerTarget
       : null;
+    const hypnoticLockedTargetId = player.role === 'Hypnotic' && state.selectedAction === 'trance'
+      ? player.lastHypnoticTarget
+      : null;
+    const blackoutCanFlashTonight = player.role === 'Blackout'
+      ? (player.blackoutFlashUsesRemaining ?? 3) > 0
+        && !player.blackoutFlashUsedThisNight
+        && player.lastBlackoutFlashNight !== ((state.roomData?.nightCount || 1) - 1)
+      : false;
+
+    if (player.role === 'Blackout') {
+      if (player.blackoutFlashUsedThisNight && state.selectedAction === 'flash') {
+        state.selectedAction = 'kill';
+        state.selectedTarget = null;
+      } else if (!state.selectedAction) {
+        state.selectedAction = blackoutCanFlashTonight ? 'flash' : 'kill';
+      }
+    }
 
     let actionsHTML = '';
     if (player.role === 'Sheriff') {
@@ -3101,6 +3199,9 @@
     } else if (player.role === 'Guardian Angel') {
       state.selectedAction = 'bless';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="bless">Blessing</button></div>';
+    } else if (player.role === 'Survivalist') {
+      state.selectedAction = 'lifeguard';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="lifeguard">Lifeguard</button></div>';
     } else if (player.role === 'Veteran') {
       state.selectedAction = 'instinct';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="instinct">Instinct</button></div>';
@@ -3110,6 +3211,10 @@
     } else if (player.role === 'Vitalist') {
       state.selectedAction = 'protect';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">Protect</button></div>';
+    } else if (player.role === 'Hypnotic') {
+      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'trance' ? 'selected' : ''}" data-action="trance">Trance</button><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Kill</button></div>`;
+    } else if (player.role === 'Blackout') {
+      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'flash' ? 'selected' : ''}" data-action="flash" ${blackoutCanFlashTonight ? '' : 'disabled'}>Flash</button><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Kill</button></div>`;
     } else if (player.role === 'Sniper') {
       state.selectedAction = 'longshot';
       actionsHTML = `<div class="action-buttons"><button class="action-btn selected ${actionClass}" data-action="longshot">Longshot</button></div>`;
@@ -3127,13 +3232,25 @@
     else if (player.role === 'Guardian Angel') actionDesc = player.guardianAngelTargetName
       ? `Protect <span class="chat-player-ref"${guardianAngelTargetStyle ? ` style="${guardianAngelTargetStyle}"` : ''}>${escapeHtml(player.guardianAngelTargetName)}</span> from death tonight.`
       : 'Protect your target from death tonight.';
+    else if (player.role === 'Survivalist') actionDesc = 'Protect yourself from death tonight.';
+    else if (player.role === 'Hypnotic') actionDesc = 'Cast a trance to disable a player, or kill them outright.';
+    else if (player.role === 'Blackout') actionDesc = state.selectedAction === 'flash'
+      ? player.blackoutFlashUsedThisNight
+        ? 'Flash is already active for tonight. You can still follow up with Kill.'
+        : blackoutCanFlashTonight
+          ? 'Blind every information role tonight. Flash is targetless and can be used 3 times.'
+          : 'Flash cannot be used tonight. Choose Kill instead.'
+      : 'Eliminate a player after the blackout.';
     else if (player.role === 'Veteran') actionDesc = 'Stand watch tonight.';
     else if (player.role === 'Mirror Caster') actionDesc = 'Choose a player to mirror tonight';
     else if (player.role === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
     else if (player.role === 'Sniper') actionDesc = 'Mark a player with a distant shot. The bullet lands 2 rounds later.';
     else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
 
-    const isTargetlessRole = player.role === 'Veteran' || player.role === 'Guardian Angel';
+    const isTargetlessRole = player.role === 'Veteran'
+      || player.role === 'Guardian Angel'
+      || player.role === 'Survivalist'
+      || (player.role === 'Blackout' && state.selectedAction === 'flash');
     container.innerHTML = `
       <div class="action-panel">
         <div class="action-title">YOUR NIGHT ACTION</div>
@@ -3147,12 +3264,13 @@
               || (player.role === 'Mirror Caster' && t.id === player.lastMirrorTarget)
               || (player.role === 'Investigator' && t.id === investigatorLockedTargetId)
               || (player.role === 'Tracker' && t.id === trackerLockedTargetId)
-              || (player.role === 'Stalker' && t.id === stalkerLockedTargetId);
+              || (player.role === 'Stalker' && t.id === stalkerLockedTargetId)
+              || (player.role === 'Hypnotic' && t.id === hypnoticLockedTargetId);
             return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`;
           }).join('')}
         </div>`}
         <div class="chat-local-actions">
-          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !state.selectedTarget) ? 'disabled' : ''}>${player.role === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : player.role === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : player.role === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : 'Confirm'}</button>
+          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !state.selectedTarget) || (player.role === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) ? 'disabled' : ''}>${player.role === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : player.role === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : player.role === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : player.role === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 5}/5` : player.role === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : 'Confirm'}</button>
           <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>
         </div>
       </div>
@@ -3160,6 +3278,7 @@
 
     container.querySelectorAll('.action-btn').forEach(btn => {
       btn.addEventListener('click', () => {
+        if (btn.disabled) return;
         btn.classList.remove('action-activate');
         void btn.offsetWidth;
         btn.classList.add('action-activate');
@@ -3178,6 +3297,8 @@
             showToast('You cannot target the same player twice in a row', 'error');
           } else if (player.role === 'Stalker') {
             showToast('You cannot target the same player twice in a row', 'error');
+          } else if (player.role === 'Hypnotic') {
+            showToast('You cannot target the same player twice in a row with Trance', 'error');
           } else if (player.role === 'Mirror Caster') {
             showToast('You cannot target the same player twice in a row', 'error');
           } else {
@@ -3202,6 +3323,10 @@
               queueAmnesiacInheritanceTransition(previousPlayer, response.player);
               state.playerData = response.player;
               state.hasActed = !!response.player.hasSubmittedAction;
+              if (response.player.role === 'Blackout' && state.selectedAction === 'flash' && !response.player.hasSubmittedAction) {
+                state.selectedAction = 'kill';
+                state.selectedTarget = null;
+              }
             } else {
               state.hasActed = true;
             }
