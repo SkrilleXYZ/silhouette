@@ -198,16 +198,14 @@
     },
     Amnesiac: {
       faction: 'Neutral',
-      subfaction: 'Evil',
-      hiddenFromGuide: true,
-      hiddenFromReveal: true,
-      description: 'Your old target is gone. You remember fragments, but no active power remains.',
-      revealText: 'Your purpose slips away, leaving only echoes in the dark.',
+      subfaction: 'Benign',
+      description: 'Steal the role of a dead player along with their win condition.',
+      revealText: 'Bright cyan memory glows in the dark. Claim a fallen role and inherit its fate.',
       abilities: [
         {
-          name: 'Forgotten',
-          type: 'Passive',
-          description: 'You have no active ability.',
+          name: 'Inheritance',
+          type: 'Night',
+          description: 'Steal the role of a dead player along with their win condition.',
         },
       ],
     },
@@ -729,6 +727,10 @@
       state.playerData = player;
       state.hasActed = player.hasSubmittedAction;
       state.hasVoted = player.hasVoted;
+      if (state.currentScreen === 'game' && state.gamePhase) {
+        updateRoleCard();
+        renderGameContent(state.gamePhase);
+      }
       renderGamePlayerList();
       renderChatBox();
     });
@@ -2133,6 +2135,13 @@
     }).map(p => ({ id: p.id, name: p.name, avatarIndex: p.avatarIndex }));
   }
 
+  function getAmnesiacTargets() {
+    if (!state.roomData || !state.playerData) return [];
+    return state.roomData.players
+      .filter((p) => !p.alive && p.id !== state.playerId)
+      .map((p) => ({ id: p.id, name: p.name, avatarIndex: p.avatarIndex }));
+  }
+
   function getVoteTargets() {
     if (!state.roomData) return [];
     return state.roomData.players
@@ -2458,20 +2467,26 @@
       player.role === 'Villager'
       || player.role === 'Jester'
       || player.role === 'Executioner'
-      || player.role === 'Amnesiac'
       || (player.role === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0)
       || (player.role === 'Mirror Caster' && (player.mirrorUsesRemaining ?? 4) <= 0)
     ) {
+      const amnesiacTargets = player.role === 'Amnesiac' ? getAmnesiacTargets() : [];
+      if (player.role === 'Amnesiac' && amnesiacTargets.length > 0) {
+        // Fall through to the interactive panel when there are dead roles to inherit.
+      } else {
       const executionerTargetPlayer = state.roomData?.players?.find((candidate) => candidate.id === player.executionerTargetId);
       const executionerTargetStyle = executionerTargetPlayer
         ? getPlayerChatStyle({ type: 'player', senderId: executionerTargetPlayer.id, senderName: executionerTargetPlayer.name, colorHex: executionerTargetPlayer.colorHex })
         : '';
       const waitingSubtext = player.role === 'Executioner' && player.executionerTargetName
         ? `Your target is <span class="chat-player-ref"${executionerTargetStyle ? ` style="${executionerTargetStyle}"` : ''}>${escapeHtml(player.executionerTargetName)}</span>. Get them voted out.`
-        : 'You have no abilities. Wait for dawn...';
+        : player.role === 'Amnesiac'
+          ? 'No dead players can be remembered yet. Wait for dawn...'
+          : 'You have no abilities. Wait for dawn...';
       container.innerHTML = `<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">${waitingSubtext}</p></div><div id="phase-chat-panel"></div>`;
       renderChatBox();
       return;
+      }
     }
 
     if (state.hasActed) {
@@ -2480,7 +2495,7 @@
       return;
     }
 
-    const targets = getTargetPlayers();
+    const targets = player.role === 'Amnesiac' ? getAmnesiacTargets() : getTargetPlayers();
     const isAssassin = player.faction === 'Assassin';
     const actionClass = isAssassin ? 'assassin-action' : '';
     const targetClass = isAssassin ? 'assassin-target' : '';
@@ -2906,10 +2921,30 @@
     const player = state.playerData;
     if (!player) return;
 
-    if (player.role === 'Villager' || player.role === 'Jester') {
-      container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">You have no abilities. Wait for dawn...</p></div><div id="phase-chat-panel"></div>';
+    if (
+      player.role === 'Villager'
+      || player.role === 'Jester'
+      || player.role === 'Executioner'
+      || (player.role === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0)
+      || (player.role === 'Mirror Caster' && (player.mirrorUsesRemaining ?? 4) <= 0)
+    ) {
+      const amnesiacTargets = player.role === 'Amnesiac' ? getAmnesiacTargets() : [];
+      if (player.role === 'Amnesiac' && amnesiacTargets.length > 0) {
+        // Fall through so Amnesiac can inherit a dead role.
+      } else {
+      const executionerTargetPlayer = state.roomData?.players?.find((candidate) => candidate.id === player.executionerTargetId);
+      const executionerTargetStyle = executionerTargetPlayer
+        ? getPlayerChatStyle({ type: 'player', senderId: executionerTargetPlayer.id, senderName: executionerTargetPlayer.name, colorHex: executionerTargetPlayer.colorHex })
+        : '';
+      const waitingSubtext = player.role === 'Executioner' && player.executionerTargetName
+        ? `Your target is <span class="chat-player-ref"${executionerTargetStyle ? ` style="${executionerTargetStyle}"` : ''}>${escapeHtml(player.executionerTargetName)}</span>. Get them voted out.`
+        : player.role === 'Amnesiac'
+          ? 'No dead players can be remembered yet. Wait for dawn...'
+          : 'You have no abilities. Wait for dawn...';
+      container.innerHTML = `<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">${waitingSubtext}</p></div><div id="phase-chat-panel"></div>`;
       renderChatBox();
       return;
+      }
     }
 
     if (state.hasActed) {
@@ -2918,7 +2953,7 @@
       return;
     }
 
-    const targets = getTargetPlayers();
+    const targets = player.role === 'Amnesiac' ? getAmnesiacTargets() : getTargetPlayers();
     const isAssassin = player.faction === 'Assassin';
     const actionClass = isAssassin ? 'assassin-action' : '';
     const targetClass = isAssassin ? 'assassin-target' : '';
@@ -2947,6 +2982,9 @@
     } else if (player.role === 'Stalker') {
       state.selectedAction = 'stalk';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="stalk">Stalk</button></div>';
+    } else if (player.role === 'Amnesiac') {
+      state.selectedAction = 'inherit';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="inherit">Inheritance</button></div>';
     } else if (player.role === 'Veteran') {
       state.selectedAction = 'instinct';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="instinct">Instinct</button></div>';
@@ -2966,6 +3004,7 @@
     else if (player.role === 'Investigator') actionDesc = 'Choose a player to examine for recent kills';
     else if (player.role === 'Tracker') actionDesc = 'Choose a player to track for nighttime interactions';
     else if (player.role === 'Stalker') actionDesc = 'Choose a player to stalk for incoming interactions';
+    else if (player.role === 'Amnesiac') actionDesc = 'Choose a dead player to inherit their role';
     else if (player.role === 'Veteran') actionDesc = 'Stand watch tonight.';
     else if (player.role === 'Mirror Caster') actionDesc = 'Choose a player to mirror tonight';
     else if (player.role === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
@@ -3035,7 +3074,12 @@
         if (!isTargetlessRole && !state.selectedTarget) return;
         state.socket.emit('night-action', { action: state.selectedAction, targetId: isTargetlessRole ? null : state.selectedTarget }, (response) => {
           if (response.success) {
-            state.hasActed = true;
+            if (response.player) {
+              state.playerData = response.player;
+              state.hasActed = !!response.player.hasSubmittedAction;
+            } else {
+              state.hasActed = true;
+            }
             renderNightPhase(container);
             showToast('Action submitted', 'success');
           } else {

@@ -13,6 +13,7 @@ class GameLogic {
       },
       Neutral: {
         Evil: ['Jester', 'Executioner'],
+        Benign: ['Amnesiac'],
       },
     };
   }
@@ -267,6 +268,33 @@ class GameLogic {
     return true;
   }
 
+  assignNeutralSpecialRole(room, playerId, categories = ['Evil']) {
+    const player = room.players.get(playerId);
+    if (!player) return false;
+
+    const pool = categories.flatMap((category) => this.roleCatalog?.Neutral?.[category] || []);
+    const role = this.pickRandomRole(pool);
+    if (!role) return false;
+
+    player.role = role;
+    player.faction = 'Neutral';
+    return true;
+  }
+
+  inheritDeadRole(room, playerId, targetId) {
+    const player = room.players.get(playerId);
+    const target = room.players.get(targetId);
+    if (!player || !target || target.alive) return { error: 'Invalid target' };
+
+    player.role = target.role;
+    player.faction = target.faction;
+    player.executionerTargetId = target.role === 'Executioner' ? (target.executionerTargetId || null) : null;
+    player.veteranUsesRemaining = target.role === 'Veteran' ? (target.veteranUsesRemaining ?? 4) : 4;
+    player.mirrorUsesRemaining = target.role === 'Mirror Caster' ? (target.mirrorUsesRemaining ?? 4) : 4;
+
+    return { success: true, player };
+  }
+
   assignRoles(code) {
     const room = this.rooms.get(code);
     if (!room) return null;
@@ -310,6 +338,27 @@ class GameLogic {
         index++;
       }
 
+      room.playerOrder = shuffled;
+      this.assignExecutionerTargets(room);
+      return room;
+    }
+
+    if (count === 7) {
+      const slotPlan = [
+        { faction: 'Crew', subfaction: 'Info' },
+        { faction: 'Crew', subfaction: 'Protection' },
+        { faction: 'Crew', subfaction: 'Killing' },
+        { faction: 'Crew', subfaction: 'Info' },
+        { faction: 'Assassin', subfaction: 'Power' },
+        { faction: 'Assassin', subfaction: 'Power' },
+      ];
+
+      for (const slot of slotPlan) {
+        this.assignRoleFromSlot(room, shuffled[index], slot.faction, slot.subfaction);
+        index++;
+      }
+
+      this.assignNeutralSpecialRole(room, shuffled[index], ['Evil', 'Benign']);
       room.playerOrder = shuffled;
       this.assignExecutionerTargets(room);
       return room;
@@ -469,6 +518,22 @@ class GameLogic {
       if (room.lastMirrorTargets[playerId] === targetId) {
         return { error: 'You cannot target the same player twice in a row' };
       }
+    } else if (player.role === 'Amnesiac') {
+      const target = room.players.get(targetId);
+      if (!target || target.alive) return { error: 'Invalid target' };
+      if (action !== 'inherit') return { error: 'Invalid action for Amnesiac' };
+
+      const inheritResult = this.inheritDeadRole(room, playerId, targetId);
+      if (inheritResult.error) return inheritResult;
+
+      const passiveRoles = new Set(['Villager', 'Jester', 'Executioner', 'Amnesiac']);
+      if (passiveRoles.has(inheritResult.player.role)) {
+        room.nightActions[playerId] = { action: 'skip', targetId: null };
+      } else {
+        delete room.nightActions[playerId];
+      }
+
+      return { success: true, room, player: this.getPlayerData(code, playerId), transformed: true };
     } else if (player.role === 'Veteran') {
       if (action !== 'instinct') return { error: 'Invalid action for Veteran' };
       if ((player.veteranUsesRemaining ?? 4) <= 0) return { error: 'You have no Instinct uses remaining' };
@@ -510,7 +575,10 @@ class GameLogic {
       if (player.role === 'Villager') continue;
       if (player.role === 'Jester') continue;
       if (player.role === 'Executioner') continue;
-      if (player.role === 'Amnesiac') continue;
+      if (player.role === 'Amnesiac') {
+        const hasDeadTargets = Array.from(room.players.values()).some((candidate) => !candidate.alive && candidate.id !== id);
+        if (!hasDeadTargets) continue;
+      }
       if (player.role === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0) continue;
       if (player.role === 'Mirror Caster' && (player.mirrorUsesRemaining ?? 4) <= 0) continue;
       if (!room.nightActions[id]) return false;
@@ -807,13 +875,15 @@ class GameLogic {
     }
 
     for (const [, player] of room.players) {
-      if (!player.alive || player.role !== 'Executioner') continue;
+      if (player.role !== 'Executioner') continue;
       if (player.executionerTargetId && killed.has(player.executionerTargetId)) {
         this.convertExecutionerToAmnesiac(room, player.id);
-        if (!privateMessages[player.id]) privateMessages[player.id] = [];
-        privateMessages[player.id].push(
-          this.createPrivateSystemMessage(code, 'Your target has died. You have become the Amnesiac.', 'Executioner')
-        );
+        if (player.alive) {
+          if (!privateMessages[player.id]) privateMessages[player.id] = [];
+          privateMessages[player.id].push(
+            this.createPrivateSystemMessage(code, 'Your target has died. You have become the Amnesiac.', 'Executioner')
+          );
+        }
       }
     }
 

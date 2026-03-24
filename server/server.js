@@ -192,7 +192,7 @@ io.on('connection', (socket) => {
     }
     const playerData = game.getPlayerData(mapping.code, mapping.playerId);
     socket.emit('player-updated', { player: playerData });
-    callback({ success: true });
+    callback({ success: true, player: playerData });
     if (game.checkAllNightActionsSubmitted(mapping.code)) {
       resolveNightPhase(mapping.code);
     }
@@ -211,7 +211,7 @@ io.on('connection', (socket) => {
     }
     const playerData = game.getPlayerData(mapping.code, mapping.playerId);
     socket.emit('player-updated', { player: playerData });
-    callback({ success: true });
+    callback({ success: true, player: playerData });
     if (game.checkAllNightActionsSubmitted(mapping.code)) {
       resolveNightPhase(mapping.code);
     }
