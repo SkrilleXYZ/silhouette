@@ -249,10 +249,17 @@ class GameLogic {
     if (!room) return;
 
     const players = Array.from(room.players.values());
+    const restrictAssassinTargets = players.length <= 6;
     const executioners = players.filter((player) => player.role === 'Executioner');
 
     for (const executioner of executioners) {
-      const possibleTargets = players.filter((player) => player.id !== executioner.id);
+      let possibleTargets = players.filter((player) => player.id !== executioner.id);
+      if (restrictAssassinTargets) {
+        possibleTargets = possibleTargets.filter((player) => player.faction !== 'Assassin');
+      }
+      if (possibleTargets.length === 0) {
+        possibleTargets = players.filter((player) => player.id !== executioner.id);
+      }
       const target = this.pickRandomRole(possibleTargets);
       executioner.executionerTargetId = target?.id || null;
     }

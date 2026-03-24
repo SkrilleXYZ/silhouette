@@ -40,6 +40,7 @@
     connectionToastVisible: false,
     currentRolesFaction: 'Crew',
     profilePaletteView: 'avatars',
+    pendingRoleInheritance: null,
   };
 
   const MAX_ROOM_PLAYERS = 16;
@@ -724,12 +725,15 @@
     });
 
     state.socket.on('player-updated', ({ player }) => {
+      const previousPlayer = state.playerData;
+      queueAmnesiacInheritanceTransition(previousPlayer, player);
       state.playerData = player;
       state.hasActed = player.hasSubmittedAction;
       state.hasVoted = player.hasVoted;
       if (state.currentScreen === 'game' && state.gamePhase) {
         updateRoleCard();
         renderGameContent(state.gamePhase);
+        playPendingRoleInheritanceTransition();
       }
       renderGamePlayerList();
       renderChatBox();
@@ -2093,6 +2097,7 @@
     const player = state.playerData;
     if (!player) return;
     const roleInfo = getRoleDefinition(player.role);
+    const isDead = player.alive === false;
 
     const card = document.getElementById('role-card');
     const faction = document.getElementById('role-faction');
@@ -2100,6 +2105,15 @@
     const desc = document.getElementById('role-description');
     const teammates = document.getElementById('role-teammates');
     const teammatesList = document.getElementById('teammates-list');
+
+    if (isDead) {
+      card.className = 'role-card dead';
+      faction.textContent = 'SPECTATOR';
+      roleName.textContent = "YOU'VE DIED";
+      desc.textContent = 'Spectate the remaining players and see how the game turns out.';
+      teammates.style.display = 'none';
+      return;
+    }
 
     card.className = `role-card ${player.faction?.toLowerCase() || ''} ${getRoleBadgeClass(player.role, player.faction)}`;
     faction.textContent = player.faction?.toUpperCase() || '';
@@ -2119,6 +2133,52 @@
       teammatesList.innerHTML = player.teammates.map(t => `<span class="teammate-tag">${t.name} ${t.alive ? '' : '(Dead)'}</span>`).join('');
     } else {
       teammates.style.display = 'none';
+    }
+  }
+
+  function shouldAnimateAmnesiacInheritance(previousPlayer, nextPlayer) {
+    return !!(
+      previousPlayer
+      && nextPlayer
+      && previousPlayer.id === nextPlayer.id
+      && previousPlayer.alive !== false
+      && nextPlayer.alive !== false
+      && previousPlayer.role === 'Amnesiac'
+      && nextPlayer.role
+      && nextPlayer.role !== 'Amnesiac'
+    );
+  }
+
+  function queueAmnesiacInheritanceTransition(previousPlayer, nextPlayer) {
+    if (!shouldAnimateAmnesiacInheritance(previousPlayer, nextPlayer)) return;
+    state.pendingRoleInheritance = {
+      role: nextPlayer.role,
+      timestamp: Date.now(),
+    };
+  }
+
+  function playPendingRoleInheritanceTransition() {
+    if (!state.pendingRoleInheritance) return;
+    const roleCard = document.getElementById('role-card');
+    const gameContent = document.getElementById('game-content');
+    const activePanel = gameContent
+      ? Array.from(gameContent.children).find((child) => child.id !== 'phase-chat-panel')
+      : null;
+
+    state.pendingRoleInheritance = null;
+
+    if (roleCard) {
+      roleCard.classList.remove('role-inheritance-enter');
+      void roleCard.offsetWidth;
+      roleCard.classList.add('role-inheritance-enter');
+      window.setTimeout(() => roleCard.classList.remove('role-inheritance-enter'), 820);
+    }
+
+    if (activePanel) {
+      activePanel.classList.remove('role-inheritance-panel-enter');
+      void activePanel.offsetWidth;
+      activePanel.classList.add('role-inheritance-panel-enter');
+      window.setTimeout(() => activePanel.classList.remove('role-inheritance-panel-enter'), 700);
     }
   }
 
@@ -2766,8 +2826,9 @@
     const messages = getRenderableChatMessages();
     const overlay = ensureChatOverlay();
     const isStandaloneOverlay = isDockedMode && isOverlayOpen;
+    const isDeadSpectator = state.playerData?.alive === false;
 
-    panel.className = `phase-chat-panel ${isStandaloneOverlay ? 'chat-overlay-anchor' : isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}`;
+    panel.className = `phase-chat-panel ${isStandaloneOverlay ? 'chat-overlay-anchor' : isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isDeadSpectator ? ' chat-dead' : ''}`;
     if (gameContainer) {
       gameContainer.classList.toggle('chat-overlay-active', isStandaloneOverlay);
     }
@@ -2809,7 +2870,7 @@
     if (isStandaloneOverlay) {
       panel.innerHTML = '';
       overlay.innerHTML = `
-        <div class="chat-fullscreen-shell${canChat ? '' : ' chat-locked'}">
+        <div class="chat-fullscreen-shell${canChat ? '' : ' chat-locked'}${isDeadSpectator ? ' chat-dead' : ''}">
           ${localPanel}
           <div class="chat-panel-header">
             <div>
@@ -3075,12 +3136,15 @@
         state.socket.emit('night-action', { action: state.selectedAction, targetId: isTargetlessRole ? null : state.selectedTarget }, (response) => {
           if (response.success) {
             if (response.player) {
+              const previousPlayer = state.playerData;
+              queueAmnesiacInheritanceTransition(previousPlayer, response.player);
               state.playerData = response.player;
               state.hasActed = !!response.player.hasSubmittedAction;
             } else {
               state.hasActed = true;
             }
             renderNightPhase(container);
+            playPendingRoleInheritanceTransition();
             showToast('Action submitted', 'success');
           } else {
             showToast(response.error || 'Action failed', 'error');

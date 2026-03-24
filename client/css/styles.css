@@ -2453,6 +2453,10 @@ body {
 
 .role-card { margin-bottom: 10px; perspective: 1000px; }
 
+.role-card.role-inheritance-enter {
+  animation: roleInheritanceCardEnter 0.82s cubic-bezier(0.2, 0.88, 0.2, 1);
+}
+
 .role-card-inner {
   position: relative;
   padding: 14px 16px;
@@ -2471,6 +2475,17 @@ body {
   opacity: 0.08;
   pointer-events: none;
   transition: background 0.5s;
+}
+
+.role-card.role-inheritance-enter .role-card-inner::after {
+  content: '';
+  position: absolute;
+  inset: -24% auto -24% -38%;
+  width: 34%;
+  background: linear-gradient(180deg, transparent, rgba(255,255,255,0.12), transparent);
+  transform: rotate(18deg);
+  animation: roleInheritanceSweep 0.72s ease;
+  pointer-events: none;
 }
 
 .role-card.crew .role-card-glow,
@@ -2515,6 +2530,16 @@ body {
 .role-card.assassin .role-card-inner,
 .role-card.role-theme-assassin .role-card-inner { border-color: var(--assassin-dim); }
 
+.role-card.dead .role-card-glow {
+  background: radial-gradient(circle, rgba(192, 204, 220, 0.2) 0%, transparent 72%);
+  opacity: 0.12;
+}
+
+.role-card.dead .role-card-inner {
+  border-color: rgba(172, 184, 200, 0.26);
+  box-shadow: inset 0 0 0 1px rgba(172, 184, 200, 0.05), 0 0 18px rgba(100, 110, 126, 0.08);
+}
+
 .role-faction {
   font-family: 'DM Sans', sans-serif;
   font-size: 0.65rem;
@@ -2548,6 +2573,10 @@ body {
 
 .role-card.assassin .role-faction,
 .role-card.role-theme-assassin .role-faction { color: var(--assassin); }
+
+.role-card.dead .role-faction {
+  color: rgba(206, 215, 226, 0.72);
+}
 
 .role-name {
   font-family: 'Cinzel', serif;
@@ -2590,6 +2619,10 @@ body {
 
 .role-card.assassin .role-divider,
 .role-card.role-theme-assassin .role-divider { background: var(--assassin); }
+
+.role-card.dead .role-divider {
+  background: rgba(206, 215, 226, 0.56);
+}
 
 .role-card.role-theme-vitalist .role-name {
   color: hsl(138, 100%, 90%);
@@ -2646,10 +2679,19 @@ body {
   text-shadow: 0 0 18px rgba(255, 66, 66, 0.24);
 }
 
+.role-card.dead .role-name {
+  color: hsl(0, 0%, 96%);
+  text-shadow: 0 0 18px rgba(230, 236, 244, 0.12);
+}
+
 .role-description {
   font-size: 0.74rem;
   color: var(--fg-muted);
   font-style: italic;
+}
+
+.role-card.dead .role-description {
+  color: rgba(214, 222, 233, 0.72);
 }
 
 .role-teammates {
@@ -3246,6 +3288,10 @@ body {
   min-height: 0;
 }
 
+.role-inheritance-panel-enter {
+  animation: roleInheritancePanelEnter 0.68s cubic-bezier(0.2, 0.88, 0.2, 1);
+}
+
 .action-title {
   font-family: 'Cinzel', serif;
   font-size: 0.85rem;
@@ -3506,6 +3552,56 @@ body {
   50% { opacity: 0.7; transform: scale(1.05); }
 }
 
+@keyframes roleInheritanceCardEnter {
+  0% {
+    opacity: 0.42;
+    transform: translateY(10px) scale(0.985);
+    filter: saturate(0.88) brightness(0.92);
+  }
+  42% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.01);
+    filter: saturate(1.08) brightness(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: saturate(1) brightness(1);
+  }
+}
+
+@keyframes roleInheritanceSweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-18%) rotate(18deg);
+  }
+  18% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(360%) rotate(18deg);
+  }
+}
+
+@keyframes roleInheritancePanelEnter {
+  0% {
+    opacity: 0.28;
+    transform: translateY(16px) scale(0.99);
+    filter: blur(2px);
+  }
+  58% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.004);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
 .waiting-text {
   font-family: 'Cinzel', serif;
   font-size: 0.9rem;
@@ -3638,6 +3734,12 @@ body {
   box-shadow: 0 24px 54px rgba(0,0,0,0.46);
 }
 
+.phase-chat-panel.chat-dead,
+.chat-fullscreen-shell.chat-dead {
+  border-color: rgba(182, 191, 204, 0.18);
+  box-shadow: 0 20px 44px rgba(0,0,0,0.42);
+}
+
 .phase-chat-panel.chat-docked-mode {
   margin-top: auto;
   flex: 0 0 auto;
@@ -3724,6 +3826,21 @@ body {
   border: none;
   color: var(--fg);
   text-align: left;
+}
+
+.phase-chat-panel.chat-dead .chat-dock-toggle {
+  background: hsl(0, 0%, 11%);
+  color: rgba(236, 240, 245, 0.88);
+}
+
+.phase-chat-panel.chat-dead .chat-dock-icon {
+  background: hsl(0, 0%, 15%);
+  border-color: rgba(182, 191, 204, 0.16);
+  color: rgba(181, 195, 214, 0.82);
+}
+
+.phase-chat-panel.chat-dead .chat-dock-subtitle {
+  color: rgba(184, 193, 204, 0.66);
 }
 
 .chat-dock-icon {
@@ -3926,6 +4043,12 @@ body {
   background: hsl(0, 0%, 12%);
 }
 
+.phase-chat-panel.chat-dead .chat-panel-header,
+.chat-fullscreen-shell.chat-dead .chat-panel-header {
+  background: hsl(0, 0%, 10%);
+  border-bottom-color: rgba(182, 191, 204, 0.12);
+}
+
 .chat-panel-title {
   font-family: 'Cinzel', serif;
   font-size: 0.8rem;
@@ -3936,6 +4059,11 @@ body {
   font-size: 0.72rem;
   color: var(--fg-muted);
   margin-top: 4px;
+}
+
+.phase-chat-panel.chat-dead .chat-panel-subtitle,
+.chat-fullscreen-shell.chat-dead .chat-panel-subtitle {
+  color: rgba(184, 193, 204, 0.62);
 }
 
 .chat-header-actions {
@@ -3973,6 +4101,11 @@ body {
   background: hsl(0, 0%, 10%);
 }
 
+.phase-chat-panel.chat-dead .chat-messages,
+.chat-fullscreen-shell.chat-dead .chat-messages {
+  background: hsl(0, 0%, 9%);
+}
+
 .chat-message {
   align-self: flex-start;
   max-width: 100%;
@@ -3983,12 +4116,27 @@ body {
   border-radius: 10px;
 }
 
+.phase-chat-panel.chat-dead .chat-message,
+.chat-fullscreen-shell.chat-dead .chat-message {
+  background: hsl(0, 0%, 11%);
+  border-color: rgba(182, 191, 204, 0.12);
+}
+
 .chat-message.player {
   background:
     linear-gradient(180deg, hsla(var(--chat-accent-h, 195), max(24%, calc(var(--chat-accent-s, 70%) - 28%)), 18%, 0.48), hsla(var(--chat-accent-h, 195), max(22%, calc(var(--chat-accent-s, 70%) - 30%)), 12%, 0.42)),
     var(--bg-elevated);
   border-color: hsla(var(--chat-accent-h, 195), max(36%, calc(var(--chat-accent-s, 70%) - 12%)), 46%, 0.34);
   box-shadow: inset 0 1px 0 hsla(var(--chat-accent-h, 195), max(50%, calc(var(--chat-accent-s, 70%) - 4%)), 88%, 0.06);
+}
+
+.phase-chat-panel.chat-dead .chat-message.player,
+.chat-fullscreen-shell.chat-dead .chat-message.player {
+  background:
+    linear-gradient(180deg, hsla(var(--chat-accent-h, 195), max(14%, calc(var(--chat-accent-s, 70%) - 40%)), 14%, 0.34), hsla(var(--chat-accent-h, 195), max(12%, calc(var(--chat-accent-s, 70%) - 42%)), 10%, 0.28)),
+    hsl(0, 0%, 11%);
+  border-color: hsla(var(--chat-accent-h, 195), max(18%, calc(var(--chat-accent-s, 70%) - 34%)), 34%, 0.22);
+  box-shadow: inset 0 1px 0 hsla(var(--chat-accent-h, 195), max(26%, calc(var(--chat-accent-s, 70%) - 28%)), 78%, 0.04);
 }
 
 .chat-message.self {
@@ -3999,10 +4147,24 @@ body {
   border-color: hsla(var(--chat-accent-h, 195), max(48%, calc(var(--chat-accent-s, 70%) - 2%)), 54%, 0.42);
 }
 
+.phase-chat-panel.chat-dead .chat-message.self,
+.chat-fullscreen-shell.chat-dead .chat-message.self {
+  background:
+    linear-gradient(180deg, hsla(var(--chat-accent-h, 195), max(18%, calc(var(--chat-accent-s, 70%) - 32%)), 16%, 0.42), hsla(var(--chat-accent-h, 195), max(16%, calc(var(--chat-accent-s, 70%) - 36%)), 12%, 0.34)),
+    hsl(0, 0%, 12%);
+  border-color: hsla(var(--chat-accent-h, 195), max(22%, calc(var(--chat-accent-s, 70%) - 30%)), 38%, 0.24);
+}
+
 .chat-message.system {
   width: 100%;
   background: hsl(0, 0%, 14%);
   border-color: hsl(0, 0%, 18%);
+}
+
+.phase-chat-panel.chat-dead .chat-message.system,
+.chat-fullscreen-shell.chat-dead .chat-message.system {
+  background: hsl(0, 0%, 12%);
+  border-color: rgba(182, 191, 204, 0.12);
 }
 
 .chat-message.system.phase-summary {
@@ -4130,6 +4292,11 @@ body {
   z-index: 1;
   font-weight: 800;
   text-transform: uppercase;
+}
+
+.phase-chat-panel.chat-dead .chat-message-meta,
+.chat-fullscreen-shell.chat-dead .chat-message-meta {
+  color: rgba(184, 193, 204, 0.64);
 }
 
 .chat-message.player .chat-message-meta {
@@ -4355,6 +4522,12 @@ body {
   background: hsl(0, 0%, 11%);
 }
 
+.phase-chat-panel.chat-dead .chat-input-row,
+.chat-fullscreen-shell.chat-dead .chat-input-row {
+  background: hsl(0, 0%, 10%);
+  border-top-color: rgba(182, 191, 204, 0.1);
+}
+
 .chat-input {
   flex: 1;
   min-width: 0;
@@ -4364,6 +4537,12 @@ body {
   background: var(--bg-elevated);
   color: var(--fg);
   font-size: 0.85rem;
+}
+
+.phase-chat-panel.chat-dead .chat-input,
+.chat-fullscreen-shell.chat-dead .chat-input {
+  background: hsl(0, 0%, 9%);
+  border-color: rgba(182, 191, 204, 0.12);
 }
 
 .chat-input:disabled {
