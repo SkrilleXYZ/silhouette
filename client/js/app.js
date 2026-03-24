@@ -923,10 +923,11 @@
 
   function renderRolesGuide() {
     const tabs = document.getElementById('roles-faction-tabs');
+    const summary = document.querySelector('#screen-roles .roles-guide-summary');
     const summaryLabel = document.getElementById('roles-guide-summary-label');
     const summaryCount = document.getElementById('roles-guide-summary-count');
     const grid = document.getElementById('roles-guide-grid');
-    if (!tabs || !summaryLabel || !summaryCount || !grid) return;
+    if (!tabs || !summary || !summaryLabel || !summaryCount || !grid) return;
 
     const activeFaction = state.currentRolesFaction || 'Crew';
     const factionRoles = getRolesForFaction(activeFaction);
@@ -943,6 +944,7 @@
       </button>
     `).join('');
 
+    summary.className = `roles-guide-summary roles-faction-${activeFaction.toLowerCase()}`;
     summaryLabel.className = `roles-guide-summary-label roles-faction-${activeFaction.toLowerCase()}`;
     summaryLabel.textContent = activeFaction.toUpperCase();
     summaryCount.textContent = `${factionRoles.length} role${factionRoles.length === 1 ? '' : 's'}`;

@@ -2,6 +2,19 @@ class GameLogic {
   constructor() {
     this.rooms = new Map();
     this.avatarCount = 29;
+    this.roleCatalog = {
+      Crew: {
+        Info: ['Villager', 'Investigator', 'Tracker'],
+        Protection: ['Vitalist'],
+        Killing: ['Sheriff', 'Veteran'],
+      },
+      Assassin: {
+        Power: ['Assassin'],
+      },
+      Neutral: {
+        Evil: ['Jester'],
+      },
+    };
   }
 
   normalizePlayerName(name) {
@@ -208,6 +221,23 @@ class GameLogic {
     return roles[Math.floor(Math.random() * roles.length)];
   }
 
+  pickRoleForSlot(faction, subfaction) {
+    const pool = this.roleCatalog?.[faction]?.[subfaction] || [];
+    return this.pickRandomRole(pool);
+  }
+
+  assignRoleFromSlot(room, playerId, faction, subfaction) {
+    const player = room.players.get(playerId);
+    if (!player) return false;
+
+    const role = this.pickRoleForSlot(faction, subfaction);
+    if (!role) return false;
+
+    player.role = role;
+    player.faction = faction;
+    return true;
+  }
+
   assignRoles(code) {
     const room = this.rooms.get(code);
     if (!room) return null;
@@ -236,29 +266,18 @@ class GameLogic {
     let index = 0;
 
     if (count === 5) {
-      const assassin = room.players.get(shuffled[index]);
-      assassin.role = 'Assassin';
-      assassin.faction = 'Assassin';
-      index++;
+      const slotPlan = [
+        { faction: 'Crew', subfaction: 'Info' },
+        { faction: 'Crew', subfaction: 'Protection' },
+        { faction: 'Crew', subfaction: 'Killing' },
+        { faction: 'Assassin', subfaction: 'Power' },
+        { faction: 'Neutral', subfaction: 'Evil' },
+      ];
 
-      const sheriff = room.players.get(shuffled[index]);
-      sheriff.role = 'Sheriff';
-      sheriff.faction = 'Crew';
-      index++;
-
-      const vitalist = room.players.get(shuffled[index]);
-      vitalist.role = 'Vitalist';
-      vitalist.faction = 'Crew';
-      index++;
-
-      const crewInfo = room.players.get(shuffled[index]);
-      crewInfo.role = this.pickRandomRole(['Villager', 'Investigator', 'Tracker', 'Veteran']);
-      crewInfo.faction = 'Crew';
-      index++;
-
-      const jester = room.players.get(shuffled[index]);
-      jester.role = 'Jester';
-      jester.faction = 'Neutral';
+      for (const slot of slotPlan) {
+        this.assignRoleFromSlot(room, shuffled[index], slot.faction, slot.subfaction);
+        index++;
+      }
 
       room.playerOrder = shuffled;
       return room;
