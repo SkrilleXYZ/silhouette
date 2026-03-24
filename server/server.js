@@ -245,7 +245,7 @@ io.on('connection', (socket) => {
       voterId: mapping.playerId,
       voterName: game.getRoom(mapping.code).players.get(mapping.playerId).name,
       votesCast: Object.keys(game.getRoom(mapping.code).votes).length,
-      totalAlive: game.getAlivePlayers(mapping.code).length
+      totalAlive: game.getEligibleVoterCount(mapping.code)
     });
     callback({ success: true });
     if (game.checkAllVotesSubmitted(mapping.code)) {

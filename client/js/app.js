@@ -222,6 +222,24 @@
         },
       ],
     },
+    Blackmailer: {
+      faction: 'Assassin',
+      subfaction: 'Concealing',
+      description: 'Threaten a player to disable their ability to talk and vote until the next night, or eliminate a player.',
+      revealText: 'A gilded threat settles over the table. Silence a target, then decide if the blade follows.',
+      abilities: [
+        {
+          name: 'Kill',
+          type: 'Night',
+          description: 'Eliminate a player.',
+        },
+        {
+          name: 'Blackmail',
+          type: 'Night',
+          description: 'Threaten a player to disable their ability to talk and vote until the next night.',
+        },
+      ],
+    },
     Jester: {
       faction: 'Neutral',
       subfaction: 'Evil',
@@ -983,6 +1001,7 @@
     if (normalizedRole === 'sniper') return 'sniper';
     if (normalizedRole === 'hypnotic') return 'hypnotic';
     if (normalizedRole === 'blackout') return 'blackout';
+    if (normalizedRole === 'blackmailer') return 'blackmailer';
     if (normalizedRole === 'villager') return 'villager';
     if (normalizedRole === 'jester') return 'jester';
     if (normalizedRole === 'executioner') return 'executioner';
@@ -1559,6 +1578,9 @@
     if (/.* was interacted by .* tonight\.$/i.test(text) || /.* was not interacted by anyone tonight\.$/i.test(text)) {
       return ' system-result-track';
     }
+    if (/You couldn\'t see anything last night\.$/i.test(text) && String(message.source || '').trim() === 'Blackout') {
+      return ' system-result-blackout';
+    }
     if (/You were protected by the Vitalist during the night\.$/i.test(text)) {
       return ' system-result-protect';
     }
@@ -1633,16 +1655,19 @@
     if (!panel) return;
 
     const mode = getChatMode();
-    const canChat = mode === 'morning' || mode === 'voting';
+    const phaseAllowsChat = mode === 'morning' || mode === 'voting';
+    const canChat = phaseAllowsChat && !state.playerData?.isBlackmailed;
     const isMorningFullscreen = mode === 'morning' && state.chatOverlayOpen;
     const isExpandedMode = mode === 'morning' && !isMorningFullscreen;
     const isDockedMode = mode !== 'hidden' && !isExpandedMode;
     const isOverlayOpen = state.chatOverlayOpen;
-    const subtitle = canChat
-      ? 'Chat is open for discussion.'
-      : mode === 'readonly'
-        ? 'Waiting for the next phase...'
-        : 'Chat is visible but locked until morning.';
+    const subtitle = state.playerData?.isBlackmailed
+      ? 'You have been blackmailed.'
+      : canChat
+        ? 'Chat is open for discussion.'
+        : mode === 'readonly'
+          ? 'Waiting for the next phase...'
+          : 'Chat is visible but locked until morning.';
     const messages = state.chatMessages || [];
 
     panel.className = `phase-chat-panel ${isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isOverlayOpen && isDockedMode ? ' chat-overlay-open' : ''}`;
@@ -2090,6 +2115,12 @@
   }
 
   function renderVotingPhase(container) {
+    if (state.playerData?.isBlackmailed) {
+      container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 8h8"/><path d="M7 12h10"/><path d="M9 16h6"/></svg></div><p class="waiting-text">YOU HAVE BEEN BLACKMAILED</p><p class="waiting-subtext">You cannot speak or vote until the next night.</p></div><div id="phase-chat-panel"></div>';
+      renderChatBox();
+      return;
+    }
+
     if (state.hasVoted) {
       container.innerHTML = '<div class="action-confirmed"><div class="confirmed-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><p class="confirmed-text">VOTE SUBMITTED</p><p class="confirmed-detail">Waiting for others...</p></div><div id="phase-chat-panel"></div>';
       renderChatBox();
@@ -2097,7 +2128,7 @@
     }
 
     const targets = getVoteTargets();
-    const aliveCount = state.totalAlive || state.roomData?.aliveCount || '?';
+    const aliveCount = state.totalAlive || state.roomData?.votingEligibleCount || state.roomData?.aliveCount || '?';
 
     container.innerHTML = `
       <div class="voting-panel">
@@ -2207,7 +2238,11 @@
       const targetStyle = targetPlayer
         ? getPlayerChatStyle({ type: 'player', senderId: targetPlayer.id, senderName: targetPlayer.name, colorHex: targetPlayer.colorHex })
         : '';
-      desc.innerHTML = `${escapeHtml(roleInfo.description)} Target: <span class="chat-player-ref"${targetStyle ? ` style="${targetStyle}"` : ''}>${escapeHtml(targetName)}</span>.`;
+      if (player.role === 'Executioner') {
+        desc.innerHTML = `Get <span class="chat-player-ref"${targetStyle ? ` style="${targetStyle}"` : ''}>${escapeHtml(targetName)}</span> voted out. Make sure they don't die.`;
+      } else {
+        desc.innerHTML = `${escapeHtml(roleInfo.description)} Target: <span class="chat-player-ref"${targetStyle ? ` style="${targetStyle}"` : ''}>${escapeHtml(targetName)}</span>.`;
+      }
     } else {
       desc.textContent = roleInfo.description;
     }
@@ -2982,7 +3017,7 @@
           </span>
           <span class="chat-dock-copy">
             <span class="chat-dock-title">Open Chat</span>
-            <span class="chat-dock-subtitle">${canChat ? 'Discussion and actions' : 'View updates'}</span>
+            <span class="chat-dock-subtitle">${canChat ? 'Discussion and actions' : state.playerData?.isBlackmailed ? 'You have been blackmailed' : 'View updates'}</span>
           </span>
         </button>`;
       const openBtn = document.getElementById('chat-open-btn');
@@ -3020,7 +3055,7 @@
               type="text"
               maxlength="280"
               value="${escapeHtml(state.chatOverlayDraft || '')}"
-              placeholder="${canChat ? 'Type a message...' : 'Chat is locked at night'}"
+              placeholder="${state.playerData?.isBlackmailed ? 'You have been blackmailed' : canChat ? 'Type a message...' : 'Chat is locked at night'}"
               ${canChat ? '' : 'disabled'}
             />
             <button class="btn btn-primary chat-send-btn" type="submit" ${canChat ? '' : 'disabled'}>Send</button>
@@ -3064,7 +3099,7 @@
           type="text"
           maxlength="280"
           value="${escapeHtml(state.chatDraft || '')}"
-          placeholder="${canChat ? 'Type a message...' : 'Chat is locked at night'}"
+          placeholder="${state.playerData?.isBlackmailed ? 'You have been blackmailed' : canChat ? 'Type a message...' : 'Chat is locked at night'}"
           ${canChat ? '' : 'disabled'}
         />
         <button class="btn btn-primary chat-send-btn" type="submit" ${canChat ? '' : 'disabled'}>Send</button>
@@ -3131,7 +3166,7 @@
         ? getPlayerChatStyle({ type: 'player', senderId: executionerTargetPlayer.id, senderName: executionerTargetPlayer.name, colorHex: executionerTargetPlayer.colorHex })
         : '';
       const waitingSubtext = player.role === 'Executioner' && player.executionerTargetName
-        ? `Your target is <span class="chat-player-ref"${executionerTargetStyle ? ` style="${executionerTargetStyle}"` : ''}>${escapeHtml(player.executionerTargetName)}</span>. Get them voted out.`
+        ? `Get <span class="chat-player-ref"${executionerTargetStyle ? ` style="${executionerTargetStyle}"` : ''}>${escapeHtml(player.executionerTargetName)}</span> voted out. Make sure they don't die.`
         : player.role === 'Amnesiac'
           ? 'No dead players can be remembered yet. Wait for dawn...'
           : 'You have no abilities. Wait for dawn...';
@@ -3172,12 +3207,30 @@
         && player.lastBlackoutFlashNight !== ((state.roomData?.nightCount || 1) - 1)
       : false;
 
+    if (player.role === 'Hypnotic') {
+      if (player.hypnoticTranceUsedThisNight && state.selectedAction === 'trance') {
+        state.selectedAction = 'kill';
+        state.selectedTarget = null;
+      } else if (!state.selectedAction) {
+        state.selectedAction = 'kill';
+      }
+    }
+
+    if (player.role === 'Blackmailer') {
+      if (player.blackmailerBlackmailUsedThisNight && state.selectedAction === 'blackmail') {
+        state.selectedAction = 'kill';
+        state.selectedTarget = null;
+      } else if (!state.selectedAction) {
+        state.selectedAction = 'kill';
+      }
+    }
+
     if (player.role === 'Blackout') {
       if (player.blackoutFlashUsedThisNight && state.selectedAction === 'flash') {
         state.selectedAction = 'kill';
         state.selectedTarget = null;
       } else if (!state.selectedAction) {
-        state.selectedAction = blackoutCanFlashTonight ? 'flash' : 'kill';
+        state.selectedAction = 'kill';
       }
     }
 
@@ -3212,9 +3265,11 @@
       state.selectedAction = 'protect';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">Protect</button></div>';
     } else if (player.role === 'Hypnotic') {
-      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'trance' ? 'selected' : ''}" data-action="trance">Trance</button><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Kill</button></div>`;
+      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Kill</button><button class="action-btn ${state.selectedAction === 'trance' ? 'selected' : ''}" data-action="trance" ${player.hypnoticTranceUsedThisNight ? 'disabled' : ''}>Trance</button></div>`;
+    } else if (player.role === 'Blackmailer') {
+      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Kill</button><button class="action-btn ${state.selectedAction === 'blackmail' ? 'selected' : ''}" data-action="blackmail" ${player.blackmailerBlackmailUsedThisNight ? 'disabled' : ''}>Blackmail</button></div>`;
     } else if (player.role === 'Blackout') {
-      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'flash' ? 'selected' : ''}" data-action="flash" ${blackoutCanFlashTonight ? '' : 'disabled'}>Flash</button><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Kill</button></div>`;
+      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Kill</button><button class="action-btn ${state.selectedAction === 'flash' ? 'selected' : ''}" data-action="flash" ${blackoutCanFlashTonight ? '' : 'disabled'}>Flash</button></div>`;
     } else if (player.role === 'Sniper') {
       state.selectedAction = 'longshot';
       actionsHTML = `<div class="action-buttons"><button class="action-btn selected ${actionClass}" data-action="longshot">Longshot</button></div>`;
@@ -3233,7 +3288,16 @@
       ? `Protect <span class="chat-player-ref"${guardianAngelTargetStyle ? ` style="${guardianAngelTargetStyle}"` : ''}>${escapeHtml(player.guardianAngelTargetName)}</span> from death tonight.`
       : 'Protect your target from death tonight.';
     else if (player.role === 'Survivalist') actionDesc = 'Protect yourself from death tonight.';
-    else if (player.role === 'Hypnotic') actionDesc = 'Cast a trance to disable a player, or kill them outright.';
+    else if (player.role === 'Hypnotic') actionDesc = state.selectedAction === 'trance'
+      ? player.hypnoticTranceUsedThisNight
+        ? 'Trance is already active for tonight. You can still follow up with Kill.'
+        : 'Disable a player\'s abilities for tonight.'
+      : 'Eliminate a player after casting your trance.';
+    else if (player.role === 'Blackmailer') actionDesc = state.selectedAction === 'blackmail'
+      ? player.blackmailerBlackmailUsedThisNight
+        ? 'Blackmail is already active for tonight. You can still follow up with Kill.'
+        : 'Threaten a player so they cannot chat or vote until the next night.'
+      : 'Eliminate a player after delivering your threat.';
     else if (player.role === 'Blackout') actionDesc = state.selectedAction === 'flash'
       ? player.blackoutFlashUsedThisNight
         ? 'Flash is already active for tonight. You can still follow up with Kill.'
@@ -3324,6 +3388,12 @@
               state.playerData = response.player;
               state.hasActed = !!response.player.hasSubmittedAction;
               if (response.player.role === 'Blackout' && state.selectedAction === 'flash' && !response.player.hasSubmittedAction) {
+                state.selectedAction = 'kill';
+                state.selectedTarget = null;
+              } else if (response.player.role === 'Hypnotic' && state.selectedAction === 'trance' && !response.player.hasSubmittedAction) {
+                state.selectedAction = 'kill';
+                state.selectedTarget = null;
+              } else if (response.player.role === 'Blackmailer' && state.selectedAction === 'blackmail' && !response.player.hasSubmittedAction) {
                 state.selectedAction = 'kill';
                 state.selectedTarget = null;
               }
