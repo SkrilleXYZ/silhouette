@@ -881,6 +881,14 @@
     };
   }
 
+  function getGameoverWinnerThemeClass(winningSide, player) {
+    if (!player) return '';
+    if (winningSide === 'Crew' && player.faction === 'Crew') return 'winner-crew';
+    if (winningSide === 'Assassin' && player.faction === 'Assassin') return 'winner-assassin';
+    if (winningSide === player.role) return `winner-${getRoleThemeClass(player.role, player.faction)}`;
+    return '';
+  }
+
   function getRoleDefinition(role) {
     return ROLE_DEFINITIONS[role] || {
       faction: 'Crew',

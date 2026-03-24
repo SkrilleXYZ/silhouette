@@ -864,15 +864,23 @@ class GameLogic {
 
     let aliveCrewCount = 0;
     let aliveAssassinCount = 0;
+    let aliveNeutralEvilCount = 0;
 
     for (const [, player] of room.players) {
       if (!player.alive) continue;
       if (player.faction === 'Crew') aliveCrewCount++;
       else if (player.faction === 'Assassin') aliveAssassinCount++;
+      else if (player.faction === 'Neutral' && this.roleCatalog?.Neutral?.Evil?.includes(player.role)) aliveNeutralEvilCount++;
     }
 
     if (aliveAssassinCount === 0) {
       return { winner: 'Crew', reason: 'All Assassins have been eliminated!' };
+    }
+
+    // Neutral Evil roles like Jester should be able to keep the game alive at parity,
+    // so the table still has a chance to vote them out instead of ending immediately.
+    if (aliveAssassinCount > 0 && aliveCrewCount > 0 && aliveNeutralEvilCount > 0) {
+      return null;
     }
 
     if (aliveAssassinCount >= aliveCrewCount) {
