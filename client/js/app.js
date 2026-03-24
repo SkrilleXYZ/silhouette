@@ -197,6 +197,19 @@
         },
       ],
     },
+    'Guardian Angel': {
+      faction: 'Neutral',
+      subfaction: 'Benign',
+      description: 'A random player becomes your target. Bless them to protect them from getting killed that round. Can be used 4 times. If your target dies or gets voted out, you become an Amnesiac.',
+      revealText: 'Warm white gold gathers around you. Watch over your chosen soul and rise or fall with their fate.',
+      abilities: [
+        {
+          name: 'Blessing',
+          type: 'Night',
+          description: 'Protect your target from getting killed that round. Can be used 4 times. If your target dies or gets voted out, you become an Amnesiac.',
+        },
+      ],
+    },
     Amnesiac: {
       faction: 'Neutral',
       subfaction: 'Benign',
@@ -906,6 +919,7 @@
     if (normalizedRole === 'villager') return 'villager';
     if (normalizedRole === 'jester') return 'jester';
     if (normalizedRole === 'executioner') return 'executioner';
+    if (normalizedRole === 'guardian angel') return 'guardianangel';
     if (normalizedRole === 'amnesiac') return 'amnesiac';
     return String(fallbackFaction || 'Crew').trim().toLowerCase();
   }
@@ -2118,12 +2132,14 @@
     card.className = `role-card ${player.faction?.toLowerCase() || ''} ${getRoleBadgeClass(player.role, player.faction)}`;
     faction.textContent = player.faction?.toUpperCase() || '';
     roleName.textContent = player.role?.toUpperCase() || '';
-    if (player.role === 'Executioner' && player.executionerTargetName) {
-      const targetPlayer = state.roomData?.players?.find((candidate) => candidate.id === player.executionerTargetId);
+    if ((player.role === 'Executioner' && player.executionerTargetName) || (player.role === 'Guardian Angel' && player.guardianAngelTargetName)) {
+      const targetId = player.role === 'Guardian Angel' ? player.guardianAngelTargetId : player.executionerTargetId;
+      const targetName = player.role === 'Guardian Angel' ? player.guardianAngelTargetName : player.executionerTargetName;
+      const targetPlayer = state.roomData?.players?.find((candidate) => candidate.id === targetId);
       const targetStyle = targetPlayer
         ? getPlayerChatStyle({ type: 'player', senderId: targetPlayer.id, senderName: targetPlayer.name, colorHex: targetPlayer.colorHex })
         : '';
-      desc.innerHTML = `${escapeHtml(roleInfo.description)} Target: <span class="chat-player-ref"${targetStyle ? ` style="${targetStyle}"` : ''}>${escapeHtml(player.executionerTargetName)}</span>.`;
+      desc.innerHTML = `${escapeHtml(roleInfo.description)} Target: <span class="chat-player-ref"${targetStyle ? ` style="${targetStyle}"` : ''}>${escapeHtml(targetName)}</span>.`;
     } else {
       desc.textContent = roleInfo.description;
     }
@@ -2217,6 +2233,7 @@
     const playersList = document.getElementById('gameover-players');
     const winnerPresentation = getWinnerPresentation(winner?.winner);
     const winningSide = String(winner?.winner || '').trim();
+    const guardianAngelWinnerIds = new Set(winner?.guardianAngelWinnerIds || []);
 
     glow.className = `gameover-glow ${winnerPresentation.glowClass}`;
     title.className = `gameover-faction ${winnerPresentation.textClass}`;
@@ -2226,7 +2243,7 @@
       : winner.reason;
 
     playersList.innerHTML = players.map((p, index) => `
-      <div class="gameover-player ${((winningSide === 'Crew' && p.faction === 'Crew') || (winningSide === 'Assassin' && p.faction === 'Assassin') || winningSide === p.role) ? 'won' : 'lost'}" style="--gameover-delay:${320 + (index * 60)}ms;">
+      <div class="gameover-player ${(guardianAngelWinnerIds.has(p.id) || (winningSide === 'Crew' && p.faction === 'Crew') || (winningSide === 'Assassin' && p.faction === 'Assassin') || winningSide === p.role) ? 'won' : 'lost'}" style="--gameover-delay:${320 + (index * 60)}ms;">
         <span class="gameover-player-name" style="${getPlayerChatStyle({ type: 'player', senderId: p.id, senderName: p.name, colorHex: p.colorHex || p.colorHue })}">${p.name}</span>
         <span class="gameover-player-role ${getRoleBadgeClass(p.role, p.faction)}">
           ${p.role}
@@ -2527,6 +2544,7 @@
       player.role === 'Villager'
       || player.role === 'Jester'
       || player.role === 'Executioner'
+      || (player.role === 'Guardian Angel' && (player.guardianAngelUsesRemaining ?? 4) <= 0)
       || (player.role === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0)
       || (player.role === 'Mirror Caster' && (player.mirrorUsesRemaining ?? 4) <= 0)
     ) {
@@ -2538,8 +2556,14 @@
       const executionerTargetStyle = executionerTargetPlayer
         ? getPlayerChatStyle({ type: 'player', senderId: executionerTargetPlayer.id, senderName: executionerTargetPlayer.name, colorHex: executionerTargetPlayer.colorHex })
         : '';
+      const guardianAngelTargetPlayer = state.roomData?.players?.find((candidate) => candidate.id === player.guardianAngelTargetId);
+      const guardianAngelTargetStyle = guardianAngelTargetPlayer
+        ? getPlayerChatStyle({ type: 'player', senderId: guardianAngelTargetPlayer.id, senderName: guardianAngelTargetPlayer.name, colorHex: guardianAngelTargetPlayer.colorHex })
+        : '';
       const waitingSubtext = player.role === 'Executioner' && player.executionerTargetName
         ? `Your target is <span class="chat-player-ref"${executionerTargetStyle ? ` style="${executionerTargetStyle}"` : ''}>${escapeHtml(player.executionerTargetName)}</span>. Get them voted out.`
+        : player.role === 'Guardian Angel' && player.guardianAngelTargetName
+          ? `Your target is <span class="chat-player-ref"${guardianAngelTargetStyle ? ` style="${guardianAngelTargetStyle}"` : ''}>${escapeHtml(player.guardianAngelTargetName)}</span>. Your blessings are spent, so watch over them from the sidelines.`
         : player.role === 'Amnesiac'
           ? 'No dead players can be remembered yet. Wait for dawn...'
           : 'You have no abilities. Wait for dawn...';
@@ -2559,6 +2583,10 @@
     const isAssassin = player.faction === 'Assassin';
     const actionClass = isAssassin ? 'assassin-action' : '';
     const targetClass = isAssassin ? 'assassin-target' : '';
+    const guardianAngelTargetPlayer = state.roomData?.players?.find((candidate) => candidate.id === player.guardianAngelTargetId);
+    const guardianAngelTargetStyle = guardianAngelTargetPlayer
+      ? getPlayerChatStyle({ type: 'player', senderId: guardianAngelTargetPlayer.id, senderName: guardianAngelTargetPlayer.name, colorHex: guardianAngelTargetPlayer.colorHex })
+      : '';
 
     let actionsHTML = '';
     if (player.role === 'Sheriff') {
@@ -3046,6 +3074,9 @@
     } else if (player.role === 'Amnesiac') {
       state.selectedAction = 'inherit';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="inherit">Inheritance</button></div>';
+    } else if (player.role === 'Guardian Angel') {
+      state.selectedAction = 'bless';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="bless">Blessing</button></div>';
     } else if (player.role === 'Veteran') {
       state.selectedAction = 'instinct';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="instinct">Instinct</button></div>';
@@ -3066,12 +3097,15 @@
     else if (player.role === 'Tracker') actionDesc = 'Choose a player to track for nighttime interactions';
     else if (player.role === 'Stalker') actionDesc = 'Choose a player to stalk for incoming interactions';
     else if (player.role === 'Amnesiac') actionDesc = 'Choose a dead player to inherit their role';
+    else if (player.role === 'Guardian Angel') actionDesc = player.guardianAngelTargetName
+      ? `Protect <span class="chat-player-ref"${guardianAngelTargetStyle ? ` style="${guardianAngelTargetStyle}"` : ''}>${escapeHtml(player.guardianAngelTargetName)}</span> from death tonight.`
+      : 'Protect your target from death tonight.';
     else if (player.role === 'Veteran') actionDesc = 'Stand watch tonight.';
     else if (player.role === 'Mirror Caster') actionDesc = 'Choose a player to mirror tonight';
     else if (player.role === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
     else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
 
-    const isTargetlessRole = player.role === 'Veteran';
+    const isTargetlessRole = player.role === 'Veteran' || player.role === 'Guardian Angel';
     container.innerHTML = `
       <div class="action-panel">
         <div class="action-title">YOUR NIGHT ACTION</div>
@@ -3090,7 +3124,7 @@
           }).join('')}
         </div>`}
         <div class="chat-local-actions">
-          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !state.selectedTarget) ? 'disabled' : ''}>${player.role === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : player.role === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : 'Confirm'}</button>
+          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !state.selectedTarget) ? 'disabled' : ''}>${player.role === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : player.role === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : player.role === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : 'Confirm'}</button>
           <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>
         </div>
       </div>
