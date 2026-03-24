@@ -147,6 +147,19 @@
         },
       ],
     },
+    Silencer: {
+      faction: 'Crew',
+      subfaction: 'Unbound',
+      description: 'Disable a player\'s abilities and prevent them from talking until the next night. Cannot target the same player twice in a row.',
+      revealText: 'A hard crimson hush closes around your target. Mute their voice and snuff out their night action.',
+      abilities: [
+        {
+          name: 'Quietus',
+          type: 'Night',
+          description: 'Disable a player\'s abilities and prevent them from talking until the next night. Cannot target the same player twice in a row.',
+        },
+      ],
+    },
     Villager: {
       faction: 'Crew',
       subfaction: 'Info',
@@ -183,6 +196,24 @@
           name: 'Longshot',
           type: 'Night',
           description: 'Shoot a player from a great distance. The bullet hits them 2 rounds later making you harder to track.',
+        },
+      ],
+    },
+    Tetherhex: {
+      faction: 'Assassin',
+      subfaction: 'Power',
+      description: 'Link with a player each round. If you get killed, they also die with you. Can be used with Kill. Cannot target the same player 3 times in a row.',
+      revealText: 'Neon green chains hum in the dark. Bind another life to yours, then strike before the tether snaps.',
+      abilities: [
+        {
+          name: 'Kill',
+          type: 'Night',
+          description: 'Eliminate a player.',
+        },
+        {
+          name: 'Interlinked',
+          type: 'Night',
+          description: 'Link with a player each round. If you get killed, they also die with you. Can be used with Kill. Cannot target the same player 3 times in a row.',
         },
       ],
     },
@@ -229,14 +260,14 @@
       revealText: 'A gilded threat settles over the table. Silence a target, then decide if the blade follows.',
       abilities: [
         {
-          name: 'Kill',
-          type: 'Night',
-          description: 'Eliminate a player.',
-        },
-        {
           name: 'Blackmail',
           type: 'Night',
           description: 'Threaten a player to disable their ability to talk and vote until the next night.',
+        },
+        {
+          name: 'Kill',
+          type: 'Night',
+          description: 'Eliminate a player.',
         },
       ],
     },
@@ -997,8 +1028,10 @@
     if (normalizedRole === 'investigator') return 'investigator';
     if (normalizedRole === 'tracker') return 'tracker';
     if (normalizedRole === 'stalker') return 'stalker';
+    if (normalizedRole === 'silencer') return 'silencer';
     if (normalizedRole === 'assassin') return 'assassin';
     if (normalizedRole === 'sniper') return 'sniper';
+    if (normalizedRole === 'tetherhex') return 'tetherhex';
     if (normalizedRole === 'hypnotic') return 'hypnotic';
     if (normalizedRole === 'blackout') return 'blackout';
     if (normalizedRole === 'blackmailer') return 'blackmailer';
@@ -1104,10 +1137,12 @@
     const summaryLabel = document.getElementById('roles-guide-summary-label');
     const summaryCount = document.getElementById('roles-guide-summary-count');
     const grid = document.getElementById('roles-guide-grid');
-    if (!tabs || !summary || !summaryLabel || !summaryCount || !grid) return;
+    const guideScreen = document.querySelector('#screen-roles .roles-guide-screen');
+    if (!tabs || !summary || !summaryLabel || !summaryCount || !grid || !guideScreen) return;
 
     const activeFaction = state.currentRolesFaction || 'Crew';
     const factionRoles = getRolesForFaction(activeFaction);
+    guideScreen.className = `roles-guide-screen roles-guide-screen-${activeFaction.toLowerCase()}`;
 
     tabs.innerHTML = ROLE_GUIDE_SECTIONS.map((section) => `
       <button
@@ -1656,13 +1691,15 @@
 
     const mode = getChatMode();
     const phaseAllowsChat = mode === 'morning' || mode === 'voting';
-    const canChat = phaseAllowsChat && !state.playerData?.isBlackmailed;
+    const canChat = phaseAllowsChat && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced;
     const isMorningFullscreen = mode === 'morning' && state.chatOverlayOpen;
     const isExpandedMode = mode === 'morning' && !isMorningFullscreen;
     const isDockedMode = mode !== 'hidden' && !isExpandedMode;
     const isOverlayOpen = state.chatOverlayOpen;
     const subtitle = state.playerData?.isBlackmailed
       ? 'You have been blackmailed.'
+      : state.playerData?.isSilenced
+        ? 'You have been silenced.'
       : canChat
         ? 'Chat is open for discussion.'
         : mode === 'readonly'
@@ -3017,7 +3054,7 @@
           </span>
           <span class="chat-dock-copy">
             <span class="chat-dock-title">Open Chat</span>
-            <span class="chat-dock-subtitle">${canChat ? 'Discussion and actions' : state.playerData?.isBlackmailed ? 'You have been blackmailed' : 'View updates'}</span>
+            <span class="chat-dock-subtitle">${canChat ? 'Discussion and actions' : state.playerData?.isBlackmailed ? 'You have been blackmailed' : state.playerData?.isSilenced ? 'You have been silenced' : 'View updates'}</span>
           </span>
         </button>`;
       const openBtn = document.getElementById('chat-open-btn');
@@ -3055,7 +3092,7 @@
               type="text"
               maxlength="280"
               value="${escapeHtml(state.chatOverlayDraft || '')}"
-              placeholder="${state.playerData?.isBlackmailed ? 'You have been blackmailed' : canChat ? 'Type a message...' : 'Chat is locked at night'}"
+              placeholder="${state.playerData?.isBlackmailed ? 'You have been blackmailed' : state.playerData?.isSilenced ? 'You have been silenced' : canChat ? 'Type a message...' : 'Chat is locked at night'}"
               ${canChat ? '' : 'disabled'}
             />
             <button class="btn btn-primary chat-send-btn" type="submit" ${canChat ? '' : 'disabled'}>Send</button>
@@ -3099,7 +3136,7 @@
           type="text"
           maxlength="280"
           value="${escapeHtml(state.chatDraft || '')}"
-          placeholder="${state.playerData?.isBlackmailed ? 'You have been blackmailed' : canChat ? 'Type a message...' : 'Chat is locked at night'}"
+          placeholder="${state.playerData?.isBlackmailed ? 'You have been blackmailed' : state.playerData?.isSilenced ? 'You have been silenced' : canChat ? 'Type a message...' : 'Chat is locked at night'}"
           ${canChat ? '' : 'disabled'}
         />
         <button class="btn btn-primary chat-send-btn" type="submit" ${canChat ? '' : 'disabled'}>Send</button>
@@ -3198,6 +3235,15 @@
     const stalkerLockedTargetId = player.role === 'Stalker'
       ? player.lastStalkerTarget
       : null;
+    const tetherhexLockedTargetId = player.role === 'Tetherhex' && state.selectedAction === 'interlinked'
+      && Array.isArray(player.lastTetherhexTargets)
+      && player.lastTetherhexTargets.length >= 2
+      && player.lastTetherhexTargets[0] === player.lastTetherhexTargets[1]
+      ? player.lastTetherhexTargets[0]
+      : null;
+    const silencerLockedTargetId = player.role === 'Silencer'
+      ? player.lastSilencerTarget
+      : null;
     const hypnoticLockedTargetId = player.role === 'Hypnotic' && state.selectedAction === 'trance'
       ? player.lastHypnoticTarget
       : null;
@@ -3206,6 +3252,15 @@
         && !player.blackoutFlashUsedThisNight
         && player.lastBlackoutFlashNight !== ((state.roomData?.nightCount || 1) - 1)
       : false;
+
+    if (player.role === 'Tetherhex') {
+      if (player.tetherhexInterlinkedUsedThisNight && state.selectedAction === 'interlinked') {
+        state.selectedAction = 'kill';
+        state.selectedTarget = null;
+      } else if (!state.selectedAction) {
+        state.selectedAction = 'kill';
+      }
+    }
 
     if (player.role === 'Hypnotic') {
       if (player.hypnoticTranceUsedThisNight && state.selectedAction === 'trance') {
@@ -3246,6 +3301,9 @@
     } else if (player.role === 'Stalker') {
       state.selectedAction = 'stalk';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="stalk">Stalk</button></div>';
+    } else if (player.role === 'Silencer') {
+      state.selectedAction = 'quietus';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="quietus">Quietus</button></div>';
     } else if (player.role === 'Amnesiac') {
       state.selectedAction = 'inherit';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="inherit">Inheritance</button></div>';
@@ -3264,6 +3322,8 @@
     } else if (player.role === 'Vitalist') {
       state.selectedAction = 'protect';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">Protect</button></div>';
+    } else if (player.role === 'Tetherhex') {
+      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Kill</button><button class="action-btn ${state.selectedAction === 'interlinked' ? 'selected' : ''}" data-action="interlinked" ${player.tetherhexInterlinkedUsedThisNight ? 'disabled' : ''}>Interlinked</button></div>`;
     } else if (player.role === 'Hypnotic') {
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Kill</button><button class="action-btn ${state.selectedAction === 'trance' ? 'selected' : ''}" data-action="trance" ${player.hypnoticTranceUsedThisNight ? 'disabled' : ''}>Trance</button></div>`;
     } else if (player.role === 'Blackmailer') {
@@ -3283,11 +3343,17 @@
     else if (player.role === 'Investigator') actionDesc = 'Choose a player to examine for recent kills';
     else if (player.role === 'Tracker') actionDesc = 'Choose a player to track for nighttime interactions';
     else if (player.role === 'Stalker') actionDesc = 'Choose a player to stalk for incoming interactions';
+    else if (player.role === 'Silencer') actionDesc = 'Choose a player to silence until the next night.';
     else if (player.role === 'Amnesiac') actionDesc = 'Choose a dead player to inherit their role';
     else if (player.role === 'Guardian Angel') actionDesc = player.guardianAngelTargetName
       ? `Protect <span class="chat-player-ref"${guardianAngelTargetStyle ? ` style="${guardianAngelTargetStyle}"` : ''}>${escapeHtml(player.guardianAngelTargetName)}</span> from death tonight.`
       : 'Protect your target from death tonight.';
     else if (player.role === 'Survivalist') actionDesc = 'Protect yourself from death tonight.';
+    else if (player.role === 'Tetherhex') actionDesc = state.selectedAction === 'interlinked'
+      ? player.tetherhexInterlinkedUsedThisNight
+        ? 'Interlinked is already active for tonight. You can still follow up with Kill.'
+        : 'Bind another player to your fate for this round.'
+      : 'Eliminate a player while your tether is active.';
     else if (player.role === 'Hypnotic') actionDesc = state.selectedAction === 'trance'
       ? player.hypnoticTranceUsedThisNight
         ? 'Trance is already active for tonight. You can still follow up with Kill.'
@@ -3329,6 +3395,8 @@
               || (player.role === 'Investigator' && t.id === investigatorLockedTargetId)
               || (player.role === 'Tracker' && t.id === trackerLockedTargetId)
               || (player.role === 'Stalker' && t.id === stalkerLockedTargetId)
+              || (player.role === 'Tetherhex' && t.id === tetherhexLockedTargetId)
+              || (player.role === 'Silencer' && t.id === silencerLockedTargetId)
               || (player.role === 'Hypnotic' && t.id === hypnoticLockedTargetId);
             return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`;
           }).join('')}
@@ -3361,6 +3429,10 @@
             showToast('You cannot target the same player twice in a row', 'error');
           } else if (player.role === 'Stalker') {
             showToast('You cannot target the same player twice in a row', 'error');
+          } else if (player.role === 'Tetherhex') {
+            showToast('You cannot target the same player 3 times in a row', 'error');
+          } else if (player.role === 'Silencer') {
+            showToast('You cannot target the same player twice in a row', 'error');
           } else if (player.role === 'Hypnotic') {
             showToast('You cannot target the same player twice in a row with Trance', 'error');
           } else if (player.role === 'Mirror Caster') {
@@ -3388,6 +3460,9 @@
               state.playerData = response.player;
               state.hasActed = !!response.player.hasSubmittedAction;
               if (response.player.role === 'Blackout' && state.selectedAction === 'flash' && !response.player.hasSubmittedAction) {
+                state.selectedAction = 'kill';
+                state.selectedTarget = null;
+              } else if (response.player.role === 'Tetherhex' && state.selectedAction === 'interlinked' && !response.player.hasSubmittedAction) {
                 state.selectedAction = 'kill';
                 state.selectedTarget = null;
               } else if (response.player.role === 'Hypnotic' && state.selectedAction === 'trance' && !response.player.hasSubmittedAction) {

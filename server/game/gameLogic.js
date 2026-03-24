@@ -7,9 +7,10 @@ class GameLogic {
         Info: ['Villager', 'Investigator', 'Tracker', 'Stalker'],
         Protection: ['Vitalist', 'Mirror Caster'],
         Killing: ['Sheriff', 'Veteran'],
+        Unbound: ['Silencer'],
       },
       Assassin: {
-        Power: ['Assassin', 'Sniper'],
+        Power: ['Assassin', 'Sniper', 'Tetherhex'],
         Concealing: ['Hypnotic', 'Blackout', 'Blackmailer'],
       },
       Neutral: {
@@ -116,9 +117,12 @@ class GameLogic {
       lastInvestigatorTargets: {},
       lastTrackerTargets: {},
       lastStalkerTargets: {},
+      lastTetherhexTargets: {},
+      lastSilencerTargets: {},
       lastHypnoticTargets: {},
       lastBlackoutFlashNight: {},
       blackmailedPlayers: {},
+      silencedPlayers: {},
       recentKillers: [],
       pendingLongshots: [],
       roleRevealEndsAt: 0,
@@ -404,7 +408,7 @@ class GameLogic {
         { faction: 'Crew', subfaction: 'Info' },
         { faction: 'Crew', subfaction: 'Protection' },
         { faction: 'Crew', subfaction: 'Killing' },
-        { faction: 'Crew', subfaction: 'Info' },
+        { faction: 'Crew', subfaction: 'Unbound' },
         { faction: 'Assassin', subfaction: 'Power' },
         { faction: 'Assassin', subfaction: 'Concealing' },
       ];
@@ -443,6 +447,11 @@ class GameLogic {
       index++;
     }
 
+    if (index < shuffled.length) {
+      this.assignRoleFromSlot(room, shuffled[index], 'Crew', 'Unbound');
+      index++;
+    }
+
     while (index < shuffled.length) {
       const player = room.players.get(shuffled[index]);
       player.role = 'Villager';
@@ -474,9 +483,12 @@ class GameLogic {
     room.lastInvestigatorTargets = {};
     room.lastTrackerTargets = {};
     room.lastStalkerTargets = {};
+    room.lastTetherhexTargets = {};
+    room.lastSilencerTargets = {};
     room.lastHypnoticTargets = {};
     room.lastBlackoutFlashNight = {};
     room.blackmailedPlayers = {};
+    room.silencedPlayers = {};
     room.roleRevealEndsAt = 0;
     room.pendingLongshots = [];
 
@@ -521,9 +533,12 @@ class GameLogic {
     room.lastInvestigatorTargets = {};
     room.lastTrackerTargets = {};
     room.lastStalkerTargets = {};
+    room.lastTetherhexTargets = {};
+    room.lastSilencerTargets = {};
     room.lastHypnoticTargets = {};
     room.lastBlackoutFlashNight = {};
     room.blackmailedPlayers = {};
+    room.silencedPlayers = {};
     room.recentKillers = [];
     room.pendingLongshots = [];
     room.roleRevealEndsAt = 0;
@@ -569,6 +584,14 @@ class GameLogic {
       if (action !== 'stalk') return { error: 'Invalid action for Stalker' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
       if (room.lastStalkerTargets[playerId] === targetId) {
+        return { error: 'You cannot target the same player twice in a row' };
+      }
+    } else if (player.role === 'Silencer') {
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
+      if (action !== 'quietus') return { error: 'Invalid action for Silencer' };
+      if (targetId === playerId) return { error: 'Cannot target yourself' };
+      if (room.lastSilencerTargets[playerId] === targetId) {
         return { error: 'You cannot target the same player twice in a row' };
       }
     } else if (player.role === 'Vitalist') {
@@ -626,6 +649,27 @@ class GameLogic {
       if (action !== 'longshot') return { error: 'Invalid action for Sniper' };
       if (target.faction === 'Assassin') return { error: 'Cannot shoot teammates' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
+    } else if (player.role === 'Tetherhex') {
+      const existingAction = room.nightActions[playerId] || {};
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
+      if (action !== 'interlinked' && action !== 'kill') return { error: 'Invalid action for Tetherhex' };
+      if (action === 'kill') {
+        if (target.faction === 'Assassin') return { error: 'Cannot kill teammates' };
+        if (targetId === playerId) return { error: 'Cannot target yourself' };
+        if (existingAction.action === 'kill' && existingAction.targetId === targetId) {
+          return { error: 'You already chose that kill target tonight' };
+        }
+      } else {
+        if (targetId === playerId) return { error: 'Cannot target yourself' };
+        const recentTargets = room.lastTetherhexTargets[playerId] || [];
+        if (recentTargets.length >= 2 && recentTargets[recentTargets.length - 1] === targetId && recentTargets[recentTargets.length - 2] === targetId) {
+          return { error: 'You cannot target the same player 3 times in a row' };
+        }
+        if (existingAction.interlinkedUsedThisNight && existingAction.interlinkedTargetId === targetId) {
+          return { error: 'You already linked with that player tonight' };
+        }
+      }
     } else if (player.role === 'Hypnotic') {
       const existingAction = room.nightActions[playerId] || {};
       const target = room.players.get(targetId);
@@ -676,7 +720,17 @@ class GameLogic {
       return { error: 'You have no night abilities' };
     }
 
-    if (player.role === 'Hypnotic') {
+    if (player.role === 'Tetherhex') {
+      const existingAction = room.nightActions[playerId] || {};
+      room.nightActions[playerId] = {
+        ...existingAction,
+        interlinkedUsedThisNight: action === 'interlinked' ? true : !!existingAction.interlinkedUsedThisNight,
+        interlinkedTargetId: action === 'interlinked' ? targetId : (existingAction.interlinkedTargetId || null),
+        action: action === 'kill' ? 'kill' : (existingAction.action || null),
+        targetId: action === 'kill' ? targetId : (existingAction.targetId || null),
+        queuedTargetId: null,
+      };
+    } else if (player.role === 'Hypnotic') {
       const existingAction = room.nightActions[playerId] || {};
       room.nightActions[playerId] = {
         ...existingAction,
@@ -684,6 +738,12 @@ class GameLogic {
         tranceTargetId: action === 'trance' ? targetId : (existingAction.tranceTargetId || null),
         action: action === 'kill' ? 'kill' : (existingAction.action || null),
         targetId: action === 'kill' ? targetId : (existingAction.targetId || null),
+        queuedTargetId: null,
+      };
+    } else if (player.role === 'Silencer') {
+      room.nightActions[playerId] = {
+        action,
+        targetId,
         queuedTargetId: null,
       };
     } else if (player.role === 'Blackmailer') {
@@ -726,7 +786,16 @@ class GameLogic {
     const player = room.players.get(playerId);
     if (!player || !player.alive) return { error: 'Invalid player' };
 
-    if (player.role === 'Hypnotic') {
+    if (player.role === 'Tetherhex') {
+      const existingAction = room.nightActions[playerId] || {};
+      room.nightActions[playerId] = {
+        ...existingAction,
+        action: existingAction.action || 'skip',
+        targetId: existingAction.targetId || null,
+        queuedTargetId: null,
+        skippedAfterInterlinked: !!existingAction.interlinkedUsedThisNight || existingAction.skippedAfterInterlinked === true,
+      };
+    } else if (player.role === 'Hypnotic') {
       const existingAction = room.nightActions[playerId] || {};
       room.nightActions[playerId] = {
         ...existingAction,
@@ -768,6 +837,16 @@ class GameLogic {
       if (player.role === 'Villager') continue;
       if (player.role === 'Jester') continue;
       if (player.role === 'Executioner') continue;
+      if (player.role === 'Tetherhex') {
+        const tetherhexAction = room.nightActions[id];
+        if (!tetherhexAction) return false;
+        if (tetherhexAction.action === 'kill' || tetherhexAction.action === 'skip' || tetherhexAction.skippedAfterInterlinked === true) continue;
+        return false;
+      }
+      if (player.role === 'Silencer') {
+        if (!room.nightActions[id]) return false;
+        continue;
+      }
       if (player.role === 'Blackmailer') {
         const blackmailerAction = room.nightActions[id];
         if (!blackmailerAction) return false;
@@ -819,6 +898,7 @@ class GameLogic {
     const veteranAlertIds = new Set();
     const mirroredTargets = new Map();
     const hypnotizedTargets = new Set();
+    const silencedTargets = new Set();
     const blackoutFlashActive = new Set();
     const blackmailedTargets = new Set();
     const nextPendingLongshots = [];
@@ -827,9 +907,23 @@ class GameLogic {
     // Track who the medic protected this night
     let medicTargetThisNight = null;
     const nextMirrorTargets = {};
+    const nextTetherhexTargets = {};
+    const nextSilencerTargets = {};
     const nextHypnoticTargets = {};
 
     room.blackmailedPlayers = {};
+    room.silencedPlayers = {};
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      if (!player || player.role !== 'Tetherhex') continue;
+      const previousTargets = room.lastTetherhexTargets[playerId] || [];
+      if (action.interlinkedUsedThisNight && action.interlinkedTargetId) {
+        nextTetherhexTargets[playerId] = [...previousTargets.slice(-1), action.interlinkedTargetId];
+      } else {
+        nextTetherhexTargets[playerId] = [];
+      }
+    }
 
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
@@ -861,8 +955,26 @@ class GameLogic {
 
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
+      if (!player || player.role !== 'Silencer') continue;
+      if (action.action === 'quietus' && action.targetId) {
+        silencedTargets.add(action.targetId);
+        room.silencedPlayers[action.targetId] = true;
+        nextSilencerTargets[playerId] = action.targetId;
+        if (!privateMessages[action.targetId]) privateMessages[action.targetId] = [];
+        privateMessages[action.targetId].push(
+          this.createPrivateSystemMessage(code, 'You have been silenced by the Silencer.', 'Silencer')
+        );
+      } else {
+        nextSilencerTargets[playerId] = null;
+      }
+    }
+
+    const disabledAbilityTargets = new Set([...hypnotizedTargets, ...silencedTargets]);
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
       if (!player) continue;
-      if (hypnotizedTargets.has(playerId)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
       if (action.action === 'instinct' && player.role === 'Veteran') {
         veteranAlertIds.add(playerId);
         player.veteranUsesRemaining = Math.max(0, (player.veteranUsesRemaining ?? 4) - 1);
@@ -920,6 +1032,8 @@ class GameLogic {
       room.lastMedicTarget = null;
     }
     room.lastMirrorTargets = nextMirrorTargets;
+    room.lastTetherhexTargets = nextTetherhexTargets;
+    room.lastSilencerTargets = nextSilencerTargets;
     room.lastHypnoticTargets = nextHypnoticTargets;
     room.pendingLongshots = nextPendingLongshots;
 
@@ -968,7 +1082,7 @@ class GameLogic {
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       if (!player) continue;
-      if (hypnotizedTargets.has(playerId)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
 
       if (action.action === 'kill' && player.role === 'Assassin' && action.targetId) {
         if (veteranAlertIds.has(action.targetId)) {
@@ -1011,7 +1125,7 @@ class GameLogic {
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       if (!player || player.role !== 'Sheriff') continue;
-      if (hypnotizedTargets.has(playerId)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
 
       if (action.action === 'shoot' && action.targetId) {
         const target = room.players.get(action.targetId);
@@ -1083,7 +1197,7 @@ class GameLogic {
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       if (!player || player.role !== 'Investigator') continue;
-      if (hypnotizedTargets.has(playerId)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
 
       const previousTargets = room.lastInvestigatorTargets[playerId] || [];
       if (action.action === 'examine' && action.targetId) {
@@ -1127,7 +1241,7 @@ class GameLogic {
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       if (!player || player.role !== 'Tracker') continue;
-      if (hypnotizedTargets.has(playerId)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
 
       if (action.action === 'track' && action.targetId) {
         if (veteranAlertIds.has(action.targetId)) {
@@ -1177,7 +1291,7 @@ class GameLogic {
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       if (!player || player.role !== 'Stalker') continue;
-      if (hypnotizedTargets.has(playerId)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
 
       if (action.action === 'stalk' && action.targetId) {
         if (veteranAlertIds.has(action.targetId)) {
@@ -1231,7 +1345,7 @@ class GameLogic {
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       if (!player || player.role !== 'Vitalist') continue;
-      if (hypnotizedTargets.has(playerId)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
       if (action.action === 'protect' && action.targetId && veteranAlertIds.has(action.targetId)) {
         killed.add(playerId);
       }
@@ -1240,7 +1354,7 @@ class GameLogic {
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       if (!player || player.role !== 'Mirror Caster') continue;
-      if (hypnotizedTargets.has(playerId)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
       if (action.action === 'mirror' && action.targetId && veteranAlertIds.has(action.targetId)) {
         killed.add(playerId);
       }
@@ -1249,7 +1363,7 @@ class GameLogic {
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       if (!player || player.role !== 'Guardian Angel') continue;
-      if (hypnotizedTargets.has(playerId)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
       if (action.action === 'bless' && player.guardianAngelTargetId && veteranAlertIds.has(player.guardianAngelTargetId)) {
         killed.add(playerId);
       }
@@ -1382,6 +1496,59 @@ class GameLogic {
           );
         }
       }
+    }
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      if (!player || player.role !== 'Tetherhex') continue;
+
+      if (action.action === 'kill' && action.targetId) {
+        if (veteranAlertIds.has(action.targetId)) {
+          killed.add(playerId);
+        } else if (mirroredTargets.has(action.targetId)) {
+          killed.add(playerId);
+          if (!privateMessages[action.targetId]) {
+            privateMessages[action.targetId] = [];
+          }
+          privateMessages[action.targetId].push(
+            this.createPrivateSystemMessage(code, 'A mirrored shield reflected a killing blow away from you.', 'Mirror Caster')
+          );
+        } else if (!protected_.has(action.targetId) && !blessedTargets.has(action.targetId) && !lifeguardedTargets.has(action.targetId)) {
+          killed.add(action.targetId);
+          killersThisNight.add(playerId);
+        } else if (protected_.has(action.targetId)) {
+          if (!privateMessages[action.targetId]) {
+            privateMessages[action.targetId] = [];
+          }
+          privateMessages[action.targetId].push(
+            this.createPrivateSystemMessage(code, 'You were protected by the Vitalist during the night.', 'Vitalist')
+          );
+        } else if (lifeguardedTargets.has(action.targetId)) {
+          if (!privateMessages[action.targetId]) {
+            privateMessages[action.targetId] = [];
+          }
+          privateMessages[action.targetId].push(
+            this.createPrivateSystemMessage(code, 'You protected yourself from death during the night.', 'Survivalist')
+          );
+        } else {
+          if (!privateMessages[action.targetId]) {
+            privateMessages[action.targetId] = [];
+          }
+          privateMessages[action.targetId].push(
+            this.createPrivateSystemMessage(code, 'A Guardian Angel blessed you through the night.', 'Guardian Angel')
+          );
+        }
+      }
+    }
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      if (!player || player.role !== 'Tetherhex') continue;
+      if (!action.interlinkedUsedThisNight || !action.interlinkedTargetId) continue;
+      if (!killed.has(playerId)) continue;
+      const linkedTarget = room.players.get(action.interlinkedTargetId);
+      if (!linkedTarget || !linkedTarget.alive) continue;
+      killed.add(action.interlinkedTargetId);
     }
 
     for (const deadId of killed) {
@@ -1633,6 +1800,7 @@ class GameLogic {
       room.nightCount++;
       room.nightActions = {};
       room.blackmailedPlayers = {};
+      room.silencedPlayers = {};
       this.beginPhaseSummary(code, `Night ${room.nightCount} begins. Chat is locked until morning.`);
     }
 
@@ -1794,6 +1962,7 @@ class GameLogic {
     if (action === 'track') return 'Tracker is following someone.';
     if (action === 'stalk') return 'Stalker is shadowing someone.';
     if (action === 'protect') return 'Vitalist has protected someone.';
+    if (action === 'quietus') return 'Silencer has hushed someone.';
     if (action === 'bless') return 'Guardian Angel has blessed their target.';
     if (action === 'trance') return 'Hypnotic has cast a trance over someone.';
     if (action === 'flash') return 'Blackout has blinded the room.';
@@ -1802,6 +1971,7 @@ class GameLogic {
     if (action === 'mirror') return 'Mirror Caster has woven a reflective shield.';
     if (action === 'instinct') return 'Veteran is standing watch.';
     if (action === 'longshot') return 'Sniper has lined up a distant shot.';
+    if (action === 'interlinked') return 'Tetherhex has forged a lethal bond.';
     if (action === 'kill') return 'An Assassin has moved through the shadows.';
     return null;
   }
@@ -1915,6 +2085,7 @@ class GameLogic {
     const player = room.players.get(playerId);
     if (!player) return { error: 'Player not found' };
     if (room.blackmailedPlayers?.[playerId]) return { error: 'You have been blackmailed' };
+    if (room.silencedPlayers?.[playerId]) return { error: 'You have been silenced' };
 
     const cleanText = String(text || '').trim().replace(/\s+/g, ' ');
     if (!cleanText) return { error: 'Message cannot be empty' };
@@ -1957,7 +2128,9 @@ class GameLogic {
     return {
       ...player,
       teammates,
-      hasSubmittedAction: player.role === 'Hypnotic'
+      hasSubmittedAction: player.role === 'Tetherhex'
+        ? !!(room.nightActions[playerId] && (room.nightActions[playerId].action === 'kill' || room.nightActions[playerId].action === 'skip' || room.nightActions[playerId].skippedAfterInterlinked === true))
+        : player.role === 'Hypnotic'
         ? !!(room.nightActions[playerId] && (room.nightActions[playerId].action === 'kill' || room.nightActions[playerId].action === 'skip' || room.nightActions[playerId].skippedAfterTrance === true))
         : player.role === 'Blackmailer'
           ? !!(room.nightActions[playerId] && (room.nightActions[playerId].action === 'kill' || room.nightActions[playerId].action === 'skip' || room.nightActions[playerId].skippedAfterBlackmail === true))
@@ -1966,6 +2139,7 @@ class GameLogic {
           : !!room.nightActions[playerId],
       hasVoted: !!room.votes[playerId],
       isBlackmailed: !!room.blackmailedPlayers?.[playerId],
+      isSilenced: !!room.silencedPlayers?.[playerId],
       executionerTargetId: player.role === 'Executioner' ? (player.executionerTargetId || null) : null,
       executionerTargetName: player.role === 'Executioner' && player.executionerTargetId
         ? (room.players.get(player.executionerTargetId)?.name || null)
@@ -1979,9 +2153,12 @@ class GameLogic {
       lastInvestigatorTargets: player.role === 'Investigator' ? (room.lastInvestigatorTargets[playerId] || []) : [],
       lastTrackerTarget: player.role === 'Tracker' ? (room.lastTrackerTargets[playerId] || null) : null,
       lastStalkerTarget: player.role === 'Stalker' ? (room.lastStalkerTargets[playerId] || null) : null,
+      lastTetherhexTargets: player.role === 'Tetherhex' ? (room.lastTetherhexTargets[playerId] || []) : [],
+      lastSilencerTarget: player.role === 'Silencer' ? (room.lastSilencerTargets[playerId] || null) : null,
       lastHypnoticTarget: player.role === 'Hypnotic' ? (room.lastHypnoticTargets[playerId] || null) : null,
       hypnoticTranceUsedThisNight: player.role === 'Hypnotic' ? !!room.nightActions[playerId]?.tranceUsedThisNight : false,
       blackmailerBlackmailUsedThisNight: player.role === 'Blackmailer' ? !!room.nightActions[playerId]?.blackmailUsedThisNight : false,
+      tetherhexInterlinkedUsedThisNight: player.role === 'Tetherhex' ? !!room.nightActions[playerId]?.interlinkedUsedThisNight : false,
       lastBlackoutFlashNight: player.role === 'Blackout' ? (room.lastBlackoutFlashNight[playerId] || null) : null,
       veteranUsesRemaining: player.role === 'Veteran' ? (player.veteranUsesRemaining ?? 4) : null,
       mirrorUsesRemaining: player.role === 'Mirror Caster' ? (player.mirrorUsesRemaining ?? 4) : null,
