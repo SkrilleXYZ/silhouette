@@ -927,7 +927,7 @@
     `).join('');
 
     summaryLabel.className = `roles-guide-summary-label roles-faction-${activeFaction.toLowerCase()}`;
-    summaryLabel.textContent = activeFaction;
+    summaryLabel.textContent = activeFaction.toUpperCase();
     summaryCount.textContent = `${factionRoles.length} role${factionRoles.length === 1 ? '' : 's'}`;
 
     if (!factionRoles.length) {
@@ -940,31 +940,53 @@
       return;
     }
 
-    grid.innerHTML = factionRoles.map((roleInfo, index) => `
-      <article class="roles-guide-card ${getRoleBadgeClass(roleInfo.role, roleInfo.faction)}" style="--role-card-delay:${index * 90}ms;">
-        <div class="roles-guide-card-head">
-          <div class="roles-guide-card-aura"></div>
-          <div class="roles-guide-card-icon">${roleInfo.role.slice(0, 1)}</div>
-          <div class="roles-guide-card-copy">
-            <h3 class="roles-guide-card-title">${roleInfo.role.toUpperCase()}</h3>
-            <div class="roles-guide-card-meta">
-              <span>${roleInfo.faction}</span>
-              ${roleInfo.subfaction ? `<span>${roleInfo.subfaction}</span>` : ''}
-            </div>
-          </div>
+    const groupedRoles = factionRoles.reduce((groups, roleInfo) => {
+      const groupKey = roleInfo.subfaction || 'General';
+      if (!groups[groupKey]) groups[groupKey] = [];
+      groups[groupKey].push(roleInfo);
+      return groups;
+    }, {});
+
+    const orderedGroups = Object.entries(groupedRoles).sort(([left], [right]) => left.localeCompare(right));
+    let cardIndex = 0;
+
+    grid.innerHTML = orderedGroups.map(([groupName, roles]) => `
+      <section class="roles-guide-section">
+        <div class="roles-guide-section-head roles-guide-section-head-${activeFaction.toLowerCase()}">
+          <h3 class="roles-guide-section-title">${escapeHtml(groupName)}</h3>
+          <span class="roles-guide-section-count">${roles.length} role${roles.length === 1 ? '' : 's'}</span>
         </div>
-        <div class="roles-guide-abilities">
-          ${roleInfo.abilities.map((ability) => `
-            <div class="roles-guide-ability">
-              <div class="roles-guide-ability-head">
-                <span class="roles-guide-ability-name">${ability.name}</span>
-                <span class="roles-guide-ability-type">${ability.type}</span>
-              </div>
-              <p class="roles-guide-ability-copy">${formatRoleGuideAbilityDescription(ability.description)}</p>
-            </div>
-          `).join('')}
+        <div class="roles-guide-grid">
+          ${roles.map((roleInfo) => {
+            const currentIndex = cardIndex++;
+            return `
+              <article class="roles-guide-card ${getRoleBadgeClass(roleInfo.role, roleInfo.faction)}" style="--role-card-delay:${currentIndex * 80}ms;">
+                <div class="roles-guide-card-head">
+                  <div class="roles-guide-card-icon-shell">
+                    <div class="roles-guide-card-icon"></div>
+                  </div>
+                  <div class="roles-guide-card-copy">
+                    <h3 class="roles-guide-card-title">${escapeHtml(roleInfo.role)}</h3>
+                    <div class="roles-guide-card-meta">${escapeHtml(roleInfo.faction)}${roleInfo.subfaction ? ` &bull; ${escapeHtml(roleInfo.subfaction)}` : ''}</div>
+                  </div>
+                </div>
+                <div class="roles-guide-abilities">
+                  ${roleInfo.abilities.map((ability) => `
+                    <div class="roles-guide-ability">
+                      <div class="roles-guide-ability-head">
+                        <span class="roles-guide-ability-name">${escapeHtml(ability.name)}</span>
+                        <span class="roles-guide-ability-type">${escapeHtml(ability.type)}</span>
+                      </div>
+                      <p class="roles-guide-ability-copy">${formatRoleGuideAbilityDescription(ability.description)}</p>
+                    </div>
+                  `).join('')}
+                </div>
+                <div class="roles-guide-card-bottom-glow"></div>
+              </article>
+            `;
+          }).join('')}
         </div>
-      </article>
+      </section>
     `).join('');
   }
 

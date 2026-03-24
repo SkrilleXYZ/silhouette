@@ -327,19 +327,521 @@ body {
 }
 
 .profile-name-group {
-  max-width: none;
+  width: 300px;
+  max-width: 100%;
   margin-bottom: 0;
-  flex: 1;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+  flex: 0 1 auto;
+}
+
+.profile-name-group .text-input {
+  padding-left: 0;
+  padding-right: 0;
+  text-align: center;
+  text-align-last: center;
+  left: 0;
+  transform: none;
+}
+
+.roles-guide-screen {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 28px 20px 120px;
+  position: relative;
+}
+
+.roles-guide-screen::before,
+.roles-guide-screen::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  border-radius: 999px;
+  filter: blur(90px);
+  opacity: 0.34;
+}
+
+.roles-guide-screen::before {
+  width: 280px;
+  height: 280px;
+  top: 18px;
+  right: 8%;
+  background: radial-gradient(circle, rgba(78, 214, 255, 0.1), transparent 72%);
+}
+
+.roles-guide-screen::after {
+  width: 240px;
+  height: 240px;
+  left: -20px;
+  top: 240px;
+  background: radial-gradient(circle, rgba(255, 84, 98, 0.08), transparent 74%);
+}
+
+.roles-guide-hero {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 18px;
+}
+
+.roles-guide-kicker {
+  color: rgba(148, 163, 184, 0.78);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  margin-bottom: 12px;
+}
+
+.roles-guide-title {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+
+.roles-guide-subtitle {
+  max-width: 720px;
+  color: rgba(148, 163, 184, 0.86);
+  font-size: 1.02rem;
+  line-height: 1.7;
+}
+
+.roles-faction-tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  background: rgba(15, 23, 42, 0.5);
+  position: relative;
+  z-index: 1;
+}
+
+.roles-faction-tabs::before {
+  display: none;
+}
+
+.roles-faction-tab {
+  min-height: 44px;
+  min-width: 108px;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(148, 163, 184, 0.82);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.roles-faction-tab::before {
+  display: none;
+}
+
+.roles-faction-tab:hover {
+  color: rgba(226, 232, 240, 0.98);
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(51, 65, 85, 0.9);
+}
+
+.roles-faction-tab.active {
+  background: rgba(30, 41, 59, 0.92);
+  color: #fff;
+  border-color: rgba(71, 85, 105, 0.95);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.roles-faction-tab-assassin.active {
+  background: rgba(69, 10, 10, 0.9);
+  border-color: rgba(127, 29, 29, 0.95);
+}
+
+.roles-faction-tab-neutral.active {
+  background: rgba(66, 32, 6, 0.9);
+  border-color: rgba(120, 53, 15, 0.95);
+}
+
+.roles-guide-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+  position: relative;
+  z-index: 1;
+}
+
+.roles-guide-summary-marker {
+  width: 4px;
+  min-height: 60px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--crew), rgba(34, 211, 238, 0.18));
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.18);
+}
+
+.roles-guide-summary-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.roles-guide-summary-label {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.7rem, 3.2vw, 2.4rem);
+  letter-spacing: 0.14em;
+  color: var(--crew);
+}
+
+.roles-guide-summary-label.roles-faction-assassin {
+  color: var(--assassin);
+}
+
+.roles-guide-summary-label.roles-faction-neutral {
+  color: var(--neutral);
+}
+
+.roles-guide-summary-count {
+  color: rgba(148, 163, 184, 0.82);
+  font-size: 0.92rem;
+}
+
+.roles-guide-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.roles-guide-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.roles-guide-section-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-left: 14px;
+  border-left: 4px solid var(--crew);
+}
+
+.roles-guide-section-head-assassin {
+  border-left-color: var(--assassin);
+}
+
+.roles-guide-section-head-neutral {
+  border-left-color: var(--neutral);
+}
+
+.roles-guide-section-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+
+.roles-guide-section-count {
+  color: rgba(148, 163, 184, 0.75);
+  font-size: 0.86rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.roles-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+.roles-guide-card,
+.roles-empty-state {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(51, 65, 85, 0.78);
+  background: rgba(15, 23, 42, 0.48);
+  box-shadow: 0 18px 38px rgba(2, 6, 23, 0.28);
+  opacity: 0;
+  transform: translateY(18px);
+  animation: rolesCardRise 0.45s ease forwards;
+  animation-delay: var(--role-card-delay, 0ms);
+}
+
+.roles-guide-card::before,
+.roles-empty-state::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 34%);
+  pointer-events: none;
+}
+
+.roles-guide-card::after,
+.roles-empty-state::after {
+  display: none;
+}
+
+.roles-guide-card:hover,
+.roles-empty-state:hover {
+  transform: translateY(-2px);
+  background: rgba(30, 41, 59, 0.58);
+  box-shadow: 0 22px 42px rgba(2, 6, 23, 0.34);
+}
+
+.roles-guide-card-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.48);
+  background: transparent;
+}
+
+.roles-guide-card-aura {
+  display: none;
+}
+
+.roles-guide-card-icon-shell {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.86);
+  border: 1px solid rgba(51, 65, 85, 0.92);
+  flex-shrink: 0;
+}
+
+.roles-guide-card-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+  background: transparent;
+  color: var(--crew);
+}
+
+.roles-guide-card-copy {
+  min-width: 0;
+}
+
+.roles-guide-card-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.12rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  color: #f8fafc;
+}
+
+.roles-guide-card-meta {
+  color: rgba(148, 163, 184, 0.88);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.roles-guide-abilities {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px 20px;
+}
+
+.roles-guide-ability {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  border-top: none;
+}
+
+.roles-guide-ability-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.roles-guide-ability-name {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.roles-guide-ability-type {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(51, 65, 85, 0.9);
+  border: none;
+  color: rgba(226, 232, 240, 0.84);
+  font-size: 0.63rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.roles-guide-ability-copy {
+  color: rgba(148, 163, 184, 0.92);
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.roles-empty-state {
+  padding: 24px;
+}
+
+.roles-empty-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.22rem;
+  color: var(--neutral);
+  margin-bottom: 10px;
+}
+
+.roles-empty-copy {
+  color: rgba(148, 163, 184, 0.9);
+  line-height: 1.7;
+}
+
+.roles-guide-card.role-theme-villager {
+  border-color: rgba(100, 116, 139, 0.68);
+  box-shadow: 0 18px 38px rgba(2, 6, 23, 0.28), 0 0 0 1px rgba(148, 163, 184, 0.04);
+}
+
+.roles-guide-card.role-theme-villager .roles-guide-card-title,
+.roles-guide-card.role-theme-villager .roles-guide-card-icon,
+.roles-guide-card.role-theme-villager .roles-guide-ability-highlight {
+  color: var(--villager);
+}
+
+.roles-guide-card.role-theme-vitalist {
+  border-color: rgba(21, 128, 61, 0.72);
+  box-shadow: 0 18px 38px rgba(2, 6, 23, 0.28), 0 0 22px rgba(34, 197, 94, 0.08);
+}
+
+.roles-guide-card.role-theme-vitalist .roles-guide-card-title,
+.roles-guide-card.role-theme-vitalist .roles-guide-card-icon,
+.roles-guide-card.role-theme-vitalist .roles-guide-ability-highlight {
+  color: var(--vitalist);
+}
+
+.roles-guide-card.role-theme-tracker {
+  border-color: rgba(8, 145, 178, 0.72);
+  box-shadow: 0 18px 38px rgba(2, 6, 23, 0.28), 0 0 22px rgba(34, 211, 238, 0.08);
+}
+
+.roles-guide-card.role-theme-tracker .roles-guide-card-title,
+.roles-guide-card.role-theme-tracker .roles-guide-card-icon,
+.roles-guide-card.role-theme-tracker .roles-guide-ability-highlight {
+  color: var(--tracker);
+}
+
+.roles-guide-card.role-theme-investigator {
+  border-color: rgba(109, 40, 217, 0.72);
+  box-shadow: 0 18px 38px rgba(2, 6, 23, 0.28), 0 0 22px rgba(168, 85, 247, 0.08);
+}
+
+.roles-guide-card.role-theme-investigator .roles-guide-card-title,
+.roles-guide-card.role-theme-investigator .roles-guide-card-icon,
+.roles-guide-card.role-theme-investigator .roles-guide-ability-highlight {
+  color: var(--investigator);
+}
+
+.roles-guide-card.role-theme-sheriff {
+  border-color: rgba(180, 83, 9, 0.72);
+  box-shadow: 0 18px 38px rgba(2, 6, 23, 0.28), 0 0 22px rgba(245, 158, 11, 0.08);
+}
+
+.roles-guide-card.role-theme-sheriff .roles-guide-card-title,
+.roles-guide-card.role-theme-sheriff .roles-guide-card-icon,
+.roles-guide-card.role-theme-sheriff .roles-guide-ability-highlight {
+  color: var(--sheriff);
+}
+
+.roles-guide-card.role-theme-assassin {
+  border-color: rgba(127, 29, 29, 0.72);
+  box-shadow: 0 18px 38px rgba(2, 6, 23, 0.28), 0 0 22px rgba(239, 68, 68, 0.08);
+}
+
+.roles-guide-card.role-theme-assassin .roles-guide-card-title,
+.roles-guide-card.role-theme-assassin .roles-guide-card-icon,
+.roles-guide-card.role-theme-assassin .roles-guide-ability-highlight {
+  color: var(--assassin);
+}
+
+.roles-guide-card.role-theme-neutral {
+  border-color: rgba(146, 64, 14, 0.7);
+  box-shadow: 0 18px 38px rgba(2, 6, 23, 0.28), 0 0 22px rgba(245, 158, 11, 0.06);
+}
+
+.roles-guide-card.role-theme-neutral .roles-guide-card-title,
+.roles-guide-card.role-theme-neutral .roles-guide-card-icon,
+.roles-guide-card.role-theme-neutral .roles-guide-ability-highlight {
+  color: var(--neutral);
+}
+
+.roles-guide-card.role-theme-jester {
+  border-color: rgba(157, 23, 77, 0.72);
+  box-shadow: 0 18px 38px rgba(2, 6, 23, 0.28), 0 0 22px rgba(236, 72, 153, 0.07);
+}
+
+.roles-guide-card.role-theme-jester .roles-guide-card-title,
+.roles-guide-card.role-theme-jester .roles-guide-card-icon,
+.roles-guide-card.role-theme-jester .roles-guide-ability-highlight {
+  color: var(--jester);
+}
+
+@media (max-width: 720px) {
+  .roles-guide-screen {
+    padding-inline: 16px;
+  }
+
+  .roles-faction-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .roles-faction-tab {
+    min-width: 0;
+    padding-inline: 12px;
+  }
+
+  .roles-guide-summary {
+    margin-bottom: 22px;
+  }
+
+  .roles-guide-section-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .roles-guide-section-title {
+    font-size: 1.28rem;
+  }
+
+  .roles-guide-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .profile-panel-body {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  width: 100%;
 }
 
 .profile-name-row {
   display: flex;
   align-items: stretch;
+  justify-content: center;
+  width: 100%;
   margin-bottom: 18px;
 }
 
@@ -377,6 +879,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 100%;
 }
 
 .profile-avatar-label {
@@ -4673,5 +5176,400 @@ body {
 
 .phase-chat-panel.chat-docked-mode.chat-overlay-open .chat-send-btn {
   flex: 0 0 auto;
+}
+
+#screen-roles .roles-guide-screen {
+  max-width: 1320px;
+  padding: 28px 20px 120px;
+}
+
+#screen-roles .roles-guide-hero {
+  margin-bottom: 18px;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  border: 0;
+}
+
+#screen-roles .roles-guide-kicker {
+  color: rgba(148, 163, 184, 0.78);
+  letter-spacing: 0.28em;
+  font-size: 0.78rem;
+}
+
+#screen-roles .roles-guide-title {
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  letter-spacing: 0.05em;
+  text-shadow: none;
+}
+
+#screen-roles .roles-guide-subtitle {
+  max-width: 720px;
+  color: rgba(148, 163, 184, 0.86);
+  font-size: 1.02rem;
+  line-height: 1.7;
+}
+
+#screen-roles .roles-faction-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  background: rgba(15, 23, 42, 0.5);
+  box-shadow: none;
+}
+
+#screen-roles .roles-faction-tabs::before,
+#screen-roles .roles-faction-tab::before,
+#screen-roles .roles-guide-card::after,
+#screen-roles .roles-empty-state::after,
+#screen-roles .roles-guide-card-aura {
+  display: none;
+}
+
+#screen-roles .roles-faction-tab {
+  min-height: 44px;
+  min-width: 108px;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(148, 163, 184, 0.82);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+#screen-roles .roles-faction-tab:hover {
+  color: rgba(226, 232, 240, 0.98);
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(51, 65, 85, 0.9);
+}
+
+#screen-roles .roles-faction-tab.active {
+  background: rgba(30, 41, 59, 0.92);
+  color: #fff;
+  border-color: rgba(71, 85, 105, 0.95);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+#screen-roles .roles-faction-tab-assassin.active {
+  background: rgba(69, 10, 10, 0.9);
+  border-color: rgba(127, 29, 29, 0.95);
+}
+
+#screen-roles .roles-faction-tab-neutral.active {
+  background: rgba(66, 32, 6, 0.9);
+  border-color: rgba(120, 53, 15, 0.95);
+}
+
+#screen-roles .roles-guide-summary-marker {
+  width: 4px;
+  min-height: 60px;
+  background: linear-gradient(180deg, var(--crew), rgba(34, 211, 238, 0.18));
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.18);
+}
+
+#screen-roles .roles-guide-summary-label {
+  font-size: clamp(1.7rem, 3.2vw, 2.4rem);
+  letter-spacing: 0.14em;
+}
+
+#screen-roles .roles-guide-summary-count,
+#screen-roles .roles-guide-section-count,
+#screen-roles .roles-guide-card-meta,
+#screen-roles .roles-guide-ability-copy,
+#screen-roles .roles-empty-copy {
+  color: rgba(148, 163, 184, 0.88);
+}
+
+#screen-roles .roles-guide-content {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+#screen-roles .roles-guide-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+#screen-roles .roles-guide-section-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-left: 14px;
+  border-left: 4px solid var(--crew);
+}
+
+#screen-roles .roles-guide-section-head-assassin {
+  border-left-color: var(--assassin);
+}
+
+#screen-roles .roles-guide-section-head-neutral {
+  border-left-color: var(--neutral);
+}
+
+#screen-roles .roles-guide-section-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+#screen-roles .roles-guide-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+#screen-roles .roles-guide-card,
+#screen-roles .roles-empty-state {
+  border-radius: 18px;
+  border: 1px solid rgba(71, 85, 105, 0.46);
+  background: rgba(8, 10, 12, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 14px 34px rgba(2, 6, 23, 0.34);
+}
+
+#screen-roles .roles-guide-card:hover,
+#screen-roles .roles-empty-state:hover {
+  transform: translateY(-2px) scale(1.01);
+  background: rgba(12, 15, 20, 0.98);
+}
+
+#screen-roles .roles-guide-card-head {
+  gap: 14px;
+  padding: 20px 20px 0;
+  margin-bottom: 18px;
+  border-bottom: 0;
+  background: transparent;
+}
+
+#screen-roles .roles-guide-card-icon-shell {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0d1117;
+  border: 1px solid currentColor;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+#screen-roles .roles-guide-card-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+  background: transparent;
+  color: var(--crew);
+  font-size: 0;
+  opacity: 0.82;
+}
+
+#screen-roles .roles-guide-card-title {
+  font-size: 1.12rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  color: #f8fafc;
+}
+
+#screen-roles .roles-guide-card-meta {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(100, 116, 139, 0.92);
+}
+
+#screen-roles .roles-guide-abilities {
+  gap: 12px;
+  padding: 0 20px 22px;
+}
+
+#screen-roles .roles-guide-ability {
+  gap: 6px;
+  padding: 0;
+  border-top: none;
+}
+
+#screen-roles .roles-guide-ability-name {
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #e2e8f0;
+}
+
+#screen-roles .roles-guide-ability-type {
+  padding: 2px 8px;
+  background: rgba(30, 41, 59, 0.72);
+  border: 1px solid rgba(51, 65, 85, 0.95);
+  color: #94a3b8;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#screen-roles .roles-guide-ability-copy {
+  font-size: 0.82rem;
+  line-height: 1.72;
+}
+
+#screen-roles .roles-guide-card-bottom-glow {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 52%;
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, currentColor, transparent);
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+#screen-roles .roles-guide-card.role-theme-villager,
+#screen-roles .roles-guide-card.role-theme-villager .roles-guide-card-icon {
+  border-color: rgba(100, 116, 139, 0.68);
+  color: var(--villager);
+}
+
+#screen-roles .roles-guide-card.role-theme-vitalist,
+#screen-roles .roles-guide-card.role-theme-vitalist .roles-guide-card-icon {
+  border-color: rgba(21, 128, 61, 0.72);
+  color: var(--vitalist);
+}
+
+#screen-roles .roles-guide-card.role-theme-tracker,
+#screen-roles .roles-guide-card.role-theme-tracker .roles-guide-card-icon {
+  border-color: rgba(8, 145, 178, 0.72);
+  color: var(--tracker);
+}
+
+#screen-roles .roles-guide-card.role-theme-investigator,
+#screen-roles .roles-guide-card.role-theme-investigator .roles-guide-card-icon {
+  border-color: rgba(109, 40, 217, 0.72);
+  color: var(--investigator);
+}
+
+#screen-roles .roles-guide-card.role-theme-sheriff,
+#screen-roles .roles-guide-card.role-theme-sheriff .roles-guide-card-icon {
+  border-color: rgba(180, 83, 9, 0.72);
+  color: var(--sheriff);
+}
+
+#screen-roles .roles-guide-card.role-theme-assassin,
+#screen-roles .roles-guide-card.role-theme-assassin .roles-guide-card-icon {
+  border-color: rgba(127, 29, 29, 0.72);
+  color: var(--assassin);
+}
+
+#screen-roles .roles-guide-card.role-theme-neutral,
+#screen-roles .roles-guide-card.role-theme-neutral .roles-guide-card-icon {
+  border-color: rgba(146, 64, 14, 0.7);
+  color: var(--neutral);
+}
+
+#screen-roles .roles-guide-card.role-theme-jester,
+#screen-roles .roles-guide-card.role-theme-jester .roles-guide-card-icon {
+  border-color: rgba(157, 23, 77, 0.72);
+  color: var(--jester);
+}
+
+#screen-roles .roles-guide-card.role-theme-villager:hover {
+  box-shadow: 0 0 20px -10px rgba(148, 163, 184, 0.46);
+}
+
+#screen-roles .roles-guide-card.role-theme-vitalist:hover {
+  box-shadow: 0 0 20px -10px rgba(34, 197, 94, 0.5);
+}
+
+#screen-roles .roles-guide-card.role-theme-tracker:hover {
+  box-shadow: 0 0 20px -10px rgba(6, 182, 212, 0.5);
+}
+
+#screen-roles .roles-guide-card.role-theme-investigator:hover {
+  box-shadow: 0 0 20px -10px rgba(168, 85, 247, 0.5);
+}
+
+#screen-roles .roles-guide-card.role-theme-sheriff:hover,
+#screen-roles .roles-guide-card.role-theme-neutral:hover {
+  box-shadow: 0 0 20px -10px rgba(245, 158, 11, 0.5);
+}
+
+#screen-roles .roles-guide-card.role-theme-assassin:hover {
+  box-shadow: 0 0 20px -10px rgba(239, 68, 68, 0.5);
+}
+
+#screen-roles .roles-guide-card.role-theme-jester:hover {
+  box-shadow: 0 0 20px -10px rgba(236, 72, 153, 0.48);
+}
+
+#screen-roles .roles-guide-card.role-theme-villager .roles-guide-ability-highlight {
+  color: var(--villager);
+}
+
+#screen-roles .roles-guide-card.role-theme-vitalist .roles-guide-ability-highlight {
+  color: var(--vitalist);
+}
+
+#screen-roles .roles-guide-card.role-theme-tracker .roles-guide-ability-highlight {
+  color: var(--tracker);
+}
+
+#screen-roles .roles-guide-card.role-theme-investigator .roles-guide-ability-highlight {
+  color: var(--investigator);
+}
+
+#screen-roles .roles-guide-card.role-theme-sheriff .roles-guide-ability-highlight {
+  color: var(--sheriff);
+}
+
+#screen-roles .roles-guide-card.role-theme-assassin .roles-guide-ability-highlight {
+  color: var(--assassin);
+}
+
+#screen-roles .roles-guide-card.role-theme-neutral .roles-guide-ability-highlight {
+  color: var(--neutral);
+}
+
+#screen-roles .roles-guide-card.role-theme-jester .roles-guide-ability-highlight {
+  color: var(--jester);
+}
+
+@media (max-width: 720px) {
+  #screen-roles .roles-guide-screen {
+    padding-inline: 16px;
+  }
+
+  #screen-roles .roles-faction-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  #screen-roles .roles-faction-tab {
+    min-width: 0;
+    padding-inline: 12px;
+  }
+
+  #screen-roles .roles-guide-section-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  #screen-roles .roles-guide-section-title {
+    font-size: 1.28rem;
+  }
+
+  #screen-roles .roles-guide-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
