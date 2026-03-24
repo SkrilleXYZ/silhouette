@@ -998,6 +998,7 @@ class GameLogic {
     const silencedTargets = new Set();
     const blackoutFlashActive = new Set();
     const blackmailedTargets = new Set();
+    const tetheredVictims = new Set();
     const nextPendingLongshots = [];
     const resolvingLongshots = [];
     const registerKillAttribution = (victimId, killerId) => {
@@ -1767,21 +1768,25 @@ class GameLogic {
       const linkedTarget = room.players.get(action.interlinkedTargetId);
       if (!linkedTarget || !linkedTarget.alive) continue;
       killed.add(action.interlinkedTargetId);
+      tetheredVictims.add(action.interlinkedTargetId);
     }
 
     for (const deadId of killed) {
       const deadPlayer = room.players.get(deadId);
       if (deadPlayer) {
         deadPlayer.alive = false;
-        const deathText = room.anonymousEjects
-          ? `${deadPlayer.name} was found dead.`
-          : `${deadPlayer.name} was found dead. They were a ${deadPlayer.role}.`;
+        const deathText = tetheredVictims.has(deadId)
+          ? `${deadPlayer.name} has been Tethered.`
+          : room.anonymousEjects
+            ? `${deadPlayer.name} was found dead.`
+            : `${deadPlayer.name} was found dead. They were a ${deadPlayer.role}.`;
         messages.push({
-          type: 'death',
+          type: tetheredVictims.has(deadId) ? 'tethered' : 'death',
           text: deathText,
           playerId: deadId,
           role: deadPlayer.role,
           faction: deadPlayer.faction,
+          source: tetheredVictims.has(deadId) ? 'Tetherhex' : null,
           public: true
         });
         if (deadPlayer.role === 'Redflag') {

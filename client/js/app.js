@@ -1642,6 +1642,7 @@
     const text = String(line || '').trim();
     if (!text) return '';
     if (/alive players:/i.test(text)) return 'summary-alive';
+    if (/has been Tethered\./i.test(text)) return 'summary-tethered';
     if (/was found dead|was eliminated by vote/i.test(text)) return 'summary-death';
     if (/used their gun/i.test(text)) return 'summary-shoot';
     if (/Sheriff is investigating someone/i.test(text)) return 'summary-search';
@@ -1706,10 +1707,10 @@
       return ' system-result-examine';
     }
     if (/.* interacted with .* tonight\.$/i.test(text) || /.* did not interact with anyone tonight\.$/i.test(text)) {
-      return ' system-result-track';
+      return ' system-result-tracker';
     }
     if (/.* was interacted by .* tonight\.$/i.test(text) || /.* was not interacted by anyone tonight\.$/i.test(text)) {
-      return ' system-result-track';
+      return ' system-result-stalker';
     }
     if (/Your trap uncovered these roles: .*?\.$/i.test(text) && String(message.source || '').trim() === 'Traplord') {
       return ' system-result-trap';

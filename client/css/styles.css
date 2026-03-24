@@ -4758,10 +4758,16 @@ body {
   box-shadow: inset 0 1px 0 rgba(221, 191, 255, 0.08), 0 0 0 1px rgba(185, 132, 255, 0.06);
 }
 
-.chat-message.system.private.system-result-track {
+.chat-message.system.private.system-result-tracker {
   border-color: rgba(122, 226, 255, 0.34);
   background: linear-gradient(180deg, rgba(18, 66, 88, 0.92), rgba(8, 20, 28, 0.96));
   box-shadow: inset 0 1px 0 rgba(196, 243, 255, 0.08), 0 0 0 1px rgba(122, 226, 255, 0.06);
+}
+
+.chat-message.system.private.system-result-stalker {
+  border-color: rgba(84, 182, 129, 0.34);
+  background: linear-gradient(180deg, rgba(18, 62, 40, 0.92), rgba(8, 22, 14, 0.96));
+  box-shadow: inset 0 1px 0 rgba(205, 255, 225, 0.08), 0 0 0 1px rgba(84, 182, 129, 0.06);
 }
 
 .chat-message.system.private.system-result-trap {
@@ -4976,9 +4982,15 @@ body {
   text-shadow: none;
 }
 
-.chat-message.system.private.system-result-track .chat-message-meta,
-.chat-message.system.private.system-result-track .chat-message-text {
+.chat-message.system.private.system-result-tracker .chat-message-meta,
+.chat-message.system.private.system-result-tracker .chat-message-text {
   color: hsl(194, 100%, 95%);
+  text-shadow: none;
+}
+
+.chat-message.system.private.system-result-stalker .chat-message-meta,
+.chat-message.system.private.system-result-stalker .chat-message-text {
+  color: hsl(144, 100%, 95%);
   text-shadow: none;
 }
 
@@ -5107,6 +5119,13 @@ body {
   background: hsla(0, 72%, 45%, 0.2);
   border-color: hsla(0, 82%, 58%, 0.42);
   color: hsl(0, 100%, 95%);
+}
+
+.chat-summary-line.summary-tethered {
+  background: hsla(135, 92%, 24%, 0.24);
+  border-color: hsla(135, 100%, 62%, 0.44);
+  color: hsl(132, 100%, 94%);
+  box-shadow: inset 0 1px 0 rgba(192, 255, 205, 0.08), 0 0 18px rgba(74, 255, 119, 0.12);
 }
 
 .chat-summary-line.summary-alive {
