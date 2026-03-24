@@ -904,18 +904,6 @@
       );
   }
 
-  function getRoleGuideIconSymbol(role) {
-    const normalizedRole = String(role || '').trim().toLowerCase();
-    if (normalizedRole === 'sheriff') return '★';
-    if (normalizedRole === 'vitalist') return '+';
-    if (normalizedRole === 'investigator') return '◐';
-    if (normalizedRole === 'tracker') return '⌖';
-    if (normalizedRole === 'villager') return '◇';
-    if (normalizedRole === 'assassin') return '†';
-    if (normalizedRole === 'jester') return '♛';
-    return '•';
-  }
-
   function renderRolesGuide() {
     const tabs = document.getElementById('roles-faction-tabs');
     const summaryLabel = document.getElementById('roles-guide-summary-label');
@@ -975,7 +963,7 @@
               <article class="roles-guide-card ${getRoleBadgeClass(roleInfo.role, roleInfo.faction)}" style="--role-card-delay:${currentIndex * 80}ms;">
                 <div class="roles-guide-card-head">
                   <div class="roles-guide-card-icon-shell">
-                    <div class="roles-guide-card-icon">${getRoleGuideIconSymbol(roleInfo.role)}</div>
+                    <div class="roles-guide-card-icon"></div>
                   </div>
                   <div class="roles-guide-card-copy">
                     <h3 class="roles-guide-card-title">${escapeHtml(roleInfo.role)}</h3>
