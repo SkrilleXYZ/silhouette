@@ -206,14 +206,14 @@
       revealText: 'Neon green chains hum in the dark. Bind another life to yours, then strike before the tether snaps.',
       abilities: [
         {
-          name: 'Kill',
-          type: 'Night',
-          description: 'Eliminate a player.',
-        },
-        {
           name: 'Interlinked',
           type: 'Night',
           description: 'Link with a player each round. If you get killed, they also die with you. Can be used with Kill. Cannot target the same player 3 times in a row.',
+        },
+        {
+          name: 'Kill',
+          type: 'Night',
+          description: 'Eliminate a player.',
         },
       ],
     },
@@ -266,6 +266,24 @@
         },
         {
           name: 'Kill',
+          type: 'Night',
+          description: 'Eliminate a player.',
+        },
+      ],
+    },
+    Overload: {
+      faction: 'Neutral',
+      subfaction: 'Killing',
+      description: 'Hack players to disable their abilities, or eliminate a player. Malware can be used with Shutdown.',
+      revealText: 'Toxic green code floods your vision. Infect a target with malware, then shut the system down.',
+      abilities: [
+        {
+          name: 'Malware',
+          type: 'Night',
+          description: 'Hack a player to disable their abilities for the night. Can be used with Shutdown.',
+        },
+        {
+          name: 'Shutdown',
           type: 'Night',
           description: 'Eliminate a player.',
         },
@@ -1033,6 +1051,7 @@
     if (normalizedRole === 'sniper') return 'sniper';
     if (normalizedRole === 'tetherhex') return 'tetherhex';
     if (normalizedRole === 'hypnotic') return 'hypnotic';
+    if (normalizedRole === 'overload') return 'overload';
     if (normalizedRole === 'blackout') return 'blackout';
     if (normalizedRole === 'blackmailer') return 'blackmailer';
     if (normalizedRole === 'villager') return 'villager';
@@ -1615,6 +1634,15 @@
     }
     if (/You couldn\'t see anything last night\.$/i.test(text) && String(message.source || '').trim() === 'Blackout') {
       return ' system-result-blackout';
+    }
+    if (/You have been blackmailed\.$/i.test(text) && String(message.source || '').trim() === 'Blackmailer') {
+      return ' system-result-blackmail';
+    }
+    if (/You have been hypnotised by the Hypnotic\.$/i.test(text) && String(message.source || '').trim() === 'Hypnotic') {
+      return ' system-result-hypnotic';
+    }
+    if (/You have been hacked by the Overload\.$/i.test(text) && String(message.source || '').trim() === 'Overload') {
+      return ' system-result-overload';
     }
     if (/You were protected by the Vitalist during the night\.$/i.test(text)) {
       return ' system-result-protect';
@@ -3247,6 +3275,9 @@
     const hypnoticLockedTargetId = player.role === 'Hypnotic' && state.selectedAction === 'trance'
       ? player.lastHypnoticTarget
       : null;
+    const overloadLockedTargetId = player.role === 'Overload' && state.selectedAction === 'malware'
+      ? player.lastOverloadTarget
+      : null;
     const blackoutCanFlashTonight = player.role === 'Blackout'
       ? (player.blackoutFlashUsesRemaining ?? 3) > 0
         && !player.blackoutFlashUsedThisNight
@@ -3264,6 +3295,15 @@
 
     if (player.role === 'Hypnotic') {
       if (player.hypnoticTranceUsedThisNight && state.selectedAction === 'trance') {
+        state.selectedAction = 'kill';
+        state.selectedTarget = null;
+      } else if (!state.selectedAction) {
+        state.selectedAction = 'kill';
+      }
+    }
+
+    if (player.role === 'Overload') {
+      if (player.overloadMalwareUsedThisNight && state.selectedAction === 'malware') {
         state.selectedAction = 'kill';
         state.selectedTarget = null;
       } else if (!state.selectedAction) {
@@ -3326,6 +3366,8 @@
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Kill</button><button class="action-btn ${state.selectedAction === 'interlinked' ? 'selected' : ''}" data-action="interlinked" ${player.tetherhexInterlinkedUsedThisNight ? 'disabled' : ''}>Interlinked</button></div>`;
     } else if (player.role === 'Hypnotic') {
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Kill</button><button class="action-btn ${state.selectedAction === 'trance' ? 'selected' : ''}" data-action="trance" ${player.hypnoticTranceUsedThisNight ? 'disabled' : ''}>Trance</button></div>`;
+    } else if (player.role === 'Overload') {
+      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Shutdown</button><button class="action-btn ${state.selectedAction === 'malware' ? 'selected' : ''}" data-action="malware" ${player.overloadMalwareUsedThisNight ? 'disabled' : ''}>Malware</button></div>`;
     } else if (player.role === 'Blackmailer') {
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Kill</button><button class="action-btn ${state.selectedAction === 'blackmail' ? 'selected' : ''}" data-action="blackmail" ${player.blackmailerBlackmailUsedThisNight ? 'disabled' : ''}>Blackmail</button></div>`;
     } else if (player.role === 'Blackout') {
@@ -3359,6 +3401,11 @@
         ? 'Trance is already active for tonight. You can still follow up with Kill.'
         : 'Disable a player\'s abilities for tonight.'
       : 'Eliminate a player after casting your trance.';
+    else if (player.role === 'Overload') actionDesc = state.selectedAction === 'malware'
+      ? player.overloadMalwareUsedThisNight
+        ? 'Malware is already active for tonight. You can still follow up with Shutdown.'
+        : 'Hack a player and disable their abilities for tonight.'
+      : 'Eliminate a player after injecting your malware.';
     else if (player.role === 'Blackmailer') actionDesc = state.selectedAction === 'blackmail'
       ? player.blackmailerBlackmailUsedThisNight
         ? 'Blackmail is already active for tonight. You can still follow up with Kill.'
@@ -3397,7 +3444,8 @@
               || (player.role === 'Stalker' && t.id === stalkerLockedTargetId)
               || (player.role === 'Tetherhex' && t.id === tetherhexLockedTargetId)
               || (player.role === 'Silencer' && t.id === silencerLockedTargetId)
-              || (player.role === 'Hypnotic' && t.id === hypnoticLockedTargetId);
+              || (player.role === 'Hypnotic' && t.id === hypnoticLockedTargetId)
+              || (player.role === 'Overload' && t.id === overloadLockedTargetId);
             return `<div class="target-item ${state.selectedTarget === t.id ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`;
           }).join('')}
         </div>`}
@@ -3435,6 +3483,8 @@
             showToast('You cannot target the same player twice in a row', 'error');
           } else if (player.role === 'Hypnotic') {
             showToast('You cannot target the same player twice in a row with Trance', 'error');
+          } else if (player.role === 'Overload') {
+            showToast('You cannot target the same player twice in a row with Malware', 'error');
           } else if (player.role === 'Mirror Caster') {
             showToast('You cannot target the same player twice in a row', 'error');
           } else {
@@ -3466,6 +3516,9 @@
                 state.selectedAction = 'kill';
                 state.selectedTarget = null;
               } else if (response.player.role === 'Hypnotic' && state.selectedAction === 'trance' && !response.player.hasSubmittedAction) {
+                state.selectedAction = 'kill';
+                state.selectedTarget = null;
+              } else if (response.player.role === 'Overload' && state.selectedAction === 'malware' && !response.player.hasSubmittedAction) {
                 state.selectedAction = 'kill';
                 state.selectedTarget = null;
               } else if (response.player.role === 'Blackmailer' && state.selectedAction === 'blackmail' && !response.player.hasSubmittedAction) {

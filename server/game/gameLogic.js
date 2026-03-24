@@ -16,6 +16,7 @@ class GameLogic {
       Neutral: {
         Evil: ['Jester', 'Executioner'],
         Benign: ['Amnesiac', 'Guardian Angel', 'Survivalist'],
+        Killing: ['Overload'],
       },
     };
   }
@@ -120,6 +121,7 @@ class GameLogic {
       lastTetherhexTargets: {},
       lastSilencerTargets: {},
       lastHypnoticTargets: {},
+      lastOverloadTargets: {},
       lastBlackoutFlashNight: {},
       blackmailedPlayers: {},
       silencedPlayers: {},
@@ -418,7 +420,7 @@ class GameLogic {
         index++;
       }
 
-      this.assignNeutralSpecialRole(room, shuffled[index], ['Evil', 'Benign']);
+      this.assignNeutralSpecialRole(room, shuffled[index], ['Evil', 'Benign', 'Killing']);
       room.playerOrder = shuffled;
       this.assignExecutionerTargets(room);
       this.assignGuardianAngelTargets(room);
@@ -486,6 +488,7 @@ class GameLogic {
     room.lastTetherhexTargets = {};
     room.lastSilencerTargets = {};
     room.lastHypnoticTargets = {};
+    room.lastOverloadTargets = {};
     room.lastBlackoutFlashNight = {};
     room.blackmailedPlayers = {};
     room.silencedPlayers = {};
@@ -536,6 +539,7 @@ class GameLogic {
     room.lastTetherhexTargets = {};
     room.lastSilencerTargets = {};
     room.lastHypnoticTargets = {};
+    room.lastOverloadTargets = {};
     room.lastBlackoutFlashNight = {};
     room.blackmailedPlayers = {};
     room.silencedPlayers = {};
@@ -685,6 +689,20 @@ class GameLogic {
       } else if (existingAction.action === 'kill' && existingAction.targetId === targetId) {
         return { error: 'You already chose that kill target tonight' };
       }
+    } else if (player.role === 'Overload') {
+      const existingAction = room.nightActions[playerId] || {};
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
+      if (targetId === playerId) return { error: 'Cannot target yourself' };
+      if (action !== 'malware' && action !== 'kill') return { error: 'Invalid action for Overload' };
+      if (action === 'malware') {
+        if (existingAction.malwareUsedThisNight) return { error: 'You already used Malware tonight' };
+        if (room.lastOverloadTargets[playerId] === targetId) {
+          return { error: 'You cannot target the same player twice in a row' };
+        }
+      } else if (existingAction.action === 'kill' && existingAction.targetId === targetId) {
+        return { error: 'You already chose that kill target tonight' };
+      }
     } else if (player.role === 'Blackout') {
       const existingAction = room.nightActions[playerId] || {};
       if (action === 'flash') {
@@ -736,6 +754,16 @@ class GameLogic {
         ...existingAction,
         tranceUsedThisNight: action === 'trance' ? true : !!existingAction.tranceUsedThisNight,
         tranceTargetId: action === 'trance' ? targetId : (existingAction.tranceTargetId || null),
+        action: action === 'kill' ? 'kill' : (existingAction.action || null),
+        targetId: action === 'kill' ? targetId : (existingAction.targetId || null),
+        queuedTargetId: null,
+      };
+    } else if (player.role === 'Overload') {
+      const existingAction = room.nightActions[playerId] || {};
+      room.nightActions[playerId] = {
+        ...existingAction,
+        malwareUsedThisNight: action === 'malware' ? true : !!existingAction.malwareUsedThisNight,
+        malwareTargetId: action === 'malware' ? targetId : (existingAction.malwareTargetId || null),
         action: action === 'kill' ? 'kill' : (existingAction.action || null),
         targetId: action === 'kill' ? targetId : (existingAction.targetId || null),
         queuedTargetId: null,
@@ -804,6 +832,15 @@ class GameLogic {
         queuedTargetId: null,
         skippedAfterTrance: !!existingAction.tranceUsedThisNight || existingAction.skippedAfterTrance === true,
       };
+    } else if (player.role === 'Overload') {
+      const existingAction = room.nightActions[playerId] || {};
+      room.nightActions[playerId] = {
+        ...existingAction,
+        action: existingAction.action || 'skip',
+        targetId: existingAction.targetId || null,
+        queuedTargetId: null,
+        skippedAfterMalware: !!existingAction.malwareUsedThisNight || existingAction.skippedAfterMalware === true,
+      };
     } else if (player.role === 'Blackmailer') {
       const existingAction = room.nightActions[playerId] || {};
       room.nightActions[playerId] = {
@@ -859,6 +896,12 @@ class GameLogic {
         if (hypnoticAction.action === 'kill' || hypnoticAction.action === 'skip' || hypnoticAction.skippedAfterTrance === true) continue;
         return false;
       }
+      if (player.role === 'Overload') {
+        const overloadAction = room.nightActions[id];
+        if (!overloadAction) return false;
+        if (overloadAction.action === 'kill' || overloadAction.action === 'skip' || overloadAction.skippedAfterMalware === true) continue;
+        return false;
+      }
       if (player.role === 'Blackout') {
         const blackoutAction = room.nightActions[id];
         if (!blackoutAction) return false;
@@ -898,11 +941,23 @@ class GameLogic {
     const veteranAlertIds = new Set();
     const mirroredTargets = new Map();
     const hypnotizedTargets = new Set();
+    const overloadedTargets = new Set();
     const silencedTargets = new Set();
     const blackoutFlashActive = new Set();
     const blackmailedTargets = new Set();
     const nextPendingLongshots = [];
     const resolvingLongshots = [];
+    const getInteractionTargetIds = (nightAction) => {
+      if (!nightAction) return [];
+      const targetIds = [];
+      if (nightAction.targetId) targetIds.push(nightAction.targetId);
+      if (nightAction.action === 'longshot' && nightAction.queuedTargetId) targetIds.push(nightAction.queuedTargetId);
+      if (nightAction.tranceUsedThisNight && nightAction.tranceTargetId) targetIds.push(nightAction.tranceTargetId);
+      if (nightAction.malwareUsedThisNight && nightAction.malwareTargetId) targetIds.push(nightAction.malwareTargetId);
+      if (nightAction.blackmailUsedThisNight && nightAction.blackmailTargetId) targetIds.push(nightAction.blackmailTargetId);
+      if (nightAction.interlinkedUsedThisNight && nightAction.interlinkedTargetId) targetIds.push(nightAction.interlinkedTargetId);
+      return [...new Set(targetIds)];
+    };
 
     // Track who the medic protected this night
     let medicTargetThisNight = null;
@@ -910,6 +965,7 @@ class GameLogic {
     const nextTetherhexTargets = {};
     const nextSilencerTargets = {};
     const nextHypnoticTargets = {};
+    const nextOverloadTargets = {};
 
     room.blackmailedPlayers = {};
     room.silencedPlayers = {};
@@ -942,6 +998,21 @@ class GameLogic {
 
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
+      if (!player || player.role !== 'Overload') continue;
+      if (action.malwareUsedThisNight && action.malwareTargetId) {
+        overloadedTargets.add(action.malwareTargetId);
+        nextOverloadTargets[playerId] = action.malwareTargetId;
+        if (!privateMessages[action.malwareTargetId]) privateMessages[action.malwareTargetId] = [];
+        privateMessages[action.malwareTargetId].push(
+          this.createPrivateSystemMessage(code, 'You have been hacked by the Overload.', 'Overload')
+        );
+      } else {
+        nextOverloadTargets[playerId] = null;
+      }
+    }
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
       if (!player || player.role !== 'Blackmailer') continue;
       if (action.blackmailUsedThisNight && action.blackmailTargetId) {
         blackmailedTargets.add(action.blackmailTargetId);
@@ -969,7 +1040,7 @@ class GameLogic {
       }
     }
 
-    const disabledAbilityTargets = new Set([...hypnotizedTargets, ...silencedTargets]);
+    const disabledAbilityTargets = new Set([...hypnotizedTargets, ...overloadedTargets, ...silencedTargets]);
 
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
@@ -1035,6 +1106,7 @@ class GameLogic {
     room.lastTetherhexTargets = nextTetherhexTargets;
     room.lastSilencerTargets = nextSilencerTargets;
     room.lastHypnoticTargets = nextHypnoticTargets;
+    room.lastOverloadTargets = nextOverloadTargets;
     room.pendingLongshots = nextPendingLongshots;
 
     const nightSummaryLines = this.getNightActionSummaryLines(code);
@@ -1257,10 +1329,13 @@ class GameLogic {
         } else {
           const trackedPlayer = room.players.get(action.targetId);
           const trackedAction = room.nightActions[action.targetId];
-          const interactedTarget = trackedAction?.targetId
-            ? room.players.get(trackedAction.targetId)
+          const interactionTargetIds = disabledAbilityTargets.has(action.targetId)
+            ? []
+            : getInteractionTargetIds(trackedAction);
+          const interactedTarget = interactionTargetIds.length > 0
+            ? room.players.get(interactionTargetIds[0])
             : null;
-          const interactedWithPlayer = trackedAction?.action && trackedAction.action !== 'skip' && interactedTarget;
+          const interactedWithPlayer = interactedTarget !== undefined && interactedTarget !== null;
 
           searchResults[playerId] = {
             targetId: action.targetId,
@@ -1309,9 +1384,8 @@ class GameLogic {
           const visitors = Object.entries(room.nightActions)
             .filter(([visitorId, visitorAction]) => (
               visitorId !== playerId
-              && visitorAction?.action
-              && visitorAction.action !== 'skip'
-              && visitorAction.targetId === action.targetId
+              && !disabledAbilityTargets.has(visitorId)
+              && getInteractionTargetIds(visitorAction).includes(action.targetId)
             ))
             .map(([visitorId]) => room.players.get(visitorId))
             .filter(Boolean);
@@ -1372,6 +1446,49 @@ class GameLogic {
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       if (!player || player.role !== 'Hypnotic') continue;
+
+      if (action.action === 'kill' && action.targetId) {
+        if (veteranAlertIds.has(action.targetId)) {
+          killed.add(playerId);
+        } else if (mirroredTargets.has(action.targetId)) {
+          killed.add(playerId);
+          if (!privateMessages[action.targetId]) {
+            privateMessages[action.targetId] = [];
+          }
+          privateMessages[action.targetId].push(
+            this.createPrivateSystemMessage(code, 'A mirrored shield reflected a killing blow away from you.', 'Mirror Caster')
+          );
+        } else if (!protected_.has(action.targetId) && !blessedTargets.has(action.targetId) && !lifeguardedTargets.has(action.targetId)) {
+          killed.add(action.targetId);
+          killersThisNight.add(playerId);
+        } else if (protected_.has(action.targetId)) {
+          if (!privateMessages[action.targetId]) {
+            privateMessages[action.targetId] = [];
+          }
+          privateMessages[action.targetId].push(
+            this.createPrivateSystemMessage(code, 'You were protected by the Vitalist during the night.', 'Vitalist')
+          );
+        } else if (lifeguardedTargets.has(action.targetId)) {
+          if (!privateMessages[action.targetId]) {
+            privateMessages[action.targetId] = [];
+          }
+          privateMessages[action.targetId].push(
+            this.createPrivateSystemMessage(code, 'You protected yourself from death during the night.', 'Survivalist')
+          );
+        } else {
+          if (!privateMessages[action.targetId]) {
+            privateMessages[action.targetId] = [];
+          }
+          privateMessages[action.targetId].push(
+            this.createPrivateSystemMessage(code, 'A Guardian Angel blessed you through the night.', 'Guardian Angel')
+          );
+        }
+      }
+    }
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      if (!player || player.role !== 'Overload') continue;
 
       if (action.action === 'kill' && action.targetId) {
         if (veteranAlertIds.has(action.targetId)) {
@@ -1829,21 +1946,36 @@ class GameLogic {
     let aliveCrewCount = 0;
     let aliveAssassinCount = 0;
     let aliveNeutralEvilCount = 0;
+    let aliveNeutralKillingCount = 0;
+    let aliveNeutralKillingRoles = [];
 
     for (const [, player] of room.players) {
       if (!player.alive) continue;
       if (player.faction === 'Crew') aliveCrewCount++;
       else if (player.faction === 'Assassin') aliveAssassinCount++;
       else if (player.faction === 'Neutral' && this.roleCatalog?.Neutral?.Evil?.includes(player.role)) aliveNeutralEvilCount++;
+      else if (player.faction === 'Neutral' && this.roleCatalog?.Neutral?.Killing?.includes(player.role)) {
+        aliveNeutralKillingCount++;
+        aliveNeutralKillingRoles.push(player.role);
+      }
     }
 
-    if (aliveAssassinCount === 0) {
+    if (aliveNeutralKillingCount > 0 && aliveCrewCount === 0 && aliveAssassinCount === 0 && aliveNeutralEvilCount === 0) {
+      const neutralKillingWinner = aliveNeutralKillingRoles[0] || 'Overload';
+      return this.withNeutralBenignCoWinners(room, this.withGuardianAngelCoWinners(room, { winner: neutralKillingWinner, reason: `${neutralKillingWinner} has outlived everyone else!` }));
+    }
+
+    if (aliveAssassinCount === 0 && aliveNeutralKillingCount === 0) {
       return this.withNeutralBenignCoWinners(room, this.withGuardianAngelCoWinners(room, { winner: 'Crew', reason: 'All Assassins have been eliminated!' }));
     }
 
     // Neutral Evil roles like Jester should be able to keep the game alive at parity,
     // so the table still has a chance to vote them out instead of ending immediately.
-    if (aliveAssassinCount > 0 && aliveCrewCount > 0 && aliveNeutralEvilCount > 0) {
+    if (aliveAssassinCount > 0 && aliveCrewCount > 0 && (aliveNeutralEvilCount > 0 || aliveNeutralKillingCount > 0)) {
+      return null;
+    }
+
+    if (aliveNeutralKillingCount > 0 && (aliveCrewCount > 0 || aliveAssassinCount > 0 || aliveNeutralEvilCount > 0)) {
       return null;
     }
 
@@ -1965,6 +2097,7 @@ class GameLogic {
     if (action === 'quietus') return 'Silencer has hushed someone.';
     if (action === 'bless') return 'Guardian Angel has blessed their target.';
     if (action === 'trance') return 'Hypnotic has cast a trance over someone.';
+    if (action === 'malware') return 'Overload has infected someone with malware.';
     if (action === 'flash') return 'Blackout has blinded the room.';
     if (action === 'blackmail') return 'Blackmailer has silenced someone.';
     if (action === 'lifeguard') return 'Survivalist has prepared to survive the night.';
@@ -2132,8 +2265,10 @@ class GameLogic {
         ? !!(room.nightActions[playerId] && (room.nightActions[playerId].action === 'kill' || room.nightActions[playerId].action === 'skip' || room.nightActions[playerId].skippedAfterInterlinked === true))
         : player.role === 'Hypnotic'
         ? !!(room.nightActions[playerId] && (room.nightActions[playerId].action === 'kill' || room.nightActions[playerId].action === 'skip' || room.nightActions[playerId].skippedAfterTrance === true))
+        : player.role === 'Overload'
+        ? !!(room.nightActions[playerId] && (room.nightActions[playerId].action === 'kill' || room.nightActions[playerId].action === 'skip' || room.nightActions[playerId].skippedAfterMalware === true))
         : player.role === 'Blackmailer'
-          ? !!(room.nightActions[playerId] && (room.nightActions[playerId].action === 'kill' || room.nightActions[playerId].action === 'skip' || room.nightActions[playerId].skippedAfterBlackmail === true))
+        ? !!(room.nightActions[playerId] && (room.nightActions[playerId].action === 'kill' || room.nightActions[playerId].action === 'skip' || room.nightActions[playerId].skippedAfterBlackmail === true))
         : player.role === 'Blackout'
           ? !!(room.nightActions[playerId] && (room.nightActions[playerId].action === 'kill' || room.nightActions[playerId].action === 'skip' || room.nightActions[playerId].skippedAfterFlash === true))
           : !!room.nightActions[playerId],
@@ -2157,6 +2292,8 @@ class GameLogic {
       lastSilencerTarget: player.role === 'Silencer' ? (room.lastSilencerTargets[playerId] || null) : null,
       lastHypnoticTarget: player.role === 'Hypnotic' ? (room.lastHypnoticTargets[playerId] || null) : null,
       hypnoticTranceUsedThisNight: player.role === 'Hypnotic' ? !!room.nightActions[playerId]?.tranceUsedThisNight : false,
+      lastOverloadTarget: player.role === 'Overload' ? (room.lastOverloadTargets[playerId] || null) : null,
+      overloadMalwareUsedThisNight: player.role === 'Overload' ? !!room.nightActions[playerId]?.malwareUsedThisNight : false,
       blackmailerBlackmailUsedThisNight: player.role === 'Blackmailer' ? !!room.nightActions[playerId]?.blackmailUsedThisNight : false,
       tetherhexInterlinkedUsedThisNight: player.role === 'Tetherhex' ? !!room.nightActions[playerId]?.interlinkedUsedThisNight : false,
       lastBlackoutFlashNight: player.role === 'Blackout' ? (room.lastBlackoutFlashNight[playerId] || null) : null,
