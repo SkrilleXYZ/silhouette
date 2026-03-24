@@ -94,6 +94,7 @@ class GameLogic {
     const room = {
       code,
       hostId,
+      creatorHostId: hostId,
       players: new Map(),
       state: 'lobby',
       phase: 0,
@@ -205,8 +206,13 @@ class GameLogic {
     }
 
     player.connected = true;
+    let newHostId = null;
+    if (room.state === 'lobby' && room.creatorHostId === playerId && room.hostId !== playerId) {
+      room.hostId = playerId;
+      newHostId = playerId;
+    }
     room.lastAction = Date.now();
-    return { room, player };
+    return { room, player, newHostId };
   }
 
   leaveRoom(code, playerId) {
@@ -582,6 +588,32 @@ class GameLogic {
     room.roleRevealEndsAt = 0;
 
     return { room };
+  }
+
+  returnRoomToLobby(code, playerId) {
+    const room = this.rooms.get(code);
+    if (!room) return { error: 'Room not found' };
+
+    const player = room.players.get(playerId);
+    if (!player) return { error: 'Player not found' };
+
+    let newHostId = null;
+
+    if (room.state === 'ended') {
+      const resetResult = this.resetRoom(code);
+      if (resetResult.error) return resetResult;
+      room.hostId = playerId;
+      newHostId = playerId;
+      return { room, newHostId, reset: true };
+    }
+
+    if (room.state === 'lobby' && room.creatorHostId === playerId && room.hostId !== playerId) {
+      room.hostId = playerId;
+      room.lastAction = Date.now();
+      newHostId = playerId;
+    }
+
+    return { room, newHostId, reset: false };
   }
 
   submitNightAction(code, playerId, action, targetId, targetIds = null) {

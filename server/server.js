@@ -87,6 +87,9 @@ io.on('connection', (socket) => {
 
     const publicData = game.getRoomPublicData(normalizedCode);
     io.to(normalizedCode).emit('room-updated', publicData);
+    if (result.newHostId) {
+      io.to(normalizedCode).emit('host-changed', { newHostId: result.newHostId });
+    }
     callback({
       success: true,
       room: publicData,
@@ -155,6 +158,29 @@ io.on('connection', (socket) => {
     }, ROLE_REVEAL_DELAY_MS);
     setTimerRecord(roleRevealTimers, mapping.code, revealTimer, 'role-reveal', revealEndsAt);
     callback({ success: true });
+  });
+
+  socket.on('return-to-lobby', (callback) => {
+    const mapping = socketMap.get(socket.id);
+    if (!mapping) {
+      if (callback) callback({ success: false, error: 'Not in a room' });
+      return;
+    }
+
+    clearAllTimers(mapping.code);
+    const result = game.returnRoomToLobby(mapping.code, mapping.playerId);
+    if (result.error) {
+      if (callback) callback({ success: false, error: result.error });
+      return;
+    }
+
+    const publicData = game.getRoomPublicData(mapping.code);
+    io.to(mapping.code).emit('game-reset', { room: publicData });
+    if (result.newHostId) {
+      io.to(mapping.code).emit('host-changed', { newHostId: result.newHostId });
+    }
+
+    if (callback) callback({ success: true, room: publicData, newHostId: result.newHostId || publicData.hostId });
   });
 
   socket.on('update-room-settings', ({ anonymousVotes, anonymousEjects, hiddenRoleList, disableVillagerRole }, callback) => {

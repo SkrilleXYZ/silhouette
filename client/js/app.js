@@ -2506,6 +2506,7 @@
     const title = document.getElementById('gameover-faction');
     const reason = document.getElementById('gameover-reason');
     const playersList = document.getElementById('gameover-players');
+    const returnLobbyBtn = document.getElementById('btn-return-lobby');
     const winnerPresentation = getWinnerPresentation(winner?.winner);
     const winningSide = String(winner?.winner || '').trim();
     const guardianAngelWinnerIds = new Set(winner?.guardianAngelWinnerIds || []);
@@ -2517,6 +2518,10 @@
     reason.textContent = winnerPresentation.isSoloWin
       ? (winner.reason || 'Everyone else loses.')
       : winner.reason;
+    if (returnLobbyBtn) {
+      returnLobbyBtn.disabled = false;
+      returnLobbyBtn.innerHTML = '<span>RETURN LOBBY</span>';
+    }
 
     playersList.innerHTML = players.map((p, index) => `
       <div class="gameover-player ${(survivalistWinnerIds.has(p.id) || guardianAngelWinnerIds.has(p.id) || (winningSide === 'Crew' && p.faction === 'Crew') || (winningSide === 'Assassin' && p.faction === 'Assassin') || winningSide === p.role) ? 'won' : 'lost'}" style="--gameover-delay:${320 + (index * 60)}ms;">
@@ -2527,37 +2532,6 @@
         </span>
       </div>`).join('');
 
-    const existingPlayAgain = document.getElementById('btn-play-again');
-    if (existingPlayAgain) existingPlayAgain.remove();
-
-    const gameoverScreen = document.getElementById('screen-gameover');
-
-    if (state.isHost) {
-      const btn = document.createElement('button');
-      btn.id = 'btn-play-again';
-      btn.className = 'btn btn-primary gameover-cta';
-      btn.style.cssText = 'margin-top: 24px; width: 100%; max-width: 320px; display: flex; align-items: center; justify-content: center; gap: 8px;';
-      btn.innerHTML = '▶ PLAY AGAIN';
-      btn.addEventListener('click', () => {
-        btn.disabled = true;
-        btn.textContent = 'Starting...';
-        state.socket.emit('start-game', (response) => {
-          if (!response.success) {
-            showToast(response.error || 'Cannot start game', 'error');
-            btn.disabled = false;
-            btn.innerHTML = '▶ PLAY AGAIN';
-          }
-        });
-      });
-      gameoverScreen.appendChild(btn);
-    } else {
-      const waiting = document.createElement('p');
-      waiting.id = 'btn-play-again';
-      waiting.className = 'gameover-cta gameover-waiting';
-      waiting.style.cssText = 'margin-top: 24px; color: hsl(195,60%,60%); font-size: 0.85rem; text-align: center;';
-      waiting.textContent = 'Waiting for host to start a new game...';
-      gameoverScreen.appendChild(waiting);
-    }
   }
 
   function initEventListeners() {
@@ -2776,6 +2750,20 @@
       document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
       document.querySelector('[data-tab="home"]').classList.add('active');
       renderProfilePanel();
+    });
+
+    document.getElementById('btn-return-lobby').addEventListener('click', () => {
+      const button = document.getElementById('btn-return-lobby');
+      if (!button) return;
+      button.disabled = true;
+      button.textContent = 'Returning...';
+      state.socket.emit('return-to-lobby', (response) => {
+        if (!response?.success) {
+          showToast(response?.error || 'Could not return to lobby', 'error');
+          button.disabled = false;
+          button.innerHTML = '<span>RETURN LOBBY</span>';
+        }
+      });
     });
 
   }
