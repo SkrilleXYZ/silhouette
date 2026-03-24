@@ -9,7 +9,7 @@ class GameLogic {
         Killing: ['Sheriff', 'Veteran'],
       },
       Assassin: {
-        Power: ['Assassin'],
+        Power: ['Assassin', 'Sniper'],
       },
       Neutral: {
         Evil: ['Jester', 'Executioner'],
@@ -116,6 +116,7 @@ class GameLogic {
       lastTrackerTargets: {},
       lastStalkerTargets: {},
       recentKillers: [],
+      pendingLongshots: [],
       roleRevealEndsAt: 0,
     };
 
@@ -463,6 +464,7 @@ class GameLogic {
     room.lastTrackerTargets = {};
     room.lastStalkerTargets = {};
     room.roleRevealEndsAt = 0;
+    room.pendingLongshots = [];
 
     this.beginPhaseSummary(code, 'Night 1 has begun. Chat is locked until morning.');
 
@@ -502,6 +504,7 @@ class GameLogic {
     room.lastTrackerTargets = {};
     room.lastStalkerTargets = {};
     room.recentKillers = [];
+    room.pendingLongshots = [];
     room.roleRevealEndsAt = 0;
 
     return { room };
@@ -593,11 +596,21 @@ class GameLogic {
       if (action !== 'kill') return { error: 'Invalid action for Assassin' };
       if (target.faction === 'Assassin') return { error: 'Cannot kill teammates' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
+    } else if (player.role === 'Sniper') {
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
+      if (action !== 'longshot') return { error: 'Invalid action for Sniper' };
+      if (target.faction === 'Assassin') return { error: 'Cannot shoot teammates' };
+      if (targetId === playerId) return { error: 'Cannot target yourself' };
     } else {
       return { error: 'You have no night abilities' };
     }
 
-    room.nightActions[playerId] = { action, targetId: action === 'instinct' || action === 'bless' ? null : targetId };
+    room.nightActions[playerId] = {
+      action,
+      targetId: action === 'instinct' || action === 'bless' || action === 'longshot' ? null : targetId,
+      queuedTargetId: action === 'longshot' ? targetId : null,
+    };
 
     return { success: true, room };
   }
@@ -625,6 +638,10 @@ class GameLogic {
       if (player.role === 'Villager') continue;
       if (player.role === 'Jester') continue;
       if (player.role === 'Executioner') continue;
+      if (player.role === 'Sniper') {
+        if (!room.nightActions[id]) return false;
+        continue;
+      }
       if (player.role === 'Guardian Angel' && (player.guardianAngelUsesRemaining ?? 4) <= 0) continue;
       if (player.role === 'Amnesiac') {
         const hasDeadTargets = Array.from(room.players.values()).some((candidate) => !candidate.alive && candidate.id !== id);
@@ -651,6 +668,8 @@ class GameLogic {
     const recentKillers = new Set((room.recentKillers || []).flat());
     const veteranAlertIds = new Set();
     const mirroredTargets = new Map();
+    const nextPendingLongshots = [];
+    const resolvingLongshots = [];
 
     // Track who the medic protected this night
     let medicTargetThisNight = null;
@@ -676,6 +695,27 @@ class GameLogic {
         blessedTargets.add(player.guardianAngelTargetId);
         player.guardianAngelUsesRemaining = Math.max(0, (player.guardianAngelUsesRemaining ?? 4) - 1);
       }
+      if (action.action === 'longshot' && player.role === 'Sniper' && action.queuedTargetId) {
+        nextPendingLongshots.push({
+          shooterId: playerId,
+          targetId: action.queuedTargetId,
+          roundsRemaining: 2,
+        });
+      }
+    }
+
+    for (const shot of room.pendingLongshots || []) {
+      if (!shot?.targetId) continue;
+      const target = room.players.get(shot.targetId);
+      if (!target || !target.alive) continue;
+      if ((shot.roundsRemaining ?? 0) <= 1) {
+        resolvingLongshots.push(shot);
+      } else {
+        nextPendingLongshots.push({
+          ...shot,
+          roundsRemaining: shot.roundsRemaining - 1,
+        });
+      }
     }
 
     // Update lastMedicTarget for next night
@@ -686,9 +726,43 @@ class GameLogic {
       room.lastMedicTarget = null;
     }
     room.lastMirrorTargets = nextMirrorTargets;
+    room.pendingLongshots = nextPendingLongshots;
 
     const nightSummaryLines = this.getNightActionSummaryLines(code);
     nightSummaryLines.forEach((line) => this.appendToPhaseSummary(code, line));
+
+    for (const shot of resolvingLongshots) {
+      const target = room.players.get(shot.targetId);
+      if (!target || !target.alive) continue;
+      if (veteranAlertIds.has(shot.targetId)) {
+        killed.add(shot.shooterId);
+      } else if (mirroredTargets.has(shot.targetId)) {
+        killed.add(shot.shooterId);
+        if (!privateMessages[shot.targetId]) {
+          privateMessages[shot.targetId] = [];
+        }
+        privateMessages[shot.targetId].push(
+          this.createPrivateSystemMessage(code, 'A mirrored shield reflected a killing blow away from you.', 'Mirror Caster')
+        );
+      } else if (!protected_.has(shot.targetId) && !blessedTargets.has(shot.targetId)) {
+        killed.add(shot.targetId);
+        killersThisNight.add(shot.shooterId);
+      } else if (protected_.has(shot.targetId)) {
+        if (!privateMessages[shot.targetId]) {
+          privateMessages[shot.targetId] = [];
+        }
+        privateMessages[shot.targetId].push(
+          this.createPrivateSystemMessage(code, 'You were protected by the Vitalist during the night.', 'Vitalist')
+        );
+      } else {
+        if (!privateMessages[shot.targetId]) {
+          privateMessages[shot.targetId] = [];
+        }
+        privateMessages[shot.targetId].push(
+          this.createPrivateSystemMessage(code, 'A Guardian Angel blessed you through the night.', 'Guardian Angel')
+        );
+      }
+    }
 
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
@@ -1328,6 +1402,7 @@ class GameLogic {
     if (action === 'bless') return 'Guardian Angel has blessed their target.';
     if (action === 'mirror') return 'Mirror Caster has woven a reflective shield.';
     if (action === 'instinct') return 'Veteran is standing watch.';
+    if (action === 'longshot') return 'Sniper has lined up a distant shot.';
     if (action === 'kill') return 'An Assassin has moved through the shadows.';
     return null;
   }
@@ -1409,11 +1484,22 @@ class GameLogic {
   }
 
   createChatMessage(type, senderName, text, senderId = null, phase = null) {
+    let senderAlive = null;
+    if (senderId) {
+      for (const room of this.rooms.values()) {
+        const sender = room.players.get(senderId);
+        if (sender) {
+          senderAlive = sender.alive;
+          break;
+        }
+      }
+    }
     return {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       type,
       senderId,
       senderName,
+      senderAlive,
       text,
       createdAt: Date.now(),
       phase,
@@ -1439,6 +1525,7 @@ class GameLogic {
       type: 'player',
       senderId: playerId,
       senderName: player.name,
+      senderAlive: player.alive,
       text: cleanText,
       createdAt: Date.now(),
       phase: room.state,

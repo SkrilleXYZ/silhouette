@@ -171,6 +171,19 @@
         },
       ],
     },
+    Sniper: {
+      faction: 'Assassin',
+      subfaction: 'Power',
+      description: 'Shoot a player from a great distance. The bullet hits them 2 rounds later, making you harder to track.',
+      revealText: 'Dark red focus narrows into a single line. Fire now and let the kill arrive long after the trigger pull.',
+      abilities: [
+        {
+          name: 'Longshot',
+          type: 'Night',
+          description: 'Shoot a player from a great distance. The bullet hits them 2 rounds later making you harder to track.',
+        },
+      ],
+    },
     Jester: {
       faction: 'Neutral',
       subfaction: 'Evil',
@@ -916,6 +929,7 @@
     if (normalizedRole === 'tracker') return 'tracker';
     if (normalizedRole === 'stalker') return 'stalker';
     if (normalizedRole === 'assassin') return 'assassin';
+    if (normalizedRole === 'sniper') return 'sniper';
     if (normalizedRole === 'villager') return 'villager';
     if (normalizedRole === 'jester') return 'jester';
     if (normalizedRole === 'executioner') return 'executioner';
@@ -2782,7 +2796,15 @@
   }
 
   function getRenderableChatMessages() {
+    const viewerIsDead = state.playerData?.alive === false;
     return [...(state.chatMessages || []), ...(state.privateChatMessages || [])]
+      .filter((message) => {
+        if (viewerIsDead) return true;
+        if (message.type !== 'player') return true;
+        const sender = state.roomData?.players?.find((candidate) => candidate.id === message.senderId);
+        const senderAlive = sender ? sender.alive : message.senderAlive;
+        return senderAlive !== false;
+      })
       .sort((a, b) => a.createdAt - b.createdAt);
   }
 
@@ -2790,15 +2812,17 @@
     return messages.length
       ? messages.map((message) => {
         const isSelf = message.senderId === state.playerId;
+        const sender = state.roomData?.players?.find((candidate) => candidate.id === message.senderId);
+        const senderIsDead = message.type === 'player' && ((sender ? sender.alive : message.senderAlive) === false);
         const phaseClass = message.type === 'system' && message.phase ? ` phase-${message.phase}` : '';
         const summaryClass = message.type === 'system' && message.summaryTitle ? ' phase-summary' : '';
         const variantClass = getSystemMessageVariantClass(message);
-        const classes = `chat-message ${message.type === 'system' ? 'system' : 'player'}${phaseClass}${summaryClass}${message.private ? ' private' : ''}${variantClass}${isSelf ? ' self' : ''}`;
-        const sender = message.type === 'system' ? (message.senderName || 'SYSTEM') : message.senderName;
+        const classes = `chat-message ${message.type === 'system' ? 'system' : 'player'}${phaseClass}${summaryClass}${message.private ? ' private' : ''}${variantClass}${isSelf ? ' self' : ''}${senderIsDead ? ' sender-dead' : ''}`;
+        const senderLabel = message.type === 'system' ? (message.senderName || 'SYSTEM') : message.senderName;
         const style = getPlayerChatStyle(message);
         return `
           <div class="${classes}"${style ? ` style="${style}"` : ''}>
-            <div class="chat-message-meta">${sender}</div>
+            <div class="chat-message-meta">${senderLabel}</div>
             <div class="chat-message-text">${formatChatMessageHtml(message)}</div>
           </div>`;
       }).join('')
@@ -3086,6 +3110,9 @@
     } else if (player.role === 'Vitalist') {
       state.selectedAction = 'protect';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">Protect</button></div>';
+    } else if (player.role === 'Sniper') {
+      state.selectedAction = 'longshot';
+      actionsHTML = `<div class="action-buttons"><button class="action-btn selected ${actionClass}" data-action="longshot">Longshot</button></div>`;
     } else if (player.role === 'Assassin') {
       state.selectedAction = 'kill';
       actionsHTML = `<div class="action-buttons"><button class="action-btn selected ${actionClass}" data-action="kill">Kill</button></div>`;
@@ -3103,6 +3130,7 @@
     else if (player.role === 'Veteran') actionDesc = 'Stand watch tonight.';
     else if (player.role === 'Mirror Caster') actionDesc = 'Choose a player to mirror tonight';
     else if (player.role === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
+    else if (player.role === 'Sniper') actionDesc = 'Mark a player with a distant shot. The bullet lands 2 rounds later.';
     else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
 
     const isTargetlessRole = player.role === 'Veteran' || player.role === 'Guardian Angel';
