@@ -5174,6 +5174,35 @@ body {
   border-color: hsla(var(--chat-accent-h, 195), max(48%, calc(var(--chat-accent-s, 70%) - 2%)), 54%, 0.42);
 }
 
+.phase-chat-panel.chat-lobby .chat-message.player,
+.chat-fullscreen-shell.chat-lobby .chat-message.player {
+  background:
+    linear-gradient(180deg, hsla(var(--chat-accent-h, 195), max(52%, calc(var(--chat-accent-s, 80%) - 4%)), 24%, 0.78), hsla(var(--chat-accent-h, 195), max(44%, calc(var(--chat-accent-s, 80%) - 10%)), 16%, 0.66)),
+    hsl(0, 0%, 12%);
+  border-color: hsla(var(--chat-accent-h, 195), max(62%, calc(var(--chat-accent-s, 82%) - 2%)), 58%, 0.52);
+  box-shadow:
+    inset 0 1px 0 hsla(var(--chat-accent-h, 195), max(72%, calc(var(--chat-accent-s, 82%) + 2%)), 92%, 0.08),
+    0 0 18px hsla(var(--chat-accent-h, 195), max(58%, calc(var(--chat-accent-s, 82%) - 6%)), 54%, 0.12);
+}
+
+.phase-chat-panel.chat-lobby .chat-message.self,
+.chat-fullscreen-shell.chat-lobby .chat-message.self {
+  background:
+    linear-gradient(180deg, hsla(var(--chat-accent-h, 195), max(58%, calc(var(--chat-accent-s, 84%) - 2%)), 28%, 0.84), hsla(var(--chat-accent-h, 195), max(52%, calc(var(--chat-accent-s, 84%) - 8%)), 18%, 0.72)),
+    hsl(0, 0%, 12%);
+  border-color: hsla(var(--chat-accent-h, 195), max(72%, calc(var(--chat-accent-s, 86%) + 2%)), 62%, 0.58);
+  box-shadow:
+    inset 0 1px 0 hsla(var(--chat-accent-h, 195), max(80%, calc(var(--chat-accent-s, 86%) + 4%)), 94%, 0.1),
+    0 0 22px hsla(var(--chat-accent-h, 195), max(64%, calc(var(--chat-accent-s, 86%) - 2%)), 58%, 0.16);
+}
+
+.phase-chat-panel.chat-lobby .chat-message.player .chat-message-meta,
+.phase-chat-panel.chat-lobby .chat-message.player .chat-message-text,
+.chat-fullscreen-shell.chat-lobby .chat-message.player .chat-message-meta,
+.chat-fullscreen-shell.chat-lobby .chat-message.player .chat-message-text {
+  text-shadow: 0 0 12px hsla(var(--chat-accent-h, 195), var(--chat-accent-s, 82%), max(62%, var(--chat-accent-l, 62%)), 0.16);
+}
+
 .phase-chat-panel.chat-dead .chat-message.self,
 .chat-fullscreen-shell.chat-dead .chat-message.self {
   background:

@@ -3751,7 +3751,7 @@
     const isStandaloneOverlay = isDockedMode && isOverlayOpen;
     const isDeadSpectator = state.playerData?.alive === false;
 
-    panel.className = `phase-chat-panel ${isStandaloneOverlay ? 'chat-overlay-anchor' : isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}`;
+    panel.className = `phase-chat-panel ${isStandaloneOverlay ? 'chat-overlay-anchor' : isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}${mode === 'lobby' ? ' chat-lobby' : ''}`;
     if (gameContainer) {
       gameContainer.classList.toggle('chat-overlay-active', isStandaloneOverlay);
     }
@@ -3801,7 +3801,7 @@
     if (isStandaloneOverlay) {
       panel.innerHTML = '';
       overlay.innerHTML = `
-        <div class="chat-fullscreen-shell${canChat ? '' : ' chat-locked'}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}">
+        <div class="chat-fullscreen-shell${canChat ? '' : ' chat-locked'}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}${mode === 'lobby' ? ' chat-lobby' : ''}">
           ${localPanel}
           <div class="chat-panel-header">
             <div>
