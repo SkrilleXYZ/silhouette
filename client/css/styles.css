@@ -4997,6 +4997,11 @@ body {
   min-height: 220px;
 }
 
+#game-content > .phase-chat-panel.chat-docked-mode:not(.chat-overlay-anchor) {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
 #game-content > .phase-chat-panel.chat-morning {
   flex-basis: clamp(320px, 42vh, 460px);
   min-height: 320px;

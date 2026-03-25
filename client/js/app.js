@@ -3823,7 +3823,7 @@
             <span class="chat-dock-subtitle">${activeChannel === 'assassin' ? (canAssassinChat ? 'Private assassin coordination' : 'Assassin chat unavailable') : canPublicChat ? 'Discussion and actions' : state.playerData?.isBlackmailed ? 'You have been blackmailed' : state.playerData?.isSilenced ? 'You have been silenced' : 'View updates'}</span>
           </span>
         </button>`;
-      const openBtn = document.getElementById('chat-open-btn');
+      const openBtn = panel.querySelector('#chat-open-btn');
       if (openBtn) {
         openBtn.addEventListener('click', () => {
           state.chatOverlayOpen = true;
@@ -3866,10 +3866,10 @@
           </form>
         </div>`;
 
-      const overlayMessages = document.getElementById('chat-overlay-messages');
+      const overlayMessages = overlay.querySelector('#chat-overlay-messages');
       if (overlayMessages) overlayMessages.scrollTop = overlayMessages.scrollHeight;
 
-      const overlayCloseBtn = document.getElementById('chat-overlay-close-btn');
+      const overlayCloseBtn = overlay.querySelector('#chat-overlay-close-btn');
       if (overlayCloseBtn) {
         overlayCloseBtn.addEventListener('click', () => {
           state.chatOverlayOpen = false;
@@ -3878,7 +3878,7 @@
       }
 
       bindChatChannelTabs(overlay);
-      bindChatComposer(document.getElementById('chat-overlay-form'), canChat, activeChannel);
+      bindChatComposer(overlay.querySelector('#chat-overlay-form'), canChat, activeChannel);
       return;
     }
 
@@ -3911,10 +3911,10 @@
         <button class="btn btn-primary chat-send-btn" type="submit" ${canChat ? '' : 'disabled'}>Send</button>
       </form>`;
 
-    const chatMessages = document.getElementById('chat-messages');
+    const chatMessages = panel.querySelector('#chat-messages');
     if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
 
-    const fullscreenBtn = document.getElementById('chat-fullscreen-btn');
+    const fullscreenBtn = panel.querySelector('#chat-fullscreen-btn');
     if (fullscreenBtn) {
       fullscreenBtn.addEventListener('click', () => {
         state.chatOverlayOpen = true;
@@ -3922,7 +3922,7 @@
       });
     }
 
-    const closeBtn = document.getElementById('chat-close-btn');
+    const closeBtn = panel.querySelector('#chat-close-btn');
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
         state.chatOverlayOpen = false;
@@ -3931,7 +3931,7 @@
     }
 
     bindChatChannelTabs(panel);
-    bindChatComposer(document.getElementById('chat-form'), canChat, activeChannel);
+    bindChatComposer(panel.querySelector('#chat-form'), canChat, activeChannel);
   }
 
   function renderGameContent(phase) {
