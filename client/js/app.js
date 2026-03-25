@@ -4224,6 +4224,7 @@
     else if (player.role === 'Imitator') actionDesc = 'Choose a living player to borrow their role for tonight.';
 
     const isTargetlessRole = activeRole === 'Veteran'
+      || activeRole === 'Guardian Angel'
       || activeRole === 'Survivalist'
       || (activeRole === 'Blackout' && state.selectedAction === 'flash')
       || (activeRole === 'The Purge' && state.selectedAction === 'fascism');
