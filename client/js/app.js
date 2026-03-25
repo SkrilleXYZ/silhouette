@@ -113,6 +113,19 @@
         },
       ],
     },
+    Warden: {
+      faction: 'Crew',
+      subfaction: 'Protection',
+      description: 'Protect a player from being interacted with at night. Cannot target the same player in a row.',
+      revealText: 'Blue, teal, and gold barriers lock into place around your target. Keep every hand away from them until dawn.',
+      abilities: [
+        {
+          name: 'Guard',
+          type: 'Night',
+          description: 'Protect a player from being interacted with at night. Cannot target the same player in a row.',
+        },
+      ],
+    },
     Investigator: {
       faction: 'Crew',
       subfaction: 'Info',
@@ -1114,6 +1127,7 @@
     if (normalizedRole === 'veteran') return 'veteran';
     if (normalizedRole === 'mirror caster') return 'mirrorcaster';
     if (normalizedRole === 'vitalist') return 'vitalist';
+    if (normalizedRole === 'warden') return 'warden';
     if (normalizedRole === 'investigator') return 'investigator';
     if (normalizedRole === 'tracker') return 'tracker';
     if (normalizedRole === 'stalker') return 'stalker';
@@ -1729,6 +1743,9 @@
     }
     if (/You have been hacked by the Overload\.$/i.test(text) && String(message.source || '').trim() === 'Overload') {
       return ' system-result-overload';
+    }
+    if (/This player was guarded by the Warden\.$/i.test(text) && String(message.source || '').trim() === 'Warden') {
+      return ' system-result-warden';
     }
     if (/.* confesses to murdering .*\.$/i.test(text) && String(message.source || '').trim() === 'Redflag') {
       return ' system-result-redflag';
@@ -2541,7 +2558,7 @@
       : winner.reason;
     if (returnLobbyBtn) {
       returnLobbyBtn.disabled = false;
-      returnLobbyBtn.innerHTML = '<span>RETURN LOBBY</span>';
+      returnLobbyBtn.innerHTML = '<span>RETURN TO LOBBY</span>';
     }
 
     playersList.innerHTML = players.map((p, index) => `
@@ -2782,7 +2799,7 @@
         if (!response?.success) {
           showToast(response?.error || 'Could not return to lobby', 'error');
           button.disabled = false;
-          button.innerHTML = '<span>RETURN LOBBY</span>';
+          button.innerHTML = '<span>RETURN TO LOBBY</span>';
         }
       });
     });
@@ -3580,6 +3597,9 @@
     } else if (player.role === 'Mirror Caster') {
       state.selectedAction = 'mirror';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="mirror">Mirror</button></div>';
+    } else if (player.role === 'Warden') {
+      state.selectedAction = 'guard';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="guard">Guard</button></div>';
     } else if (player.role === 'Vitalist') {
       state.selectedAction = 'protect';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="protect">Protect</button></div>';
@@ -3642,6 +3662,7 @@
       : 'Eliminate a player after the blackout.';
     else if (player.role === 'Veteran') actionDesc = 'Stand watch tonight.';
     else if (player.role === 'Mirror Caster') actionDesc = 'Choose a player to mirror tonight';
+    else if (player.role === 'Warden') actionDesc = 'Choose a player to block all night interactions on.';
     else if (player.role === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
     else if (player.role === 'Sniper') actionDesc = 'Mark a player with a distant shot. The bullet lands 2 rounds later.';
     else if (player.role === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
@@ -3662,6 +3683,7 @@
           ${displayedTargets.map(t => {
             const isRestricted = (player.role === 'Vitalist' && t.id === player.lastMedicTarget)
               || (player.role === 'Mirror Caster' && t.id === player.lastMirrorTarget)
+              || (player.role === 'Warden' && t.id === player.lastWardenTarget)
               || (player.role === 'Investigator' && t.id === investigatorLockedTargetId)
               || (player.role === 'Tracker' && t.id === trackerLockedTargetId)
               || (player.role === 'Stalker' && t.id === stalkerLockedTargetId)
@@ -3714,6 +3736,8 @@
             showToast('You cannot target the same player twice in a row with Malware', 'error');
           } else if (player.role === 'Mirror Caster') {
             showToast('You cannot target the same player twice in a row', 'error');
+          } else if (player.role === 'Warden') {
+            showToast('You cannot target the same player in a row', 'error');
           } else {
             showToast('You cannot protect the same player two nights in a row', 'error');
           }
