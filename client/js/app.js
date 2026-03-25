@@ -1021,12 +1021,12 @@
 
   function connectSocket() {
     state.socket = io(window.location.origin, {
-      transports: ['polling', 'websocket'],
+      transports: ['websocket'],
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      timeout: 20000,
+      timeout: 30000,
     });
 
     state.socket.on('connect', () => {
