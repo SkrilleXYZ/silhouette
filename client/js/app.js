@@ -1869,6 +1869,16 @@
       classicFivePlayerSetupToggle.checked = !!data.useClassicFivePlayerSetup;
       classicFivePlayerSetupToggle.disabled = !(state.isHost || state.playerId === data.hostId);
     }
+    const sheriffKillsCrewTargetToggle = document.getElementById('toggle-sheriff-kills-crew-target');
+    if (sheriffKillsCrewTargetToggle) {
+      sheriffKillsCrewTargetToggle.checked = !!data.sheriffKillsCrewTarget;
+      sheriffKillsCrewTargetToggle.disabled = !(state.isHost || state.playerId === data.hostId);
+    }
+    const sheriffKillsNeutralEvilToggle = document.getElementById('toggle-sheriff-kills-neutral-evil');
+    if (sheriffKillsNeutralEvilToggle) {
+      sheriffKillsNeutralEvilToggle.checked = !!data.sheriffKillsNeutralEvil;
+      sheriffKillsNeutralEvilToggle.disabled = !(state.isHost || state.playerId === data.hostId);
+    }
 
     const list = document.getElementById('players-list');
     list.innerHTML = '';
@@ -3176,6 +3186,24 @@
         if (!response.success) {
           showToast(response.error || 'Could not update room settings', 'error');
           event.target.checked = !!state.roomData?.useClassicFivePlayerSetup;
+        }
+      });
+    });
+
+    document.getElementById('toggle-sheriff-kills-crew-target').addEventListener('change', (event) => {
+      state.socket.emit('update-room-settings', { sheriffKillsCrewTarget: event.target.checked }, (response) => {
+        if (!response.success) {
+          showToast(response.error || 'Could not update room settings', 'error');
+          event.target.checked = !!state.roomData?.sheriffKillsCrewTarget;
+        }
+      });
+    });
+
+    document.getElementById('toggle-sheriff-kills-neutral-evil').addEventListener('change', (event) => {
+      state.socket.emit('update-room-settings', { sheriffKillsNeutralEvil: event.target.checked }, (response) => {
+        if (!response.success) {
+          showToast(response.error || 'Could not update room settings', 'error');
+          event.target.checked = !!state.roomData?.sheriffKillsNeutralEvil;
         }
       });
     });

@@ -183,14 +183,14 @@ io.on('connection', (socket) => {
     if (callback) callback({ success: true, room: publicData, newHostId: result.newHostId || publicData.hostId });
   });
 
-  socket.on('update-room-settings', ({ anonymousVotes, anonymousEjects, hiddenRoleList, disableVillagerRole, useClassicFivePlayerSetup }, callback) => {
+  socket.on('update-room-settings', ({ anonymousVotes, anonymousEjects, hiddenRoleList, disableVillagerRole, useClassicFivePlayerSetup, sheriffKillsCrewTarget, sheriffKillsNeutralEvil }, callback) => {
     const mapping = socketMap.get(socket.id);
     if (!mapping) {
       if (callback) callback({ success: false, error: 'Not in a room' });
       return;
     }
 
-    const result = game.updateRoomSettings(mapping.code, mapping.playerId, { anonymousVotes, anonymousEjects, hiddenRoleList, disableVillagerRole, useClassicFivePlayerSetup });
+    const result = game.updateRoomSettings(mapping.code, mapping.playerId, { anonymousVotes, anonymousEjects, hiddenRoleList, disableVillagerRole, useClassicFivePlayerSetup, sheriffKillsCrewTarget, sheriffKillsNeutralEvil });
     if (result.error) {
       if (callback) callback({ success: false, error: result.error });
       return;

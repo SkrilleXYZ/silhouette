@@ -117,6 +117,8 @@ class GameLogic {
       hiddenRoleList: false,
       disableVillagerRole: false,
       useClassicFivePlayerSetup: false,
+      sheriffKillsCrewTarget: false,
+      sheriffKillsNeutralEvil: false,
       playerOrder: [],
       lastAction: Date.now(),
       lastMedicTarget: null,
@@ -2082,6 +2084,9 @@ class GameLogic {
 
       if (action.action === 'shoot' && action.targetId) {
         const target = room.players.get(action.targetId);
+        const isCrewTarget = target?.faction === 'Crew';
+        const isNeutralEvilTarget = target?.faction === 'Neutral' && target?.subfaction === 'Evil';
+        const sheriffCanKillNeutralEvil = room.sheriffKillsNeutralEvil && isNeutralEvilTarget;
         if (veteranAlertIds.has(action.targetId)) {
           killed.add(playerId);
         } else if (mirroredTargets.has(action.targetId)) {
@@ -2092,7 +2097,36 @@ class GameLogic {
           privateMessages[action.targetId].push(
             this.createPrivateSystemMessage(code, 'A mirrored shield reflected a killing blow away from you.', 'Mirror Caster')
           );
-        } else if (target && target.faction === 'Crew') {
+        } else if (isCrewTarget && room.sheriffKillsCrewTarget) {
+          killed.add(playerId);
+          if (!protected_.has(action.targetId) && !blessedTargets.has(action.targetId) && !lifeguardedTargets.has(action.targetId)) {
+            killed.add(action.targetId);
+            killersThisNight.add(playerId);
+            registerKillAttribution(action.targetId, playerId);
+          } else if (protected_.has(action.targetId)) {
+            if (!privateMessages[action.targetId]) {
+              privateMessages[action.targetId] = [
+                this.createPrivateSystemMessage(code, 'You were protected by the Vitalist during the night.', 'Vitalist')
+              ];
+            }
+          } else if (lifeguardedTargets.has(action.targetId)) {
+            if (!privateMessages[action.targetId]) {
+              privateMessages[action.targetId] = [];
+            }
+            privateMessages[action.targetId].push(
+              this.createPrivateSystemMessage(code, 'You protected yourself from death during the night.', 'Survivalist')
+            );
+          } else {
+            if (!privateMessages[action.targetId]) {
+              privateMessages[action.targetId] = [];
+            }
+            privateMessages[action.targetId].push(
+              this.createPrivateSystemMessage(code, 'A Guardian Angel blessed you through the night.', 'Guardian Angel')
+            );
+          }
+        } else if (isCrewTarget) {
+          killed.add(playerId);
+        } else if (isNeutralEvilTarget && !sheriffCanKillNeutralEvil) {
           killed.add(playerId);
         } else if (!protected_.has(action.targetId) && !blessedTargets.has(action.targetId) && !lifeguardedTargets.has(action.targetId)) {
           killed.add(action.targetId);
@@ -2995,6 +3029,12 @@ class GameLogic {
     if (typeof settings.useClassicFivePlayerSetup === 'boolean') {
       room.useClassicFivePlayerSetup = settings.useClassicFivePlayerSetup;
     }
+    if (typeof settings.sheriffKillsCrewTarget === 'boolean') {
+      room.sheriffKillsCrewTarget = settings.sheriffKillsCrewTarget;
+    }
+    if (typeof settings.sheriffKillsNeutralEvil === 'boolean') {
+      room.sheriffKillsNeutralEvil = settings.sheriffKillsNeutralEvil;
+    }
 
     room.lastAction = Date.now();
     return { success: true, room };
@@ -3507,6 +3547,8 @@ class GameLogic {
       hiddenRoleList: room.hiddenRoleList,
       disableVillagerRole: room.disableVillagerRole,
       useClassicFivePlayerSetup: room.useClassicFivePlayerSetup,
+      sheriffKillsCrewTarget: room.sheriffKillsCrewTarget,
+      sheriffKillsNeutralEvil: room.sheriffKillsNeutralEvil,
       votingEligibleCount: players.filter((p) => p.alive && !room.blackmailedPlayers?.[p.id]).length,
     };
   }
