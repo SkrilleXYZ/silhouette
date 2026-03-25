@@ -25,6 +25,9 @@
   --teleporter: hsl(192, 100%, 78%);
   --teleporter-dim: hsl(194, 56%, 20%);
   --teleporter-glow: hsla(192, 100%, 78%, 0.34);
+  --magician: hsl(255, 92%, 76%);
+  --magician-dim: hsl(246, 44%, 20%);
+  --magician-glow: hsla(255, 92%, 76%, 0.34);
   --tracker: hsl(195, 100%, 72%);
   --tracker-dim: hsl(198, 58%, 18%);
   --tracker-glow: hsla(195, 100%, 72%, 0.36);
@@ -85,6 +88,9 @@
   --blackmailer: hsl(42, 92%, 68%);
   --blackmailer-dim: hsl(39, 44%, 18%);
   --blackmailer-glow: hsla(42, 92%, 68%, 0.3);
+  --thepurge: hsl(0, 68%, 44%);
+  --thepurge-dim: hsl(0, 34%, 12%);
+  --thepurge-glow: hsla(0, 68%, 44%, 0.28);
   --blackout: hsl(220, 8%, 54%);
   --blackout-dim: hsl(220, 10%, 14%);
   --blackout-glow: hsla(220, 8%, 54%, 0.22);
@@ -2542,6 +2548,9 @@ body {
 .role-card.role-theme-teleporter .role-card-glow { background: radial-gradient(circle, var(--teleporter) 0%, transparent 70%); }
 .role-card.role-theme-teleporter .role-card-inner { border-color: rgba(138, 235, 255, 0.42); box-shadow: inset 0 0 0 1px rgba(138, 235, 255, 0.08), 0 0 24px rgba(84, 212, 255, 0.14); }
 
+.role-card.role-theme-magician .role-card-glow { background: radial-gradient(circle, var(--magician) 0%, transparent 70%); }
+.role-card.role-theme-magician .role-card-inner { border-color: rgba(144, 124, 255, 0.42); box-shadow: inset 0 0 0 1px rgba(144, 124, 255, 0.08), 0 0 24px rgba(88, 76, 210, 0.16); }
+
 .role-card.role-theme-tracker .role-card-glow { background: radial-gradient(circle, var(--tracker) 0%, transparent 70%); }
 .role-card.role-theme-tracker .role-card-inner { border-color: rgba(122, 226, 255, 0.38); box-shadow: inset 0 0 0 1px rgba(122, 226, 255, 0.08), 0 0 24px rgba(74, 192, 230, 0.12); }
 
@@ -2582,6 +2591,8 @@ body {
 
 .role-card.role-theme-veteran .role-card-glow { background: radial-gradient(circle, var(--veteran) 0%, transparent 70%); }
 .role-card.role-theme-veteran .role-card-inner { border-color: rgba(188, 192, 139, 0.42); box-shadow: inset 0 0 0 1px rgba(188, 192, 139, 0.08), 0 0 22px rgba(143, 150, 98, 0.12); }
+.role-card.role-theme-karma .role-card-glow { background: radial-gradient(circle, rgba(123, 18, 34, 0.82) 0%, transparent 70%); }
+.role-card.role-theme-karma .role-card-inner { border-color: rgba(116, 32, 44, 0.42); box-shadow: inset 0 0 0 1px rgba(140, 44, 52, 0.08), 0 0 22px rgba(86, 18, 26, 0.16); }
 
 .role-card.role-theme-mirrorcaster .role-card-glow { background: radial-gradient(circle, var(--mirrorcaster) 0%, transparent 70%); }
 .role-card.role-theme-mirrorcaster .role-card-inner { border-color: rgba(162, 202, 232, 0.42); box-shadow: inset 0 0 0 1px rgba(162, 202, 232, 0.08), 0 0 22px rgba(116, 171, 214, 0.14); }
@@ -2600,6 +2611,9 @@ body {
 
 .role-card.role-theme-blackmailer .role-card-glow { background: radial-gradient(circle, var(--blackmailer) 0%, transparent 70%); }
 .role-card.role-theme-blackmailer .role-card-inner { border-color: rgba(226, 180, 76, 0.42); box-shadow: inset 0 0 0 1px rgba(226, 180, 76, 0.08), 0 0 22px rgba(161, 120, 28, 0.14); }
+
+.role-card.role-theme-thepurge .role-card-glow { background: radial-gradient(circle, var(--thepurge) 0%, transparent 70%); }
+.role-card.role-theme-thepurge .role-card-inner { border-color: rgba(138, 32, 32, 0.42); box-shadow: inset 0 0 0 1px rgba(138, 32, 32, 0.08), 0 0 22px rgba(90, 12, 12, 0.16); }
 
 .role-card.role-theme-blackout .role-card-glow { background: radial-gradient(circle, var(--blackout) 0%, transparent 70%); }
 .role-card.role-theme-blackout .role-card-inner { border-color: rgba(112, 120, 136, 0.4); box-shadow: inset 0 0 0 1px rgba(112, 120, 136, 0.08), 0 0 22px rgba(58, 63, 74, 0.14); }
@@ -2636,6 +2650,7 @@ body {
 .role-card.role-theme-vitalist .role-faction { color: var(--vitalist); }
 .role-card.role-theme-warden .role-faction { color: var(--warden); }
 .role-card.role-theme-teleporter .role-faction { color: var(--teleporter); }
+.role-card.role-theme-magician .role-faction { color: var(--magician); }
 
 .role-card.role-theme-tracker .role-faction { color: var(--tracker); }
 
@@ -2657,12 +2672,15 @@ body {
 
 .role-card.role-theme-veteran .role-faction { color: var(--veteran); }
 
+.role-card.role-theme-karma .role-faction { color: hsl(356, 54%, 56%); }
+
 .role-card.role-theme-mirrorcaster .role-faction { color: var(--mirrorcaster); }
 .role-card.role-theme-sniper .role-faction { color: var(--sniper); }
 .role-card.role-theme-tetherhex .role-faction { color: var(--tetherhex); }
 .role-card.role-theme-overload .role-faction { color: var(--overload); }
 .role-card.role-theme-hypnotic .role-faction { color: var(--hypnotic); }
 .role-card.role-theme-blackmailer .role-faction { color: var(--blackmailer); }
+.role-card.role-theme-thepurge .role-faction { color: var(--thepurge); }
 .role-card.role-theme-blackout .role-faction { color: var(--blackout); }
 
 .role-card.assassin .role-faction,
@@ -2696,6 +2714,7 @@ body {
 .role-card.role-theme-vitalist .role-divider { background: var(--vitalist); }
 .role-card.role-theme-warden .role-divider { background: linear-gradient(90deg, #49a9ff 0%, #58e2d1 55%, #f2d36b 100%); }
 .role-card.role-theme-teleporter .role-divider { background: linear-gradient(90deg, rgba(132, 212, 255, 1) 0%, rgba(95, 245, 255, 1) 100%); }
+.role-card.role-theme-magician .role-divider { background: linear-gradient(90deg, rgba(114, 81, 255, 0.98) 0%, rgba(78, 124, 255, 0.92) 100%); }
 
 .role-card.role-theme-tracker .role-divider { background: var(--tracker); }
 
@@ -2717,12 +2736,15 @@ body {
 
 .role-card.role-theme-veteran .role-divider { background: var(--veteran); }
 
+.role-card.role-theme-karma .role-divider { background: linear-gradient(90deg, rgba(18, 18, 18, 0.95), rgba(123, 18, 34, 0.92)); }
+
 .role-card.role-theme-mirrorcaster .role-divider { background: var(--mirrorcaster); }
 .role-card.role-theme-sniper .role-divider { background: var(--sniper); }
 .role-card.role-theme-tetherhex .role-divider { background: var(--tetherhex); }
 .role-card.role-theme-overload .role-divider { background: var(--overload); }
 .role-card.role-theme-hypnotic .role-divider { background: var(--hypnotic); }
 .role-card.role-theme-blackmailer .role-divider { background: var(--blackmailer); }
+.role-card.role-theme-thepurge .role-divider { background: linear-gradient(90deg, rgba(18, 18, 18, 0.98) 0%, rgba(148, 24, 24, 0.92) 100%); }
 .role-card.role-theme-blackout .role-divider { background: var(--blackout); }
 
 .role-card.assassin .role-divider,
@@ -2757,9 +2779,29 @@ body {
   text-shadow: 0 0 18px rgba(255, 82, 190, 0.22);
 }
 
+.role-card.role-theme-narcissist .role-card-glow { background: radial-gradient(circle, rgba(108, 56, 255, 0.82) 0%, transparent 70%); }
+.role-card.role-theme-narcissist .role-card-inner { border-color: rgba(92, 52, 168, 0.4); box-shadow: inset 0 0 0 1px rgba(118, 72, 206, 0.08), 0 0 24px rgba(82, 38, 154, 0.15); }
+.role-card.role-theme-narcissist .role-faction { color: hsl(270, 82%, 72%); }
+.role-card.role-theme-narcissist .role-divider { background: linear-gradient(90deg, rgba(45, 20, 74, 0.95), rgba(124, 58, 237, 0.92)); }
+.role-card.role-theme-narcissist .role-name {
+  background: linear-gradient(90deg, #d9c6ff 0%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 18px rgba(124, 58, 237, 0.22);
+}
+
 .role-card.role-theme-teleporter .role-name {
   color: hsl(192, 100%, 92%);
   text-shadow: 0 0 18px rgba(138, 235, 255, 0.24);
+}
+
+.role-card.role-theme-magician .role-name {
+  background: linear-gradient(90deg, #dccdff 0%, #8fa4ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 18px rgba(124, 112, 255, 0.24);
 }
 
 .role-card.role-theme-tracker .role-name {
@@ -2785,6 +2827,14 @@ body {
 .role-card.role-theme-silencer .role-name {
   color: hsl(0, 100%, 88%);
   text-shadow: 0 0 18px rgba(214, 64, 64, 0.26);
+}
+
+.role-card.role-theme-thepurge .role-name {
+  background: linear-gradient(90deg, #f1d9d9 0%, #b71c1c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 18px rgba(140, 24, 24, 0.24);
 }
 
 .role-card.role-theme-executioner .role-name {
@@ -2830,6 +2880,14 @@ body {
 .role-card.role-theme-veteran .role-name {
   color: hsl(58, 36%, 84%);
   text-shadow: 0 0 18px rgba(188, 192, 139, 0.22);
+}
+
+.role-card.role-theme-karma .role-name {
+  background: linear-gradient(90deg, #d7d7d7 0%, #7b1222 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 16px rgba(123, 18, 34, 0.2);
 }
 
 .role-card.role-theme-mirrorcaster .role-name {
@@ -3015,6 +3073,18 @@ body {
   background:
     radial-gradient(circle at top, rgba(138, 235, 255, 0.24), transparent 44%),
     linear-gradient(180deg, rgba(10, 26, 36, 0.98), rgba(6, 14, 22, 0.98));
+}
+
+.role-reveal-panel.role-theme-magician {
+  background:
+    radial-gradient(circle at top, rgba(132, 112, 255, 0.24), transparent 44%),
+    linear-gradient(180deg, rgba(16, 12, 38, 0.98), rgba(8, 10, 24, 0.98));
+}
+
+.role-reveal-panel.role-theme-thepurge {
+  background:
+    radial-gradient(circle at top, rgba(148, 24, 24, 0.22), transparent 44%),
+    linear-gradient(180deg, rgba(24, 8, 8, 0.98), rgba(10, 4, 4, 0.98));
 }
 
 .role-reveal-panel.role-theme-vitalist {
@@ -3380,6 +3450,18 @@ body {
   box-shadow: inset 0 0 0 1px rgba(138, 235, 255, 0.12), 0 0 14px rgba(138, 235, 255, 0.14);
 }
 
+.role-reveal-item.role-theme-magician.is-selected {
+  border-color: rgba(144, 124, 255, 0.55);
+  background: linear-gradient(180deg, rgba(144, 124, 255, 0.08), rgba(113, 148, 255, 0.03));
+  box-shadow: inset 0 0 0 1px rgba(144, 124, 255, 0.12), 0 0 14px rgba(124, 112, 255, 0.16);
+}
+
+.role-reveal-item.role-theme-thepurge.is-selected {
+  border-color: rgba(148, 24, 24, 0.55);
+  background: linear-gradient(180deg, rgba(148, 24, 24, 0.08), rgba(22, 22, 22, 0.03));
+  box-shadow: inset 0 0 0 1px rgba(148, 24, 24, 0.12), 0 0 14px rgba(120, 12, 12, 0.16);
+}
+
 .role-reveal-item.role-theme-vitalist.is-selected {
   border-color: rgba(85, 255, 149, 0.55);
   background: linear-gradient(180deg, rgba(85, 255, 149, 0.08), rgba(85, 255, 149, 0.02));
@@ -3559,6 +3641,16 @@ body {
   color: var(--teleporter);
 }
 
+.role-reveal-item.role-theme-magician .role-reveal-name,
+.role-reveal-item.role-theme-magician .role-reveal-faction {
+  color: var(--magician);
+}
+
+.role-reveal-item.role-theme-thepurge .role-reveal-name,
+.role-reveal-item.role-theme-thepurge .role-reveal-faction {
+  color: var(--thepurge);
+}
+
 .role-reveal-item.role-theme-vitalist .role-reveal-name,
 .role-reveal-item.role-theme-vitalist .role-reveal-faction {
   color: var(--vitalist);
@@ -3705,6 +3797,16 @@ body {
 .role-reveal-result.role-theme-teleporter strong {
   color: var(--teleporter);
   text-shadow: 0 0 18px rgba(138, 235, 255, 0.24);
+}
+
+.role-reveal-result.role-theme-magician strong {
+  color: var(--magician);
+  text-shadow: 0 0 18px rgba(124, 112, 255, 0.24);
+}
+
+.role-reveal-result.role-theme-thepurge strong {
+  color: var(--thepurge);
+  text-shadow: 0 0 18px rgba(140, 24, 24, 0.24);
 }
 
 .role-reveal-result.role-theme-vitalist strong {
@@ -4210,6 +4312,14 @@ body {
 .message-card.death { border-color: var(--assassin-dim); border-left: 3px solid var(--assassin); }
 .message-card.confession { border-color: var(--redflag-dim); border-left: 3px solid var(--redflag); }
 .message-card.protected { border-color: var(--crew-dim); border-left: 3px solid var(--crew); }
+.message-card.purge {
+  border-color: rgba(132, 22, 22, 0.74);
+  border-left: 3px solid var(--thepurge);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(255, 142, 142, 0.12), transparent 18%),
+    linear-gradient(135deg, rgba(20, 6, 6, 0.98), rgba(42, 8, 8, 0.98));
+  box-shadow: inset 0 1px 0 rgba(255, 220, 220, 0.03), 0 0 22px rgba(120, 12, 12, 0.12);
+}
 .message-card.peaceful { border-color: var(--accent); border-left: 3px solid var(--accent-light); }
 
 @keyframes messageSlide {
@@ -5140,6 +5250,54 @@ body {
   pointer-events: none;
 }
 
+.chat-message.system.private.system-result-magician {
+  border-color: rgba(132, 112, 255, 0.42);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(218, 210, 255, 0.18), transparent 16%),
+    radial-gradient(circle at 18% 112%, rgba(46, 38, 110, 0.28), transparent 42%),
+    linear-gradient(135deg, rgba(22, 16, 52, 0.98), rgba(10, 12, 30, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(241, 238, 255, 0.06),
+    0 0 0 1px rgba(132, 112, 255, 0.05),
+    0 16px 28px -24px rgba(112, 96, 255, 0.26);
+  overflow: hidden;
+}
+
+.chat-message.system.private.system-result-magician::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(112deg, transparent 0%, rgba(198, 188, 255, 0.07) 40%, rgba(131, 170, 255, 0.05) 62%, transparent 76%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(10, 10, 28, 0.18) 100%);
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+.chat-message.system.system-result-purge {
+  border-color: rgba(148, 24, 24, 0.42);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(255, 160, 160, 0.15), transparent 16%),
+    radial-gradient(circle at 18% 112%, rgba(46, 10, 10, 0.26), transparent 42%),
+    linear-gradient(135deg, rgba(16, 8, 8, 0.98), rgba(42, 8, 8, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 226, 226, 0.04),
+    0 0 0 1px rgba(148, 24, 24, 0.05),
+    0 16px 28px -24px rgba(120, 12, 12, 0.26);
+  overflow: hidden;
+}
+
+.chat-message.system.system-result-purge::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(112deg, transparent 0%, rgba(255, 198, 198, 0.06) 42%, transparent 66%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(20, 6, 6, 0.18) 100%);
+  opacity: 0.92;
+  pointer-events: none;
+}
+
 .chat-message.system.private.system-result-warden {
   border-color: rgba(92, 228, 226, 0.4);
   background:
@@ -5394,6 +5552,18 @@ body {
 .chat-message.system.private.system-result-teleporter .chat-message-text {
   color: hsl(192, 100%, 95%);
   text-shadow: 0 1px 8px rgba(222, 250, 255, 0.08);
+}
+
+.chat-message.system.private.system-result-magician .chat-message-meta,
+.chat-message.system.private.system-result-magician .chat-message-text {
+  color: hsl(248, 100%, 96%);
+  text-shadow: 0 1px 8px rgba(220, 214, 255, 0.08);
+}
+
+.chat-message.system.system-result-purge .chat-message-meta,
+.chat-message.system.system-result-purge .chat-message-text {
+  color: hsl(0, 100%, 95%);
+  text-shadow: 0 1px 8px rgba(255, 214, 214, 0.08);
 }
 
 .chat-message.system.private.system-result-warden .chat-message-meta,
@@ -5682,6 +5852,7 @@ body {
 .search-target-role.role-theme-vitalist { color: var(--vitalist); text-shadow: 0 0 12px rgba(85, 255, 149, 0.16); }
 .search-target-role.role-theme-warden { color: var(--warden); text-shadow: 0 0 12px rgba(92, 228, 226, 0.18); }
 .search-target-role.role-theme-teleporter { color: var(--teleporter); text-shadow: 0 0 12px rgba(138, 235, 255, 0.18); }
+.search-target-role.role-theme-magician { color: var(--magician); text-shadow: 0 0 12px rgba(132, 112, 255, 0.18); }
 .search-target-role.role-theme-tracker { color: var(--tracker); text-shadow: 0 0 12px rgba(122, 226, 255, 0.18); }
 .search-target-role.role-theme-stalker { color: var(--stalker); text-shadow: 0 0 12px rgba(84, 182, 129, 0.18); }
 .search-target-role.role-theme-traplord { color: var(--traplord); text-shadow: 0 0 12px rgba(212, 92, 202, 0.2); }
@@ -5698,9 +5869,11 @@ body {
 .search-target-role.role-theme-overload { color: var(--overload); text-shadow: 0 0 12px rgba(99, 255, 76, 0.2); }
 .search-target-role.role-theme-hypnotic { color: var(--hypnotic); text-shadow: 0 0 12px rgba(196, 65, 148, 0.18); }
 .search-target-role.role-theme-blackmailer { color: var(--blackmailer); text-shadow: 0 0 12px rgba(226, 180, 76, 0.18); }
+.search-target-role.role-theme-thepurge { color: var(--thepurge); text-shadow: 0 0 12px rgba(148, 24, 24, 0.18); }
 .search-target-role.role-theme-blackout { color: var(--blackout); text-shadow: 0 0 12px rgba(112, 120, 136, 0.14); }
 .search-target-role.role-theme-sheriff { color: var(--sheriff); text-shadow: 0 0 12px rgba(255, 208, 80, 0.16); }
 .search-target-role.role-theme-veteran { color: var(--veteran); text-shadow: 0 0 12px rgba(188, 192, 139, 0.18); }
+.search-target-role.role-theme-karma { color: hsl(356, 54%, 62%); text-shadow: 0 0 12px rgba(123, 18, 34, 0.18); }
 .search-target-role.role-theme-mirrorcaster { color: var(--mirrorcaster); text-shadow: 0 0 12px rgba(162, 202, 232, 0.18); }
 .search-target-role.role-theme-assassin { color: var(--assassin); text-shadow: 0 0 12px rgba(255, 72, 84, 0.18); }
 
@@ -5942,6 +6115,7 @@ body {
 .gameover-player-role.role-theme-vitalist { color: var(--vitalist); }
 .gameover-player-role.role-theme-warden { color: var(--warden); }
 .gameover-player-role.role-theme-teleporter { color: var(--teleporter); }
+.gameover-player-role.role-theme-magician { color: var(--magician); }
 .gameover-player-role.role-theme-tracker { color: var(--tracker); }
 .gameover-player-role.role-theme-stalker { color: var(--stalker); }
 .gameover-player-role.role-theme-traplord { color: var(--traplord); }
@@ -5955,12 +6129,15 @@ body {
 .gameover-player-role.role-theme-amnesiac { color: var(--amnesiac); }
 .gameover-player-role.role-theme-sheriff { color: var(--sheriff); }
 .gameover-player-role.role-theme-veteran { color: var(--veteran); }
+.gameover-player-role.role-theme-karma { color: hsl(356, 54%, 62%); }
+.gameover-player-role.role-theme-narcissist { color: hsl(270, 90%, 78%); }
 .gameover-player-role.role-theme-mirrorcaster { color: var(--mirrorcaster); }
 .gameover-player-role.role-theme-sniper { color: var(--sniper); }
 .gameover-player-role.role-theme-tetherhex { color: var(--tetherhex); }
 .gameover-player-role.role-theme-overload { color: var(--overload); }
 .gameover-player-role.role-theme-hypnotic { color: var(--hypnotic); }
 .gameover-player-role.role-theme-blackmailer { color: var(--blackmailer); }
+.gameover-player-role.role-theme-thepurge { color: var(--thepurge); }
 .gameover-player-role.role-theme-blackout { color: var(--blackout); }
 .gameover-player-role.role-theme-assassin { color: var(--assassin); }
 
@@ -6000,6 +6177,7 @@ body {
 .gameover-player.won:has(.gameover-player-role.role-theme-veteran),
 .gameover-player.won:has(.gameover-player-role.role-theme-warden),
 .gameover-player.won:has(.gameover-player-role.role-theme-teleporter),
+.gameover-player.won:has(.gameover-player-role.role-theme-magician),
 .gameover-player.won:has(.gameover-player-role.role-theme-mirrorcaster) {
   border-color: rgba(87, 214, 255, 0.46);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 30px rgba(87, 214, 255, 0.2);
@@ -6025,6 +6203,7 @@ body {
 .gameover-player.won:has(.gameover-player-role.role-theme-sniper),
 .gameover-player.won:has(.gameover-player-role.role-theme-hypnotic),
 .gameover-player.won:has(.gameover-player-role.role-theme-blackmailer),
+.gameover-player.won:has(.gameover-player-role.role-theme-thepurge),
 .gameover-player.won:has(.gameover-player-role.role-theme-blackout) {
   border-color: rgba(255, 72, 84, 0.48);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 30px rgba(255, 72, 84, 0.22);
@@ -6515,6 +6694,7 @@ body {
 .gpl-role.role-theme-vitalist { background: rgba(20, 74, 35, 0.92); color: hsl(132, 92%, 70%); box-shadow: 0 0 16px rgba(67, 239, 128, 0.12); }
 .gpl-role.role-theme-warden { background: linear-gradient(135deg, rgba(18, 56, 70, 0.94), rgba(16, 82, 88, 0.92) 56%, rgba(94, 88, 36, 0.88)); color: var(--warden); box-shadow: 0 0 16px rgba(92, 228, 226, 0.14); }
 .gpl-role.role-theme-teleporter { background: linear-gradient(135deg, rgba(18, 58, 78, 0.94), rgba(16, 82, 104, 0.92)); color: var(--teleporter); box-shadow: 0 0 16px rgba(138, 235, 255, 0.14); }
+.gpl-role.role-theme-magician { background: linear-gradient(135deg, rgba(28, 20, 78, 0.94), rgba(22, 30, 96, 0.92)); color: var(--magician); box-shadow: 0 0 16px rgba(132, 112, 255, 0.16); }
 .gpl-role.role-theme-mirrorcaster { background: linear-gradient(135deg, rgba(58, 72, 90, 0.94), rgba(22, 56, 76, 0.94)); color: var(--mirrorcaster); box-shadow: 0 0 16px rgba(132, 205, 255, 0.14); }
 .gpl-role.role-theme-tracker { background: rgba(20, 67, 84, 0.92); color: hsl(195, 100%, 78%); box-shadow: 0 0 16px rgba(122, 226, 255, 0.14); }
 .gpl-role.role-theme-stalker { background: rgba(21, 56, 34, 0.92); color: var(--stalker); box-shadow: 0 0 16px rgba(84, 182, 129, 0.14); }
@@ -6528,11 +6708,14 @@ body {
 .gpl-role.role-theme-survivalist { background: rgba(88, 54, 18, 0.92); color: var(--survivalist); box-shadow: 0 0 16px rgba(236, 154, 62, 0.14); }
 .gpl-role.role-theme-amnesiac { background: rgba(52, 58, 70, 0.92); color: var(--amnesiac); box-shadow: 0 0 14px rgba(171, 183, 206, 0.1); }
 .gpl-role.role-theme-sheriff { background: rgba(72, 55, 14, 0.92); color: hsl(42, 100%, 76%); box-shadow: 0 0 16px rgba(227, 178, 51, 0.12); }
+.gpl-role.role-theme-karma { background: linear-gradient(135deg, rgba(16, 16, 16, 0.96), rgba(52, 16, 22, 0.94)); color: hsl(356, 54%, 62%); box-shadow: 0 0 16px rgba(123, 18, 34, 0.14); }
+.gpl-role.role-theme-narcissist { background: linear-gradient(135deg, rgba(30, 20, 56, 0.96), rgba(68, 34, 122, 0.92)); color: hsl(270, 90%, 78%); box-shadow: 0 0 16px rgba(124, 58, 237, 0.14); }
 .gpl-role.role-theme-sniper { background: rgba(62, 18, 18, 0.92); color: var(--sniper); box-shadow: 0 0 16px rgba(141, 46, 46, 0.14); }
 .gpl-role.role-theme-tetherhex { background: rgba(14, 56, 24, 0.92); color: var(--tetherhex); box-shadow: 0 0 16px rgba(74, 255, 119, 0.16); }
 .gpl-role.role-theme-overload { background: rgba(18, 62, 12, 0.92); color: var(--overload); box-shadow: 0 0 16px rgba(99, 255, 76, 0.18); }
 .gpl-role.role-theme-hypnotic { background: rgba(74, 22, 56, 0.92); color: var(--hypnotic); box-shadow: 0 0 16px rgba(196, 65, 148, 0.14); }
 .gpl-role.role-theme-blackmailer { background: rgba(83, 60, 18, 0.92); color: var(--blackmailer); box-shadow: 0 0 16px rgba(226, 180, 76, 0.14); }
+.gpl-role.role-theme-thepurge { background: linear-gradient(135deg, rgba(18, 18, 18, 0.94), rgba(88, 14, 14, 0.92)); color: var(--thepurge); box-shadow: 0 0 16px rgba(148, 24, 24, 0.16); }
 .gpl-role.role-theme-blackout { background: rgba(40, 43, 52, 0.92); color: var(--blackout); box-shadow: 0 0 16px rgba(112, 120, 136, 0.12); }
 .gpl-role.role-theme-assassin { background: rgba(77, 16, 21, 0.92); color: hsl(0, 100%, 78%); box-shadow: 0 0 16px rgba(255, 72, 84, 0.12); }
 .gpl-status { font-size: 0.65rem; color: hsl(215,20%,45%); white-space: nowrap; }
@@ -7151,10 +7334,22 @@ body {
   color: hsl(324, 100%, 82%);
 }
 
+#screen-roles .roles-guide-card.role-theme-narcissist,
+#screen-roles .roles-guide-card.role-theme-narcissist .roles-guide-card-icon {
+  border-color: rgba(124, 58, 237, 0.72);
+  color: hsl(270, 90%, 78%);
+}
+
 #screen-roles .roles-guide-card.role-theme-teleporter,
 #screen-roles .roles-guide-card.role-theme-teleporter .roles-guide-card-icon {
   border-color: rgba(138, 235, 255, 0.72);
   color: var(--teleporter);
+}
+
+#screen-roles .roles-guide-card.role-theme-magician,
+#screen-roles .roles-guide-card.role-theme-magician .roles-guide-card-icon {
+  border-color: rgba(132, 112, 255, 0.72);
+  color: var(--magician);
 }
 
 #screen-roles .roles-guide-card.role-theme-tracker,
@@ -7229,6 +7424,12 @@ body {
   color: var(--veteran);
 }
 
+#screen-roles .roles-guide-card.role-theme-karma,
+#screen-roles .roles-guide-card.role-theme-karma .roles-guide-card-icon {
+  border-color: rgba(116, 32, 44, 0.74);
+  color: hsl(356, 54%, 62%);
+}
+
 #screen-roles .roles-guide-card.role-theme-mirrorcaster,
 #screen-roles .roles-guide-card.role-theme-mirrorcaster .roles-guide-card-icon {
   border-color: rgba(162, 202, 232, 0.72);
@@ -7271,6 +7472,12 @@ body {
   color: var(--blackmailer);
 }
 
+#screen-roles .roles-guide-card.role-theme-thepurge,
+#screen-roles .roles-guide-card.role-theme-thepurge .roles-guide-card-icon {
+  border-color: rgba(148, 24, 24, 0.72);
+  color: var(--thepurge);
+}
+
 #screen-roles .roles-guide-card.role-theme-blackout,
 #screen-roles .roles-guide-card.role-theme-blackout .roles-guide-card-icon {
   border-color: rgba(82, 88, 102, 0.72);
@@ -7305,8 +7512,16 @@ body {
   box-shadow: 0 0 20px -10px rgba(255, 82, 190, 0.44);
 }
 
+#screen-roles .roles-guide-card.role-theme-narcissist:hover {
+  box-shadow: 0 0 20px -10px rgba(124, 58, 237, 0.42);
+}
+
 #screen-roles .roles-guide-card.role-theme-teleporter:hover {
   box-shadow: 0 0 20px -10px rgba(138, 235, 255, 0.48);
+}
+
+#screen-roles .roles-guide-card.role-theme-magician:hover {
+  box-shadow: 0 0 20px -10px rgba(132, 112, 255, 0.46);
 }
 
 #screen-roles .roles-guide-card.role-theme-tracker:hover {
@@ -7358,6 +7573,10 @@ body {
   box-shadow: 0 0 20px -10px rgba(188, 192, 139, 0.46);
 }
 
+#screen-roles .roles-guide-card.role-theme-karma:hover {
+  box-shadow: 0 0 20px -10px rgba(123, 18, 34, 0.44);
+}
+
 #screen-roles .roles-guide-card.role-theme-mirrorcaster:hover {
   box-shadow: 0 0 20px -10px rgba(162, 202, 232, 0.48);
 }
@@ -7386,6 +7605,10 @@ body {
   box-shadow: 0 0 20px -10px rgba(226, 180, 76, 0.42);
 }
 
+#screen-roles .roles-guide-card.role-theme-thepurge:hover {
+  box-shadow: 0 0 20px -10px rgba(148, 24, 24, 0.42);
+}
+
 #screen-roles .roles-guide-card.role-theme-blackout:hover {
   box-shadow: 0 0 20px -10px rgba(112, 120, 136, 0.32);
 }
@@ -7410,8 +7633,16 @@ body {
   color: hsl(324, 100%, 82%);
 }
 
+#screen-roles .roles-guide-card.role-theme-narcissist .roles-guide-ability-highlight {
+  color: hsl(270, 90%, 78%);
+}
+
 #screen-roles .roles-guide-card.role-theme-teleporter .roles-guide-ability-highlight {
   color: var(--teleporter);
+}
+
+#screen-roles .roles-guide-card.role-theme-magician .roles-guide-ability-highlight {
+  color: var(--magician);
 }
 
 #screen-roles .roles-guide-card.role-theme-tracker .roles-guide-ability-highlight {
@@ -7462,6 +7693,10 @@ body {
   color: var(--veteran);
 }
 
+#screen-roles .roles-guide-card.role-theme-karma .roles-guide-ability-highlight {
+  color: hsl(356, 54%, 62%);
+}
+
 #screen-roles .roles-guide-card.role-theme-mirrorcaster .roles-guide-ability-highlight {
   color: var(--mirrorcaster);
 }
@@ -7488,6 +7723,10 @@ body {
 
 #screen-roles .roles-guide-card.role-theme-blackmailer .roles-guide-ability-highlight {
   color: var(--blackmailer);
+}
+
+#screen-roles .roles-guide-card.role-theme-thepurge .roles-guide-ability-highlight {
+  color: var(--thepurge);
 }
 
 #screen-roles .roles-guide-card.role-theme-blackout .roles-guide-ability-highlight {

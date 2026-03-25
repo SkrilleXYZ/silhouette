@@ -87,6 +87,19 @@
         },
       ],
     },
+    Karma: {
+      faction: 'Crew',
+      subfaction: 'Killing',
+      description: 'Whoever kills you dies with you.',
+      revealText: 'Dark crimson payback follows your last breath. Anyone who ends you falls beside you.',
+      abilities: [
+        {
+          name: 'Payback',
+          type: 'Passive',
+          description: 'Whoever kills you dies with you.',
+        },
+      ],
+    },
     'Mirror Caster': {
       faction: 'Crew',
       subfaction: 'Protection',
@@ -126,6 +139,19 @@
         },
       ],
     },
+    Narcissist: {
+      faction: 'Crew',
+      subfaction: 'Unbound',
+      description: 'You win if the Crew faction loses.',
+      revealText: 'Royal violet vanity curls around your silhouette. Stay alive and watch the crew collapse without you.',
+      abilities: [
+        {
+          name: 'Self-Interest',
+          type: 'Passive',
+          description: 'You win if the Crew faction loses.',
+        },
+      ],
+    },
     Oracle: {
       faction: 'Crew',
       subfaction: 'Protection',
@@ -154,6 +180,19 @@
           name: 'Teleport',
           type: 'Night',
           description: 'Choose 2 players to switch places during the night.',
+        },
+      ],
+    },
+    Magician: {
+      faction: 'Crew',
+      subfaction: 'Chaos',
+      description: 'Make a player disappear, making them completely immune to everything but their abilities are also blocked. Cannot target the same player twice in a row.',
+      revealText: 'Indigo sleight bends the room out of shape. Spoof a target into the void and let every hand miss them until dawn.',
+      abilities: [
+        {
+          name: 'Abracadabra',
+          type: 'Night',
+          description: 'Make a player disappear, making them completely immune to everything but their abilities are also blocked. Cannot target the same player twice in a row.',
         },
       ],
     },
@@ -338,6 +377,24 @@
           name: 'Blackmail',
           type: 'Night',
           description: 'Threaten a player to disable their ability to talk and vote until the next night.',
+        },
+        {
+          name: 'Kill',
+          type: 'Night',
+          description: 'Eliminate a player.',
+        },
+      ],
+    },
+    'The Purge': {
+      faction: 'Assassin',
+      subfaction: 'Concealing',
+      description: 'Seize the night so only assassins can use abilities, or eliminate a player. Fascism can be used once.',
+      revealText: 'Black-red rule crushes the room into silence. Seize the whole night for the assassins, then decide who vanishes with it.',
+      abilities: [
+        {
+          name: 'Fascism',
+          type: 'Night',
+          description: 'Disable every player\'s ability except Assassins for the night. Can be used once.',
         },
         {
           name: 'Kill',
@@ -1175,11 +1232,14 @@
     const normalizedRole = String(role || '').trim().toLowerCase();
     if (normalizedRole === 'sheriff') return 'sheriff';
     if (normalizedRole === 'veteran') return 'veteran';
+    if (normalizedRole === 'karma') return 'karma';
     if (normalizedRole === 'mirror caster') return 'mirrorcaster';
     if (normalizedRole === 'vitalist') return 'vitalist';
     if (normalizedRole === 'warden') return 'warden';
     if (normalizedRole === 'oracle') return 'oracle';
+    if (normalizedRole === 'narcissist') return 'narcissist';
     if (normalizedRole === 'teleporter') return 'teleporter';
+    if (normalizedRole === 'magician') return 'magician';
     if (normalizedRole === 'investigator') return 'investigator';
     if (normalizedRole === 'tracker') return 'tracker';
     if (normalizedRole === 'stalker') return 'stalker';
@@ -1193,6 +1253,7 @@
     if (normalizedRole === 'overload') return 'overload';
     if (normalizedRole === 'blackout') return 'blackout';
     if (normalizedRole === 'blackmailer') return 'blackmailer';
+    if (normalizedRole === 'the purge') return 'thepurge';
     if (normalizedRole === 'villager') return 'villager';
     if (normalizedRole === 'jester') return 'jester';
     if (normalizedRole === 'executioner') return 'executioner';
@@ -1836,6 +1897,12 @@
     }
     if (/You have been teleported with .*\.$/i.test(text) && String(message.source || '').trim() === 'Teleporter') {
       return ' system-result-teleporter';
+    }
+    if (/You have been spoofed by the Magician\.$/i.test(text) && String(message.source || '').trim() === 'Magician') {
+      return ' system-result-magician';
+    }
+    if (/The night has been taken over by The Purge, no abilities worked\.?$/i.test(text)) {
+      return ' system-result-purge';
     }
     if (/You protected the chosen player\.$/i.test(text) && String(message.source || '').trim() === 'Warden') {
       return ' system-result-warden-confirm';
@@ -2662,6 +2729,7 @@
     const winningSide = String(winner?.winner || '').trim();
     const guardianAngelWinnerIds = new Set(winner?.guardianAngelWinnerIds || []);
     const survivalistWinnerIds = new Set(winner?.survivalistWinnerIds || []);
+    const narcissistWinnerIds = new Set(winner?.narcissistWinnerIds || []);
 
     glow.className = `gameover-glow ${winnerPresentation.glowClass}`;
     title.className = `gameover-faction ${winnerPresentation.textClass}`;
@@ -2675,7 +2743,7 @@
     }
 
     playersList.innerHTML = players.map((p, index) => `
-      <div class="gameover-player ${(winningSide !== 'Nobody' && (survivalistWinnerIds.has(p.id) || guardianAngelWinnerIds.has(p.id) || (winningSide === 'Crew' && p.faction === 'Crew') || (winningSide === 'Assassin' && p.faction === 'Assassin') || winningSide === p.role)) ? 'won' : 'lost'}" style="--gameover-delay:${320 + (index * 60)}ms;">
+      <div class="gameover-player ${(winningSide !== 'Nobody' && (narcissistWinnerIds.has(p.id) || survivalistWinnerIds.has(p.id) || guardianAngelWinnerIds.has(p.id) || (winningSide === 'Crew' && p.faction === 'Crew') || (winningSide === 'Assassin' && p.faction === 'Assassin') || winningSide === p.role)) ? 'won' : 'lost'}" style="--gameover-delay:${320 + (index * 60)}ms;">
         <span class="gameover-player-name" style="${getPlayerChatStyle({ type: 'player', senderId: p.id, senderName: p.name, colorHex: p.colorHex || p.colorHue })}">${p.name}</span>
         <span class="gameover-player-role ${getRoleBadgeClass(p.role, p.faction)}">
           ${p.role}
@@ -2970,6 +3038,8 @@
       activeRole === 'Villager'
       || activeRole === 'Jester'
       || activeRole === 'Executioner'
+      || activeRole === 'Karma'
+      || activeRole === 'Narcissist'
       || (activeRole === 'Guardian Angel' && (player.guardianAngelUsesRemaining ?? 4) <= 0)
       || (activeRole === 'Oracle' && (player.oracleEvilEyeUsesRemaining ?? 3) <= 0)
       || (activeRole === 'Survivalist' && (player.survivalistUsesRemaining ?? 5) <= 0)
@@ -3606,6 +3676,9 @@
     const silencerLockedTargetId = activeRole === 'Silencer'
       ? player.lastSilencerTarget
       : null;
+    const magicianLockedTargetId = activeRole === 'Magician'
+      ? player.lastMagicianTarget
+      : null;
     const hypnoticLockedTargetId = activeRole === 'Hypnotic' && state.selectedAction === 'trance'
       ? player.lastHypnoticTarget
       : null;
@@ -3625,6 +3698,10 @@
       ? (player.blackoutFlashUsesRemaining ?? 3) > 0
         && !player.blackoutFlashUsedThisNight
         && player.lastBlackoutFlashNight !== ((state.roomData?.nightCount || 1) - 1)
+      : false;
+    const purgeCanUseFascismTonight = activeRole === 'The Purge'
+      ? (player.purgeFascismUsesRemaining ?? 1) > 0
+        && !player.purgeFascismUsedThisNight
       : false;
 
     if (activeRole === 'Tetherhex') {
@@ -3665,6 +3742,15 @@
 
     if (activeRole === 'Blackout') {
       if (player.blackoutFlashUsedThisNight && state.selectedAction === 'flash') {
+        state.selectedAction = 'kill';
+        state.selectedTarget = null;
+      } else if (!state.selectedAction) {
+        state.selectedAction = 'kill';
+      }
+    }
+
+    if (activeRole === 'The Purge') {
+      if (player.purgeFascismUsedThisNight && state.selectedAction === 'fascism') {
         state.selectedAction = 'kill';
         state.selectedTarget = null;
       } else if (!state.selectedAction) {
@@ -3714,6 +3800,9 @@
     } else if (activeRole === 'Teleporter') {
       state.selectedAction = 'teleport';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="teleport">Teleport</button></div>';
+    } else if (activeRole === 'Magician') {
+      state.selectedAction = 'abracadabra';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="abracadabra">Abracadabra</button></div>';
     } else if (activeRole === 'Silencer') {
       state.selectedAction = 'quietus';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="quietus">Quietus</button></div>';
@@ -3751,6 +3840,8 @@
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Kill</button><button class="action-btn ${state.selectedAction === 'blackmail' ? 'selected' : ''}" data-action="blackmail" ${player.blackmailerBlackmailUsedThisNight ? 'disabled' : ''}>Blackmail</button></div>`;
     } else if (activeRole === 'Blackout') {
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Kill</button><button class="action-btn ${state.selectedAction === 'flash' ? 'selected' : ''}" data-action="flash" ${blackoutCanFlashTonight ? '' : 'disabled'}>Flash</button></div>`;
+    } else if (activeRole === 'The Purge') {
+      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Kill</button><button class="action-btn ${state.selectedAction === 'fascism' ? 'selected' : ''}" data-action="fascism" ${purgeCanUseFascismTonight ? '' : 'disabled'}>Fascism</button></div>`;
     } else if (activeRole === 'Sniper') {
       state.selectedAction = 'longshot';
       actionsHTML = `<div class="action-buttons"><button class="action-btn selected ${actionClass}" data-action="longshot">Longshot</button></div>`;
@@ -3769,6 +3860,7 @@
     else if (activeRole === 'Stalker') actionDesc = 'Choose a player to stalk for incoming interactions';
     else if (activeRole === 'Traplord') actionDesc = 'Choose at least 3 players. You will learn their roles in random order.';
     else if (activeRole === 'Teleporter') actionDesc = 'Choose exactly 2 players to swap every night interaction between them.';
+    else if (activeRole === 'Magician') actionDesc = 'Choose a player to disappear for the night. They become immune to every interaction, but their own ability is blocked.';
     else if (activeRole === 'Silencer') actionDesc = 'Choose a player to silence until the next night.';
     else if (activeRole === 'Amnesiac') actionDesc = 'Choose a dead player to inherit their role';
     else if (activeRole === 'Guardian Angel') actionDesc = player.guardianAngelTargetName
@@ -3802,6 +3894,13 @@
           ? 'Blind every information role tonight. Flash is targetless and can be used 3 times.'
           : 'Flash cannot be used tonight. Choose Kill instead.'
       : 'Eliminate a player after the blackout.';
+    else if (activeRole === 'The Purge') actionDesc = state.selectedAction === 'fascism'
+      ? player.purgeFascismUsedThisNight
+        ? 'Fascism is already active for tonight. You can still follow up with Kill.'
+        : purgeCanUseFascismTonight
+          ? 'Take over the whole night so only assassins can use abilities. Fascism can be used once.'
+          : 'Fascism cannot be used again. Choose Kill instead.'
+      : 'Eliminate a player after seizing the night.';
     else if (activeRole === 'Veteran') actionDesc = 'Stand watch tonight.';
     else if (activeRole === 'Mirror Caster') actionDesc = 'Choose a player to mirror tonight';
     else if (activeRole === 'Warden') actionDesc = 'Choose a player to block all night interactions on.';
@@ -3813,7 +3912,8 @@
 
     const isTargetlessRole = activeRole === 'Veteran'
       || activeRole === 'Survivalist'
-      || (activeRole === 'Blackout' && state.selectedAction === 'flash');
+      || (activeRole === 'Blackout' && state.selectedAction === 'flash')
+      || (activeRole === 'The Purge' && state.selectedAction === 'fascism');
     const displayedTargets = player.role === 'Imitator' && !player.imitatorCopiedRole
       ? imitatorTargets
       : activeRole === 'Guardian Angel'
@@ -3833,6 +3933,7 @@
             const isRestricted = (activeRole === 'Vitalist' && t.id === player.lastMedicTarget)
               || (activeRole === 'Mirror Caster' && t.id === player.lastMirrorTarget)
               || (activeRole === 'Warden' && t.id === player.lastWardenTarget)
+              || (activeRole === 'Magician' && t.id === magicianLockedTargetId)
               || (activeRole === 'Investigator' && t.id === investigatorLockedTargetId)
               || (activeRole === 'Tracker' && t.id === trackerLockedTargetId)
               || (activeRole === 'Stalker' && t.id === stalkerLockedTargetId)
@@ -3847,7 +3948,7 @@
           }).join('')}
         </div>`}
         <div class="chat-local-actions">
-          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) || (isMultiTargetRole && multiSelectedTargets.length < requiredMultiTargetCount) || (activeRole === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) ? 'disabled' : ''}>${activeRole === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : activeRole === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : activeRole === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : activeRole === 'Oracle' ? `Confirm ${player.oracleEvilEyeUsesRemaining ?? 3}/3` : activeRole === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 5}/5` : activeRole === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : activeRole === 'Teleporter' ? `Confirm ${multiSelectedTargets.length}/2` : isMultiTargetRole ? `Confirm ${multiSelectedTargets.length}/3+` : 'Confirm'}</button>
+          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) || (isMultiTargetRole && multiSelectedTargets.length < requiredMultiTargetCount) || (activeRole === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) || (activeRole === 'The Purge' && state.selectedAction === 'fascism' && !purgeCanUseFascismTonight) ? 'disabled' : ''}>${activeRole === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : activeRole === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : activeRole === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : activeRole === 'Oracle' ? `Confirm ${player.oracleEvilEyeUsesRemaining ?? 3}/3` : activeRole === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 5}/5` : activeRole === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : activeRole === 'The Purge' && state.selectedAction === 'fascism' ? `Confirm ${player.purgeFascismUsesRemaining ?? 1}/1` : activeRole === 'Teleporter' ? `Confirm ${multiSelectedTargets.length}/2` : isMultiTargetRole ? `Confirm ${multiSelectedTargets.length}/3+` : 'Confirm'}</button>
           <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>
         </div>
       </div>
@@ -3878,6 +3979,8 @@
           } else if (activeRole === 'Tetherhex') {
             showToast('You cannot target the same player 3 times in a row', 'error');
           } else if (activeRole === 'Silencer') {
+            showToast('You cannot target the same player twice in a row', 'error');
+          } else if (activeRole === 'Magician') {
             showToast('You cannot target the same player twice in a row', 'error');
           } else if (activeRole === 'Hypnotic') {
             showToast('You cannot target the same player twice in a row with Trance', 'error');
@@ -3933,6 +4036,9 @@
                 state.selectedAction = null;
                 state.selectedTarget = null;
               } else if (responseActiveRole === 'Blackout' && state.selectedAction === 'flash' && !response.player.hasSubmittedAction) {
+                state.selectedAction = 'kill';
+                state.selectedTarget = null;
+              } else if (responseActiveRole === 'The Purge' && state.selectedAction === 'fascism' && !response.player.hasSubmittedAction) {
                 state.selectedAction = 'kill';
                 state.selectedTarget = null;
               } else if (responseActiveRole === 'Tetherhex' && state.selectedAction === 'interlinked' && !response.player.hasSubmittedAction) {
