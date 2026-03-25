@@ -324,7 +324,7 @@
     },
     Silencer: {
       faction: 'Crew',
-      subfaction: 'Unbound',
+      subfaction: 'Chaos',
       description: 'Disable a player\'s abilities and prevent them from talking until the next night. Cannot target the same player twice in a row.',
       revealText: 'A hard crimson hush closes around your target. Mute their voice and snuff out their night action.',
       abilities: [

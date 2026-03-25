@@ -7,8 +7,8 @@ class GameLogic {
         Info: ['Villager', 'Investigator', 'Tracker', 'Stalker', 'Redflag', 'Traplord'],
         Protection: ['Vitalist', 'Mirror Caster', 'Warden', 'Oracle'],
         Killing: ['Sheriff', 'Veteran'],
-        Chaos: ['Teleporter', 'Magician', 'Scientist'],
-        Unbound: ['Silencer', 'Narcissist', 'Inquisitor', 'Alturist', 'The Vessel', 'Karma'],
+        Chaos: ['Teleporter', 'Magician', 'Scientist', 'Silencer'],
+        Unbound: ['Narcissist', 'Inquisitor', 'Alturist', 'The Vessel', 'Karma'],
       },
       Assassin: {
         Power: ['Assassin', 'Sniper', 'Tetherhex'],
