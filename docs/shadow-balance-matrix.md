@@ -106,8 +106,8 @@ Concrete lineup:
 
 ### 13 Players
 
-- 1 Crew Info
-- 2 Crew Protection
+- 2 Crew Info
+- 1 Crew Protection
 - 2 Crew Killing
 - 1 Crew Chaos
 - 1 Crew Unbound
