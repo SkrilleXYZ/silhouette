@@ -1975,6 +1975,15 @@
     return 'hidden';
   }
 
+  function getActiveChatPanel() {
+    const activeScreen = state.currentScreen === 'game'
+      ? document.getElementById('screen-game')
+      : state.currentScreen === 'room'
+        ? document.getElementById('screen-room')
+        : document.querySelector('.screen.active');
+    return activeScreen ? activeScreen.querySelector('#phase-chat-panel') : null;
+  }
+
   function escapeHtml(value) {
     return String(value || '')
       .replace(/&/g, '&amp;')
@@ -3709,7 +3718,7 @@
         event.stopPropagation();
         const nextChannel = button.dataset.chatChannel || 'public';
         if (nextChannel === state.currentChatChannel) return;
-        const panel = document.getElementById('phase-chat-panel');
+        const panel = getActiveChatPanel();
         const mode = getChatMode();
         const keepDockedChatOpen = mode !== 'morning'
           && !!panel
@@ -3737,7 +3746,7 @@
   function renderChatBox() {
     syncChatDraftFromDom();
 
-    const panel = document.getElementById('phase-chat-panel');
+    const panel = getActiveChatPanel();
     if (!panel) return;
 
     const mode = getChatMode();

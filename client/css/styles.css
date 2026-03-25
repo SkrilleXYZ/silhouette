@@ -3091,7 +3091,8 @@ body {
   flex-direction: column;
   gap: 12px;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding-bottom: 16px;
 }
 
@@ -4982,6 +4983,20 @@ body {
   margin-top: 0;
 }
 
+#game-content > .action-panel,
+#game-content > .voting-panel,
+#game-content > .waiting-panel,
+#game-content > .action-confirmed,
+#game-content > .dead-overlay,
+#game-content > .vote-result-panel {
+  flex: 0 0 auto;
+}
+
+#game-content > .phase-chat-panel {
+  flex: 0 0 clamp(220px, 30vh, 320px);
+  min-height: 220px;
+}
+
 .action-panel > .target-list,
 .voting-panel > .target-list {
   flex: 1 1 auto;
@@ -4990,6 +5005,11 @@ body {
 
 .chat-expanded { min-height: 0; }
 .chat-compact { min-height: 0; }
+
+.phase-chat-panel .chat-messages {
+  flex: 1 1 auto;
+  min-height: 0;
+}
 
 .chat-panel-header {
   display: flex;
