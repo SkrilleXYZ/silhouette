@@ -58,12 +58,11 @@ Concrete lineup:
 - 1 Crew Info
 - 1 Crew Protection
 - 1 Crew Killing
-- 1 Crew Chaos
-- 1 Crew Unbound
+- 1 Crew Chaos/Unbound
 - 1 Assassin Power
 - 1 Assassin Concealing
 - 1 Assassin Support
-- 1 Neutral Evil / Neutral Killing / Neutral Benign
+- 2 Neutral Evil / Neutral Killing / Neutral Benign
 
 ### 10 Players
 
@@ -108,7 +107,7 @@ Concrete lineup:
 
 - 2 Crew Info
 - 1 Crew Protection
-- 2 Crew Killing
+- 1 Crew Killing
 - 1 Crew Chaos
 - 1 Crew Unbound
 - 1 Assassin Power
@@ -120,7 +119,7 @@ Concrete lineup:
 ### 14 Players
 
 - 2 Crew Info
-- 2 Crew Protection
+- 1 Crew Protection
 - 2 Crew Killing
 - 1 Crew Chaos
 - 1 Crew Unbound
@@ -135,8 +134,7 @@ Concrete lineup:
 - 2 Crew Info
 - 2 Crew Protection
 - 2 Crew Killing
-- 2 Crew Chaos
-- 1 Crew Unbound
+- 2 Crew Chaos/ Unbound
 - 1 Assassin Power
 - 1 Assassin Concealing
 - 1 Assassin Support
