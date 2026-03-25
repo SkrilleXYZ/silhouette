@@ -3853,7 +3853,7 @@
           <div class="chat-panel-subtitle">${subtitle}</div>
         </div>
         <div class="chat-header-actions">
-          ${mode === 'morning' && !isOverlayOpen ? '<button class="chat-fullscreen-btn" id="chat-fullscreen-btn" type="button">Fullscreen</button>' : ''}
+          ${(mode === 'morning' || mode === 'lobby') && !isOverlayOpen ? '<button class="chat-fullscreen-btn" id="chat-fullscreen-btn" type="button">Fullscreen</button>' : ''}
           ${isDockedMode ? '<button class="chat-close-btn" id="chat-close-btn" type="button">Close</button>' : ''}
         </div>
       </div>

@@ -3711,8 +3711,8 @@ class GameLogic {
   addChatMessage(code, playerId, text) {
     const room = this.rooms.get(code);
     if (!room) return { error: 'Room not found' };
-    if (room.state !== 'morning' && room.state !== 'voting') {
-      return { error: 'Chat is only available during morning and voting' };
+    if (room.state !== 'lobby' && room.state !== 'morning' && room.state !== 'voting') {
+      return { error: 'Chat is only available in lobby, morning, and voting' };
     }
 
     const player = room.players.get(playerId);
