@@ -142,13 +142,13 @@
     Narcissist: {
       faction: 'Crew',
       subfaction: 'Unbound',
-      description: 'You win if the Crew faction loses.',
+      description: 'Decieve the Crew members and make sure they lose.',
       revealText: 'Royal violet vanity curls around your silhouette. Stay alive and watch the crew collapse without you.',
       abilities: [
         {
           name: 'Self-Interest',
           type: 'Passive',
-          description: 'You win if the Crew faction loses.',
+          description: 'Decieve the Crew members and make sure they lose.',
         },
       ],
     },
@@ -2371,6 +2371,7 @@
   function renderNightPhase(container) {
     const player = state.playerData;
     if (!player) return;
+    const activeRole = getActiveNightRole(player);
 
     if (player.role === 'Villager' || player.role === 'Jester' || (player.role === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0)) {
       container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">You have no abilities. Wait for dawn...</p></div><div id="phase-chat-panel"></div>';
@@ -3392,10 +3393,20 @@
   function bindChatChannelTabs(root) {
     if (!root) return;
     root.querySelectorAll('[data-chat-channel]').forEach((button) => {
-      button.addEventListener('click', () => {
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
         const nextChannel = button.dataset.chatChannel || 'public';
         if (nextChannel === state.currentChatChannel) return;
+        const panel = document.getElementById('phase-chat-panel');
+        const mode = getChatMode();
+        const keepDockedChatOpen = mode !== 'morning'
+          && !!panel
+          && !!panel.querySelector('.chat-panel-header');
         state.currentChatChannel = nextChannel;
+        if (keepDockedChatOpen) {
+          state.chatOverlayOpen = true;
+        }
         renderChatBox();
       });
     });
@@ -3617,6 +3628,7 @@
   function renderNightPhase(container) {
     const player = state.playerData;
     if (!player) return;
+    const activeRole = getActiveNightRole(player);
 
     if (
       player.role === 'Villager'
@@ -4102,6 +4114,8 @@
   }
 
   function renderVotingPhase(container) {
+    const player = state.playerData;
+    const canPurify = player?.role === 'Oracle' && (player.oraclePurifyUsesRemaining ?? 2) > 0 && !player.oraclePurifiedTargetId;
     if (state.hasVoted) {
       container.innerHTML = '<div class="action-confirmed"><div class="confirmed-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><p class="confirmed-text">VOTE SUBMITTED</p><p class="confirmed-detail">Waiting for others...</p></div><div id="phase-chat-panel"></div>';
       renderChatBox();
