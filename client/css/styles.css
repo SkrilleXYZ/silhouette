@@ -28,15 +28,15 @@
   --vessel: hsl(282, 74%, 72%);
   --vessel-dim: hsl(266, 46%, 18%);
   --vessel-glow: hsla(282, 74%, 72%, 0.34);
-  --teleporter: hsl(192, 100%, 78%);
-  --teleporter-dim: hsl(194, 56%, 20%);
-  --teleporter-glow: hsla(192, 100%, 78%, 0.34);
+  --teleporter: hsl(202, 100%, 80%);
+  --teleporter-dim: hsl(212, 52%, 18%);
+  --teleporter-glow: hsla(202, 100%, 80%, 0.34);
   --magician: hsl(255, 92%, 76%);
   --magician-dim: hsl(246, 44%, 20%);
   --magician-glow: hsla(255, 92%, 76%, 0.34);
-  --scientist: hsl(188, 88%, 68%);
-  --scientist-dim: hsl(266, 42%, 20%);
-  --scientist-glow: hsla(188, 88%, 68%, 0.34);
+  --scientist: hsl(176, 78%, 62%);
+  --scientist-dim: hsl(268, 44%, 20%);
+  --scientist-glow: hsla(176, 78%, 62%, 0.34);
   --disruptor: hsl(357, 84%, 66%);
   --disruptor-dim: hsl(356, 42%, 16%);
   --disruptor-glow: hsla(357, 84%, 66%, 0.3);
@@ -2585,8 +2585,8 @@ body {
 .role-card.role-theme-warden .role-card-glow { background: radial-gradient(circle, var(--warden) 0%, transparent 70%); }
 .role-card.role-theme-warden .role-card-inner { border-color: rgba(92, 228, 226, 0.42); box-shadow: inset 0 0 0 1px rgba(92, 228, 226, 0.08), 0 0 24px rgba(74, 198, 216, 0.14); }
 
-.role-card.role-theme-teleporter .role-card-glow { background: radial-gradient(circle, var(--teleporter) 0%, transparent 70%); }
-.role-card.role-theme-teleporter .role-card-inner { border-color: rgba(138, 235, 255, 0.42); box-shadow: inset 0 0 0 1px rgba(138, 235, 255, 0.08), 0 0 24px rgba(84, 212, 255, 0.14); }
+.role-card.role-theme-teleporter .role-card-glow { background: radial-gradient(circle, rgba(136, 210, 255, 0.86) 0%, rgba(118, 156, 255, 0.2) 48%, transparent 74%); }
+.role-card.role-theme-teleporter .role-card-inner { border-color: rgba(126, 184, 255, 0.44); box-shadow: inset 0 0 0 1px rgba(136, 210, 255, 0.08), 0 0 24px rgba(82, 138, 226, 0.16); }
 
 .role-card.role-theme-magician .role-card-glow { background: radial-gradient(circle, var(--magician) 0%, transparent 70%); }
 .role-card.role-theme-magician .role-card-inner { border-color: rgba(144, 124, 255, 0.42); box-shadow: inset 0 0 0 1px rgba(144, 124, 255, 0.08), 0 0 24px rgba(88, 76, 210, 0.16); }
@@ -2689,7 +2689,7 @@ body {
 
 .role-card.role-theme-vitalist .role-faction { color: var(--vitalist); }
 .role-card.role-theme-warden .role-faction { color: var(--warden); }
-.role-card.role-theme-teleporter .role-faction { color: var(--teleporter); }
+.role-card.role-theme-teleporter .role-faction { color: hsl(204, 100%, 82%); }
 .role-card.role-theme-magician .role-faction { color: var(--magician); }
 
 .role-card.role-theme-tracker .role-faction { color: var(--tracker); }
@@ -2753,7 +2753,7 @@ body {
 
 .role-card.role-theme-vitalist .role-divider { background: var(--vitalist); }
 .role-card.role-theme-warden .role-divider { background: linear-gradient(90deg, #49a9ff 0%, #58e2d1 55%, #f2d36b 100%); }
-.role-card.role-theme-teleporter .role-divider { background: linear-gradient(90deg, rgba(132, 212, 255, 1) 0%, rgba(95, 245, 255, 1) 100%); }
+.role-card.role-theme-teleporter .role-divider { background: linear-gradient(90deg, rgba(114, 176, 255, 0.98) 0%, rgba(136, 220, 255, 0.96) 56%, rgba(182, 198, 255, 0.92) 100%); }
 .role-card.role-theme-magician .role-divider { background: linear-gradient(90deg, rgba(114, 81, 255, 0.98) 0%, rgba(78, 124, 255, 0.92) 100%); }
 
 .role-card.role-theme-tracker .role-divider { background: var(--tracker); }
@@ -2819,16 +2819,16 @@ body {
   text-shadow: 0 0 18px rgba(255, 82, 190, 0.22);
 }
 
-.role-card.role-theme-inquisitor .role-card-glow { background: radial-gradient(circle, rgba(94, 236, 255, 0.9) 0%, transparent 70%); }
-.role-card.role-theme-inquisitor .role-card-inner { border-color: rgba(94, 236, 255, 0.38); box-shadow: inset 0 0 0 1px rgba(94, 236, 255, 0.08), 0 0 26px rgba(94, 236, 255, 0.14); }
-.role-card.role-theme-inquisitor .role-faction { color: hsl(188, 100%, 76%); }
-.role-card.role-theme-inquisitor .role-divider { background: linear-gradient(90deg, rgba(206, 251, 255, 0.95), rgba(94, 236, 255, 0.92)); }
+.role-card.role-theme-inquisitor .role-card-glow { background: radial-gradient(circle, rgba(84, 255, 236, 0.88) 0%, rgba(34, 214, 255, 0.16) 48%, transparent 74%); }
+.role-card.role-theme-inquisitor .role-card-inner { border-color: rgba(86, 244, 226, 0.4); box-shadow: inset 0 0 0 1px rgba(86, 244, 226, 0.08), 0 0 26px rgba(60, 218, 208, 0.16); }
+.role-card.role-theme-inquisitor .role-faction { color: hsl(176, 94%, 74%); }
+.role-card.role-theme-inquisitor .role-divider { background: linear-gradient(90deg, rgba(220, 255, 248, 0.95), rgba(84, 255, 236, 0.92)); }
 .role-card.role-theme-inquisitor .role-name {
-  background: linear-gradient(90deg, #d7fbff 0%, #59ecff 100%);
+  background: linear-gradient(90deg, #e5fffb 0%, #67f6df 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: 0 0 18px rgba(94, 236, 255, 0.22);
+  text-shadow: 0 0 18px rgba(84, 255, 236, 0.22);
 }
 
 .role-card.role-theme-disruptor .role-card-glow { background: radial-gradient(circle, rgba(214, 56, 64, 0.84) 0%, transparent 70%); }
@@ -2880,8 +2880,11 @@ body {
 }
 
 .role-card.role-theme-teleporter .role-name {
-  color: hsl(192, 100%, 92%);
-  text-shadow: 0 0 18px rgba(138, 235, 255, 0.24);
+  background: linear-gradient(90deg, #edf7ff 0%, #9ed8ff 58%, #d6ddff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 18px rgba(126, 184, 255, 0.24);
 }
 
 .role-card.role-theme-magician .role-name {
@@ -2892,12 +2895,12 @@ body {
   text-shadow: 0 0 18px rgba(124, 112, 255, 0.24);
 }
 
-.role-card.role-theme-scientist .role-card-glow { background: radial-gradient(circle, rgba(104, 232, 255, 0.84) 0%, transparent 70%); }
-.role-card.role-theme-scientist .role-card-inner { border-color: rgba(104, 232, 255, 0.38); box-shadow: inset 0 0 0 1px rgba(104, 232, 255, 0.08), 0 0 24px rgba(132, 102, 255, 0.14); }
+.role-card.role-theme-scientist .role-card-glow { background: radial-gradient(circle, rgba(84, 232, 214, 0.84) 0%, rgba(154, 116, 255, 0.18) 48%, transparent 74%); }
+.role-card.role-theme-scientist .role-card-inner { border-color: rgba(84, 232, 214, 0.38); box-shadow: inset 0 0 0 1px rgba(84, 232, 214, 0.08), 0 0 24px rgba(132, 102, 255, 0.16); }
 .role-card.role-theme-scientist .role-faction { color: var(--scientist); }
-.role-card.role-theme-scientist .role-divider { background: linear-gradient(90deg, rgba(102, 232, 255, 0.96), rgba(168, 116, 255, 0.92)); }
+.role-card.role-theme-scientist .role-divider { background: linear-gradient(90deg, rgba(78, 228, 204, 0.96), rgba(168, 116, 255, 0.92)); }
 .role-card.role-theme-scientist .role-name {
-  background: linear-gradient(90deg, #d6fbff 0%, #65e8ff 48%, #b684ff 100%);
+  background: linear-gradient(90deg, #dcfff8 0%, #69eecf 46%, #b684ff 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -3171,8 +3174,8 @@ body {
 
 .role-reveal-panel.role-theme-inquisitor {
   background:
-    radial-gradient(circle at top, rgba(94, 236, 255, 0.24), transparent 44%),
-    linear-gradient(180deg, rgba(8, 26, 34, 0.98), rgba(6, 18, 24, 0.98));
+    radial-gradient(circle at top, rgba(84, 255, 236, 0.24), transparent 44%),
+    linear-gradient(180deg, rgba(8, 26, 24, 0.98), rgba(6, 18, 16, 0.98));
 }
 
 .role-reveal-panel.role-theme-disruptor {
@@ -3195,8 +3198,8 @@ body {
 
 .role-reveal-panel.role-theme-teleporter {
   background:
-    radial-gradient(circle at top, rgba(138, 235, 255, 0.24), transparent 44%),
-    linear-gradient(180deg, rgba(10, 26, 36, 0.98), rgba(6, 14, 22, 0.98));
+    radial-gradient(circle at top, rgba(136, 210, 255, 0.24), transparent 44%),
+    linear-gradient(180deg, rgba(10, 22, 42, 0.98), rgba(8, 14, 30, 0.98));
 }
 
 .role-reveal-panel.role-theme-magician {
@@ -3207,7 +3210,7 @@ body {
 
 .role-reveal-panel.role-theme-scientist {
   background:
-    radial-gradient(circle at top, rgba(104, 232, 255, 0.24), transparent 44%),
+    radial-gradient(circle at top, rgba(84, 232, 214, 0.24), transparent 44%),
     linear-gradient(135deg, rgba(10, 22, 38, 0.98), rgba(20, 16, 48, 0.96) 54%, rgba(64, 28, 96, 0.9));
 }
 
@@ -3364,11 +3367,11 @@ body {
 }
 
 .role-reveal-panel.role-theme-scientist.settled {
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.58), 0 0 34px rgba(104, 232, 255, 0.2);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.58), 0 0 34px rgba(84, 232, 214, 0.22);
 }
 
 .role-reveal-panel.role-theme-teleporter.settled {
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.58), 0 0 34px rgba(138, 235, 255, 0.18);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.58), 0 0 34px rgba(126, 184, 255, 0.2);
 }
 
 .role-reveal-panel.role-theme-vitalist.settled {
@@ -3591,9 +3594,9 @@ body {
 }
 
 .role-reveal-item.role-theme-inquisitor.is-selected {
-  border-color: rgba(94, 236, 255, 0.55);
-  background: linear-gradient(180deg, rgba(94, 236, 255, 0.08), rgba(94, 236, 255, 0.02));
-  box-shadow: inset 0 0 0 1px rgba(94, 236, 255, 0.12), 0 0 14px rgba(94, 236, 255, 0.14);
+  border-color: rgba(84, 255, 236, 0.55);
+  background: linear-gradient(180deg, rgba(84, 255, 236, 0.08), rgba(34, 214, 255, 0.03));
+  box-shadow: inset 0 0 0 1px rgba(84, 255, 236, 0.12), 0 0 14px rgba(84, 255, 236, 0.16);
 }
 
 .role-reveal-item.role-theme-disruptor.is-selected {
@@ -3615,15 +3618,15 @@ body {
 }
 
 .role-reveal-item.role-theme-scientist.is-selected {
-  border-color: rgba(104, 232, 255, 0.55);
-  background: linear-gradient(180deg, rgba(104, 232, 255, 0.08), rgba(168, 116, 255, 0.03));
-  box-shadow: inset 0 0 0 1px rgba(104, 232, 255, 0.12), 0 0 14px rgba(104, 232, 255, 0.16);
+  border-color: rgba(84, 232, 214, 0.55);
+  background: linear-gradient(180deg, rgba(84, 232, 214, 0.08), rgba(168, 116, 255, 0.03));
+  box-shadow: inset 0 0 0 1px rgba(84, 232, 214, 0.12), 0 0 14px rgba(84, 232, 214, 0.16);
 }
 
 .role-reveal-item.role-theme-teleporter.is-selected {
-  border-color: rgba(138, 235, 255, 0.55);
-  background: linear-gradient(180deg, rgba(138, 235, 255, 0.08), rgba(138, 235, 255, 0.02));
-  box-shadow: inset 0 0 0 1px rgba(138, 235, 255, 0.12), 0 0 14px rgba(138, 235, 255, 0.14);
+  border-color: rgba(126, 184, 255, 0.55);
+  background: linear-gradient(180deg, rgba(126, 184, 255, 0.08), rgba(182, 198, 255, 0.03));
+  box-shadow: inset 0 0 0 1px rgba(126, 184, 255, 0.12), 0 0 14px rgba(126, 184, 255, 0.16);
 }
 
 .role-reveal-item.role-theme-magician.is-selected {
@@ -3829,7 +3832,7 @@ body {
 
 .role-reveal-item.role-theme-inquisitor .role-reveal-name,
 .role-reveal-item.role-theme-inquisitor .role-reveal-faction {
-  color: hsl(188, 100%, 78%);
+  color: hsl(176, 94%, 74%);
 }
 
 .role-reveal-item.role-theme-disruptor .role-reveal-name,
@@ -3992,7 +3995,7 @@ body {
 
 .role-reveal-result.role-theme-scientist strong {
   color: var(--scientist);
-  text-shadow: 0 0 18px rgba(104, 232, 255, 0.28);
+  text-shadow: 0 0 18px rgba(84, 232, 214, 0.28);
 }
 
 .role-reveal-result.role-theme-disruptor strong {
@@ -4016,13 +4019,13 @@ body {
 }
 
 .role-reveal-result.role-theme-inquisitor strong {
-  color: hsl(188, 100%, 78%);
-  text-shadow: 0 0 18px rgba(94, 236, 255, 0.24);
+  color: hsl(176, 94%, 74%);
+  text-shadow: 0 0 18px rgba(84, 255, 236, 0.24);
 }
 
 .role-reveal-result.role-theme-teleporter strong {
   color: var(--teleporter);
-  text-shadow: 0 0 18px rgba(138, 235, 255, 0.24);
+  text-shadow: 0 0 18px rgba(126, 184, 255, 0.24);
 }
 
 .role-reveal-result.role-theme-magician strong {
@@ -7119,12 +7122,12 @@ body {
 .gpl-role.role-theme-villager { background: rgba(56, 66, 74, 0.92); color: hsl(204, 20%, 82%); box-shadow: 0 0 14px rgba(191, 206, 215, 0.1); }
 .gpl-role.role-theme-vitalist { background: rgba(20, 74, 35, 0.92); color: hsl(132, 92%, 70%); box-shadow: 0 0 16px rgba(67, 239, 128, 0.12); }
 .gpl-role.role-theme-warden { background: linear-gradient(135deg, rgba(18, 56, 70, 0.94), rgba(16, 82, 88, 0.92) 56%, rgba(94, 88, 36, 0.88)); color: var(--warden); box-shadow: 0 0 16px rgba(92, 228, 226, 0.14); }
-.gpl-role.role-theme-inquisitor { background: linear-gradient(135deg, rgba(16, 58, 70, 0.94), rgba(12, 90, 106, 0.92)); color: hsl(188, 100%, 78%); box-shadow: 0 0 16px rgba(94, 236, 255, 0.14); }
+.gpl-role.role-theme-inquisitor { background: linear-gradient(135deg, rgba(10, 52, 48, 0.94), rgba(12, 86, 74, 0.92)); color: hsl(176, 94%, 74%); box-shadow: 0 0 16px rgba(84, 255, 236, 0.16); }
 .gpl-role.role-theme-disruptor { background: linear-gradient(135deg, rgba(30, 10, 14, 0.96), rgba(88, 18, 24, 0.92)); color: var(--disruptor); box-shadow: 0 0 16px rgba(214, 56, 64, 0.16); }
 .gpl-role.role-theme-alturist { background: linear-gradient(135deg, rgba(62, 18, 18, 0.96), rgba(108, 54, 20, 0.92)); color: var(--alturist); box-shadow: 0 0 16px rgba(255, 196, 92, 0.14); }
 .gpl-role.role-theme-vessel { background: linear-gradient(135deg, rgba(30, 16, 62, 0.96), rgba(94, 40, 122, 0.92)); color: var(--vessel); box-shadow: 0 0 16px rgba(185, 137, 255, 0.14); }
-.gpl-role.role-theme-scientist { background: linear-gradient(135deg, rgba(16, 44, 62, 0.96), rgba(72, 36, 120, 0.92)); color: var(--scientist); box-shadow: 0 0 16px rgba(104, 232, 255, 0.14); }
-.gpl-role.role-theme-teleporter { background: linear-gradient(135deg, rgba(18, 58, 78, 0.94), rgba(16, 82, 104, 0.92)); color: var(--teleporter); box-shadow: 0 0 16px rgba(138, 235, 255, 0.14); }
+.gpl-role.role-theme-scientist { background: linear-gradient(135deg, rgba(12, 52, 48, 0.96), rgba(72, 36, 120, 0.92)); color: var(--scientist); box-shadow: 0 0 16px rgba(84, 232, 214, 0.16); }
+.gpl-role.role-theme-teleporter { background: linear-gradient(135deg, rgba(16, 40, 76, 0.94), rgba(26, 66, 118, 0.92)); color: var(--teleporter); box-shadow: 0 0 16px rgba(126, 184, 255, 0.16); }
 .gpl-role.role-theme-magician { background: linear-gradient(135deg, rgba(28, 20, 78, 0.94), rgba(22, 30, 96, 0.92)); color: var(--magician); box-shadow: 0 0 16px rgba(132, 112, 255, 0.16); }
 .gpl-role.role-theme-mirrorcaster { background: linear-gradient(135deg, rgba(58, 72, 90, 0.94), rgba(22, 56, 76, 0.94)); color: var(--mirrorcaster); box-shadow: 0 0 16px rgba(132, 205, 255, 0.14); }
 .gpl-role.role-theme-tracker { background: rgba(20, 67, 84, 0.92); color: hsl(195, 100%, 78%); box-shadow: 0 0 16px rgba(122, 226, 255, 0.14); }
@@ -7767,8 +7770,8 @@ body {
 
 #screen-roles .roles-guide-card.role-theme-inquisitor,
 #screen-roles .roles-guide-card.role-theme-inquisitor .roles-guide-card-icon {
-  border-color: rgba(94, 236, 255, 0.72);
-  color: hsl(188, 100%, 78%);
+  border-color: rgba(84, 255, 236, 0.72);
+  color: hsl(176, 94%, 74%);
 }
 
 #screen-roles .roles-guide-card.role-theme-disruptor,
@@ -7791,7 +7794,7 @@ body {
 
 #screen-roles .roles-guide-card.role-theme-scientist,
 #screen-roles .roles-guide-card.role-theme-scientist .roles-guide-card-icon {
-  border-color: rgba(104, 232, 255, 0.72);
+  border-color: rgba(84, 232, 214, 0.72);
   color: var(--scientist);
 }
 
@@ -7803,7 +7806,7 @@ body {
 
 #screen-roles .roles-guide-card.role-theme-teleporter,
 #screen-roles .roles-guide-card.role-theme-teleporter .roles-guide-card-icon {
-  border-color: rgba(138, 235, 255, 0.72);
+  border-color: rgba(126, 184, 255, 0.72);
   color: var(--teleporter);
 }
 
@@ -7974,7 +7977,7 @@ body {
 }
 
 #screen-roles .roles-guide-card.role-theme-inquisitor:hover {
-  box-shadow: 0 0 20px -10px rgba(94, 236, 255, 0.44);
+  box-shadow: 0 0 20px -10px rgba(84, 255, 236, 0.44);
 }
 
 #screen-roles .roles-guide-card.role-theme-disruptor:hover {
@@ -7990,7 +7993,7 @@ body {
 }
 
 #screen-roles .roles-guide-card.role-theme-scientist:hover {
-  box-shadow: 0 0 20px -10px rgba(104, 232, 255, 0.44);
+  box-shadow: 0 0 20px -10px rgba(84, 232, 214, 0.44);
 }
 
 #screen-roles .roles-guide-card.role-theme-narcissist:hover {
@@ -7998,7 +8001,7 @@ body {
 }
 
 #screen-roles .roles-guide-card.role-theme-teleporter:hover {
-  box-shadow: 0 0 20px -10px rgba(138, 235, 255, 0.48);
+  box-shadow: 0 0 20px -10px rgba(126, 184, 255, 0.48);
 }
 
 #screen-roles .roles-guide-card.role-theme-magician:hover {
@@ -8115,7 +8118,7 @@ body {
 }
 
 #screen-roles .roles-guide-card.role-theme-inquisitor .roles-guide-ability-highlight {
-  color: hsl(188, 100%, 78%);
+  color: hsl(176, 94%, 74%);
 }
 
 #screen-roles .roles-guide-card.role-theme-disruptor .roles-guide-ability-highlight {
