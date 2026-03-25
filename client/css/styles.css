@@ -5094,7 +5094,7 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: var(--message-bg-image, none);
+  background-image: none;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -5102,33 +5102,6 @@ body {
   pointer-events: none;
   z-index: 0;
 }
-
-.chat-message.system.private.system-result-search { --message-bg-image: url("../assets/message-backgrounds/message-bg-sheriff.png"); }
-.chat-message.system.private.system-result-examine { --message-bg-image: url("../assets/message-backgrounds/message-bg-investigator.png"); }
-.chat-message.system.private.system-result-tracker { --message-bg-image: url("../assets/message-backgrounds/message-bg-tracker.png"); }
-.chat-message.system.private.system-result-stalker { --message-bg-image: url("../assets/message-backgrounds/message-bg-stalker.png"); }
-.chat-message.system.private.system-result-trap { --message-bg-image: url("../assets/message-backgrounds/message-bg-traplord.png"); }
-.chat-message.system.private.system-result-protect { --message-bg-image: url("../assets/message-backgrounds/message-bg-protect.png"); }
-.chat-message.system.private.system-result-mirror { --message-bg-image: url("../assets/message-backgrounds/message-bg-mirror-caster.png"); }
-.chat-message.system.private.system-result-vitalist { --message-bg-image: url("../assets/message-backgrounds/message-bg-vitalist.png"); }
-.chat-message.system.private.system-result-survivalist { --message-bg-image: url("../assets/message-backgrounds/message-bg-survivalist.png"); }
-.chat-message.system.private.system-result-guardian-angel { --message-bg-image: url("../assets/message-backgrounds/message-bg-guardian-angel.png"); }
-.chat-message.system.private.system-result-executioner-shift { --message-bg-image: url("../assets/message-backgrounds/message-bg-executioner-shift.png"); }
-.chat-message.system.private.system-result-guardian-shift { --message-bg-image: url("../assets/message-backgrounds/message-bg-guardian-shift.png"); }
-.chat-message.system.private.system-result-blackout { --message-bg-image: url("../assets/message-backgrounds/message-bg-blackout.png"); }
-.chat-message.system.private.system-result-blackmail { --message-bg-image: url("../assets/message-backgrounds/message-bg-blackmailer.png"); }
-.chat-message.system.private.system-result-silenced { --message-bg-image: url("../assets/message-backgrounds/message-bg-silencer.png"); }
-.chat-message.system.private.system-result-hypnotic { --message-bg-image: url("../assets/message-backgrounds/message-bg-hypnotic.png"); }
-.chat-message.system.private.system-result-overload { --message-bg-image: url("../assets/message-backgrounds/message-bg-overload.png"); }
-.chat-message.system.private.system-result-teleporter { --message-bg-image: url("../assets/message-backgrounds/message-bg-teleporter.png"); }
-.chat-message.system.private.system-result-magician { --message-bg-image: url("../assets/message-backgrounds/message-bg-magician.png"); }
-.chat-message.system.private.system-result-vessel { --message-bg-image: url("../assets/message-backgrounds/message-bg-vessel.png"); }
-.chat-message.system.system-result-purge { --message-bg-image: url("../assets/message-backgrounds/message-bg-purge.png"); }
-.chat-message.system.private.system-result-warden { --message-bg-image: url("../assets/message-backgrounds/message-bg-warden.png"); }
-.chat-message.system.private.system-result-warden-confirm { --message-bg-image: url("../assets/message-backgrounds/message-bg-warden-confirm.png"); }
-.chat-message.system.system-result-redflag { --message-bg-image: url("../assets/message-backgrounds/message-bg-redflag.png"); }
-.chat-message.system.system-result-oracle { --message-bg-image: url("../assets/message-backgrounds/message-bg-oracle.png"); }
-.chat-message.system.system-result-oracle-protect { --message-bg-image: url("../assets/message-backgrounds/message-bg-oracle-protect.png"); }
 
 .chat-message.system.private.system-result-search {
   border-color: rgba(255, 208, 80, 0.34);
