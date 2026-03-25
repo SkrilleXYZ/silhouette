@@ -4655,9 +4655,8 @@ body {
 }
 
 .phase-chat-panel.room-chat-panel {
-  flex: 0 0 clamp(320px, 42vh, 420px);
-  min-height: 320px;
-  max-height: clamp(320px, 42vh, 420px);
+  flex: 0 0 auto;
+  min-height: 0;
 }
 
 .phase-chat-panel.chat-overlay-anchor {
@@ -5033,9 +5032,9 @@ body {
 }
 
 .phase-chat-panel.room-chat-panel .chat-messages {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-height: 0;
-  max-height: none;
+  max-height: clamp(220px, 30vh, 300px);
 }
 
 .chat-panel-header {
