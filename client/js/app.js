@@ -3789,7 +3789,7 @@
     const isStandaloneOverlay = isOverlayOpen;
     const isDeadSpectator = state.playerData?.alive === false;
 
-    panel.className = `phase-chat-panel ${isStandaloneOverlay ? 'chat-overlay-anchor' : isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}${mode === 'lobby' ? ' chat-lobby' : ''}${mode === 'morning' ? ' chat-morning' : ''}${mode === 'night' && isExpandedMode ? ' chat-night-expanded' : ''}`;
+    panel.className = `phase-chat-panel ${isStandaloneOverlay ? 'chat-overlay-anchor' : isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}${mode === 'lobby' ? ' chat-lobby room-chat-panel' : ''}${mode === 'morning' ? ' chat-morning' : ''}${mode === 'night' && isExpandedMode ? ' chat-night-expanded' : ''}`;
     if (gameContainer) {
       gameContainer.classList.toggle('chat-overlay-active', isStandaloneOverlay);
     }

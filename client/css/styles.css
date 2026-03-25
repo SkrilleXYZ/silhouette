@@ -4659,6 +4659,12 @@ body {
   min-height: 0;
 }
 
+.phase-chat-panel.room-chat-panel.chat-expanded,
+.phase-chat-panel.room-chat-panel.chat-compact {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
 .phase-chat-panel.chat-overlay-anchor {
   display: none;
 }
@@ -5032,6 +5038,13 @@ body {
 }
 
 .phase-chat-panel.room-chat-panel .chat-messages {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: clamp(220px, 30vh, 300px);
+}
+
+.phase-chat-panel.room-chat-panel.chat-expanded .chat-messages,
+.phase-chat-panel.room-chat-panel.chat-compact .chat-messages {
   flex: 0 1 auto;
   min-height: 0;
   max-height: clamp(220px, 30vh, 300px);
