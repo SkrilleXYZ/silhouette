@@ -22,6 +22,12 @@
   --warden: hsl(188, 88%, 66%);
   --warden-dim: hsl(194, 58%, 20%);
   --warden-glow: hsla(188, 88%, 66%, 0.34);
+  --alturist: hsl(40, 100%, 72%);
+  --alturist-dim: hsl(8, 52%, 18%);
+  --alturist-glow: hsla(40, 100%, 72%, 0.34);
+  --vessel: hsl(282, 74%, 72%);
+  --vessel-dim: hsl(266, 46%, 18%);
+  --vessel-glow: hsla(282, 74%, 72%, 0.34);
   --teleporter: hsl(192, 100%, 78%);
   --teleporter-dim: hsl(194, 56%, 20%);
   --teleporter-glow: hsla(192, 100%, 78%, 0.34);
@@ -2779,6 +2785,42 @@ body {
   text-shadow: 0 0 18px rgba(255, 82, 190, 0.22);
 }
 
+.role-card.role-theme-inquisitor .role-card-glow { background: radial-gradient(circle, rgba(94, 236, 255, 0.9) 0%, transparent 70%); }
+.role-card.role-theme-inquisitor .role-card-inner { border-color: rgba(94, 236, 255, 0.38); box-shadow: inset 0 0 0 1px rgba(94, 236, 255, 0.08), 0 0 26px rgba(94, 236, 255, 0.14); }
+.role-card.role-theme-inquisitor .role-faction { color: hsl(188, 100%, 76%); }
+.role-card.role-theme-inquisitor .role-divider { background: linear-gradient(90deg, rgba(206, 251, 255, 0.95), rgba(94, 236, 255, 0.92)); }
+.role-card.role-theme-inquisitor .role-name {
+  background: linear-gradient(90deg, #d7fbff 0%, #59ecff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 18px rgba(94, 236, 255, 0.22);
+}
+
+.role-card.role-theme-alturist .role-card-glow { background: radial-gradient(circle, rgba(255, 220, 116, 0.88) 0%, transparent 70%); }
+.role-card.role-theme-alturist .role-card-inner { border-color: rgba(255, 210, 102, 0.4); box-shadow: inset 0 0 0 1px rgba(255, 210, 102, 0.08), 0 0 24px rgba(255, 122, 52, 0.14); }
+.role-card.role-theme-alturist .role-faction { color: var(--alturist); }
+.role-card.role-theme-alturist .role-divider { background: linear-gradient(90deg, rgba(255, 92, 92, 0.95), rgba(255, 222, 124, 0.92), rgba(255, 248, 228, 0.92)); }
+.role-card.role-theme-alturist .role-name {
+  background: linear-gradient(90deg, #fff7e6 0%, #ffd56b 55%, #ff8a4c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 18px rgba(255, 190, 96, 0.22);
+}
+
+.role-card.role-theme-vessel .role-card-glow { background: radial-gradient(circle, rgba(176, 110, 255, 0.82) 0%, transparent 70%); }
+.role-card.role-theme-vessel .role-card-inner { border-color: rgba(186, 140, 255, 0.38); box-shadow: inset 0 0 0 1px rgba(186, 140, 255, 0.08), 0 0 24px rgba(168, 118, 255, 0.14); }
+.role-card.role-theme-vessel .role-faction { color: var(--vessel); }
+.role-card.role-theme-vessel .role-divider { background: linear-gradient(90deg, rgba(112, 54, 190, 0.96), rgba(255, 214, 94, 0.92)); }
+.role-card.role-theme-vessel .role-name {
+  background: linear-gradient(90deg, #ead8ff 0%, #b989ff 50%, #ffd76a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 18px rgba(185, 137, 255, 0.22);
+}
+
 .role-card.role-theme-narcissist .role-card-glow { background: radial-gradient(circle, rgba(108, 56, 255, 0.82) 0%, transparent 70%); }
 .role-card.role-theme-narcissist .role-card-inner { border-color: rgba(92, 52, 168, 0.4); box-shadow: inset 0 0 0 1px rgba(118, 72, 206, 0.08), 0 0 24px rgba(82, 38, 154, 0.15); }
 .role-card.role-theme-narcissist .role-faction { color: hsl(270, 82%, 72%); }
@@ -3069,6 +3111,24 @@ body {
     linear-gradient(135deg, rgba(10, 24, 34, 0.98), rgba(10, 42, 48, 0.96) 54%, rgba(42, 46, 22, 0.92));
 }
 
+.role-reveal-panel.role-theme-inquisitor {
+  background:
+    radial-gradient(circle at top, rgba(94, 236, 255, 0.24), transparent 44%),
+    linear-gradient(180deg, rgba(8, 26, 34, 0.98), rgba(6, 18, 24, 0.98));
+}
+
+.role-reveal-panel.role-theme-alturist {
+  background:
+    radial-gradient(circle at top, rgba(255, 210, 102, 0.24), transparent 44%),
+    linear-gradient(135deg, rgba(34, 10, 10, 0.98), rgba(54, 22, 10, 0.96) 56%, rgba(92, 76, 18, 0.9));
+}
+
+.role-reveal-panel.role-theme-vessel {
+  background:
+    radial-gradient(circle at top, rgba(176, 110, 255, 0.24), transparent 44%),
+    linear-gradient(135deg, rgba(22, 12, 40, 0.98), rgba(56, 24, 94, 0.96) 54%, rgba(98, 76, 22, 0.9));
+}
+
 .role-reveal-panel.role-theme-teleporter {
   background:
     radial-gradient(circle at top, rgba(138, 235, 255, 0.24), transparent 44%),
@@ -3219,6 +3279,14 @@ body {
 
 .role-reveal-panel.role-theme-warden.settled {
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.58), 0 0 34px rgba(92, 228, 226, 0.18);
+}
+
+.role-reveal-panel.role-theme-alturist.settled {
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.58), 0 0 34px rgba(255, 196, 92, 0.2);
+}
+
+.role-reveal-panel.role-theme-vessel.settled {
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.58), 0 0 34px rgba(185, 137, 255, 0.2);
 }
 
 .role-reveal-panel.role-theme-teleporter.settled {
@@ -3444,6 +3512,24 @@ body {
   box-shadow: inset 0 0 0 1px rgba(92, 228, 226, 0.12), 0 0 14px rgba(92, 228, 226, 0.14);
 }
 
+.role-reveal-item.role-theme-inquisitor.is-selected {
+  border-color: rgba(94, 236, 255, 0.55);
+  background: linear-gradient(180deg, rgba(94, 236, 255, 0.08), rgba(94, 236, 255, 0.02));
+  box-shadow: inset 0 0 0 1px rgba(94, 236, 255, 0.12), 0 0 14px rgba(94, 236, 255, 0.14);
+}
+
+.role-reveal-item.role-theme-alturist.is-selected {
+  border-color: rgba(255, 210, 102, 0.55);
+  background: linear-gradient(180deg, rgba(255, 210, 102, 0.08), rgba(255, 114, 76, 0.03));
+  box-shadow: inset 0 0 0 1px rgba(255, 210, 102, 0.12), 0 0 14px rgba(255, 184, 90, 0.16);
+}
+
+.role-reveal-item.role-theme-vessel.is-selected {
+  border-color: rgba(185, 137, 255, 0.55);
+  background: linear-gradient(180deg, rgba(185, 137, 255, 0.08), rgba(255, 214, 94, 0.03));
+  box-shadow: inset 0 0 0 1px rgba(185, 137, 255, 0.12), 0 0 14px rgba(185, 137, 255, 0.16);
+}
+
 .role-reveal-item.role-theme-teleporter.is-selected {
   border-color: rgba(138, 235, 255, 0.55);
   background: linear-gradient(180deg, rgba(138, 235, 255, 0.08), rgba(138, 235, 255, 0.02));
@@ -3636,6 +3722,21 @@ body {
   color: var(--warden);
 }
 
+.role-reveal-item.role-theme-alturist .role-reveal-name,
+.role-reveal-item.role-theme-alturist .role-reveal-faction {
+  color: var(--alturist);
+}
+
+.role-reveal-item.role-theme-vessel .role-reveal-name,
+.role-reveal-item.role-theme-vessel .role-reveal-faction {
+  color: var(--vessel);
+}
+
+.role-reveal-item.role-theme-inquisitor .role-reveal-name,
+.role-reveal-item.role-theme-inquisitor .role-reveal-faction {
+  color: hsl(188, 100%, 78%);
+}
+
 .role-reveal-item.role-theme-teleporter .role-reveal-name,
 .role-reveal-item.role-theme-teleporter .role-reveal-faction {
   color: var(--teleporter);
@@ -3779,6 +3880,16 @@ body {
   text-shadow: 0 0 18px rgba(255, 208, 80, 0.28);
 }
 
+.role-reveal-result.role-theme-alturist strong {
+  color: var(--alturist);
+  text-shadow: 0 0 18px rgba(255, 196, 92, 0.28);
+}
+
+.role-reveal-result.role-theme-vessel strong {
+  color: var(--vessel);
+  text-shadow: 0 0 18px rgba(185, 137, 255, 0.28);
+}
+
 .role-reveal-result.role-theme-veteran strong {
   color: var(--veteran);
   text-shadow: 0 0 18px rgba(188, 192, 139, 0.24);
@@ -3792,6 +3903,11 @@ body {
 .role-reveal-result.role-theme-warden strong {
   color: var(--warden);
   text-shadow: 0 0 18px rgba(92, 228, 226, 0.24);
+}
+
+.role-reveal-result.role-theme-inquisitor strong {
+  color: hsl(188, 100%, 78%);
+  text-shadow: 0 0 18px rgba(94, 236, 255, 0.24);
 }
 
 .role-reveal-result.role-theme-teleporter strong {
@@ -5006,6 +5122,7 @@ body {
 .chat-message.system.private.system-result-overload { --message-bg-image: url("../assets/message-backgrounds/message-bg-overload.png"); }
 .chat-message.system.private.system-result-teleporter { --message-bg-image: url("../assets/message-backgrounds/message-bg-teleporter.png"); }
 .chat-message.system.private.system-result-magician { --message-bg-image: url("../assets/message-backgrounds/message-bg-magician.png"); }
+.chat-message.system.private.system-result-vessel { --message-bg-image: url("../assets/message-backgrounds/message-bg-vessel.png"); }
 .chat-message.system.system-result-purge { --message-bg-image: url("../assets/message-backgrounds/message-bg-purge.png"); }
 .chat-message.system.private.system-result-warden { --message-bg-image: url("../assets/message-backgrounds/message-bg-warden.png"); }
 .chat-message.system.private.system-result-warden-confirm { --message-bg-image: url("../assets/message-backgrounds/message-bg-warden-confirm.png"); }
@@ -5313,6 +5430,30 @@ body {
   pointer-events: none;
 }
 
+.chat-message.system.private.system-result-vessel {
+  border-color: rgba(185, 137, 255, 0.42);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(255, 224, 142, 0.15), transparent 16%),
+    radial-gradient(circle at 18% 112%, rgba(74, 34, 122, 0.28), transparent 42%),
+    linear-gradient(135deg, rgba(24, 14, 52, 0.98), rgba(40, 22, 24, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(244, 238, 255, 0.06),
+    0 0 0 1px rgba(185, 137, 255, 0.05),
+    0 16px 28px -24px rgba(185, 137, 255, 0.26);
+  overflow: hidden;
+}
+
+.chat-message.system.private.system-result-vessel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(112deg, transparent 0%, rgba(214, 196, 255, 0.07) 40%, rgba(255, 220, 136, 0.05) 62%, transparent 76%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(18, 12, 28, 0.18) 100%);
+  opacity: 0.92;
+  pointer-events: none;
+}
+
 .chat-message.system.system-result-purge {
   border-color: rgba(148, 24, 24, 0.42);
   background:
@@ -5597,6 +5738,12 @@ body {
 .chat-message.system.private.system-result-magician .chat-message-text {
   color: hsl(248, 100%, 96%);
   text-shadow: 0 1px 8px rgba(220, 214, 255, 0.08);
+}
+
+.chat-message.system.private.system-result-vessel .chat-message-meta,
+.chat-message.system.private.system-result-vessel .chat-message-text {
+  color: hsl(280, 100%, 96%);
+  text-shadow: 0 1px 8px rgba(229, 214, 255, 0.08);
 }
 
 .chat-message.system.system-result-purge .chat-message-meta,
@@ -6186,6 +6333,9 @@ body {
 .gameover-player-role.role-theme-villager { color: var(--villager); }
 .gameover-player-role.role-theme-vitalist { color: var(--vitalist); }
 .gameover-player-role.role-theme-warden { color: var(--warden); }
+.gameover-player-role.role-theme-inquisitor { color: hsl(188, 100%, 78%); }
+.gameover-player-role.role-theme-alturist { color: var(--alturist); }
+.gameover-player-role.role-theme-vessel { color: var(--vessel); }
 .gameover-player-role.role-theme-teleporter { color: var(--teleporter); }
 .gameover-player-role.role-theme-magician { color: var(--magician); }
 .gameover-player-role.role-theme-tracker { color: var(--tracker); }
@@ -6765,6 +6915,9 @@ body {
 .gpl-role.role-theme-villager { background: rgba(56, 66, 74, 0.92); color: hsl(204, 20%, 82%); box-shadow: 0 0 14px rgba(191, 206, 215, 0.1); }
 .gpl-role.role-theme-vitalist { background: rgba(20, 74, 35, 0.92); color: hsl(132, 92%, 70%); box-shadow: 0 0 16px rgba(67, 239, 128, 0.12); }
 .gpl-role.role-theme-warden { background: linear-gradient(135deg, rgba(18, 56, 70, 0.94), rgba(16, 82, 88, 0.92) 56%, rgba(94, 88, 36, 0.88)); color: var(--warden); box-shadow: 0 0 16px rgba(92, 228, 226, 0.14); }
+.gpl-role.role-theme-inquisitor { background: linear-gradient(135deg, rgba(16, 58, 70, 0.94), rgba(12, 90, 106, 0.92)); color: hsl(188, 100%, 78%); box-shadow: 0 0 16px rgba(94, 236, 255, 0.14); }
+.gpl-role.role-theme-alturist { background: linear-gradient(135deg, rgba(62, 18, 18, 0.96), rgba(108, 54, 20, 0.92)); color: var(--alturist); box-shadow: 0 0 16px rgba(255, 196, 92, 0.14); }
+.gpl-role.role-theme-vessel { background: linear-gradient(135deg, rgba(30, 16, 62, 0.96), rgba(94, 40, 122, 0.92)); color: var(--vessel); box-shadow: 0 0 16px rgba(185, 137, 255, 0.14); }
 .gpl-role.role-theme-teleporter { background: linear-gradient(135deg, rgba(18, 58, 78, 0.94), rgba(16, 82, 104, 0.92)); color: var(--teleporter); box-shadow: 0 0 16px rgba(138, 235, 255, 0.14); }
 .gpl-role.role-theme-magician { background: linear-gradient(135deg, rgba(28, 20, 78, 0.94), rgba(22, 30, 96, 0.92)); color: var(--magician); box-shadow: 0 0 16px rgba(132, 112, 255, 0.16); }
 .gpl-role.role-theme-mirrorcaster { background: linear-gradient(135deg, rgba(58, 72, 90, 0.94), rgba(22, 56, 76, 0.94)); color: var(--mirrorcaster); box-shadow: 0 0 16px rgba(132, 205, 255, 0.14); }
@@ -7406,6 +7559,24 @@ body {
   color: hsl(324, 100%, 82%);
 }
 
+#screen-roles .roles-guide-card.role-theme-inquisitor,
+#screen-roles .roles-guide-card.role-theme-inquisitor .roles-guide-card-icon {
+  border-color: rgba(94, 236, 255, 0.72);
+  color: hsl(188, 100%, 78%);
+}
+
+#screen-roles .roles-guide-card.role-theme-alturist,
+#screen-roles .roles-guide-card.role-theme-alturist .roles-guide-card-icon {
+  border-color: rgba(255, 210, 102, 0.72);
+  color: var(--alturist);
+}
+
+#screen-roles .roles-guide-card.role-theme-vessel,
+#screen-roles .roles-guide-card.role-theme-vessel .roles-guide-card-icon {
+  border-color: rgba(185, 137, 255, 0.72);
+  color: var(--vessel);
+}
+
 #screen-roles .roles-guide-card.role-theme-narcissist,
 #screen-roles .roles-guide-card.role-theme-narcissist .roles-guide-card-icon {
   border-color: rgba(124, 58, 237, 0.72);
@@ -7584,6 +7755,18 @@ body {
   box-shadow: 0 0 20px -10px rgba(255, 82, 190, 0.44);
 }
 
+#screen-roles .roles-guide-card.role-theme-inquisitor:hover {
+  box-shadow: 0 0 20px -10px rgba(94, 236, 255, 0.44);
+}
+
+#screen-roles .roles-guide-card.role-theme-alturist:hover {
+  box-shadow: 0 0 20px -10px rgba(255, 184, 90, 0.46);
+}
+
+#screen-roles .roles-guide-card.role-theme-vessel:hover {
+  box-shadow: 0 0 20px -10px rgba(185, 137, 255, 0.44);
+}
+
 #screen-roles .roles-guide-card.role-theme-narcissist:hover {
   box-shadow: 0 0 20px -10px rgba(124, 58, 237, 0.42);
 }
@@ -7703,6 +7886,18 @@ body {
 
 #screen-roles .roles-guide-card.role-theme-oracle .roles-guide-ability-highlight {
   color: hsl(324, 100%, 82%);
+}
+
+#screen-roles .roles-guide-card.role-theme-inquisitor .roles-guide-ability-highlight {
+  color: hsl(188, 100%, 78%);
+}
+
+#screen-roles .roles-guide-card.role-theme-alturist .roles-guide-ability-highlight {
+  color: var(--alturist);
+}
+
+#screen-roles .roles-guide-card.role-theme-vessel .roles-guide-ability-highlight {
+  color: var(--vessel);
 }
 
 #screen-roles .roles-guide-card.role-theme-narcissist .roles-guide-ability-highlight {

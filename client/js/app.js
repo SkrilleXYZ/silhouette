@@ -141,6 +141,50 @@
         },
       ],
     },
+    Inquisitor: {
+      faction: 'Crew',
+      subfaction: 'Unbound',
+      description: 'Exile a player before a voting phase ends, making the other players\' votes completely useless.',
+      revealText: 'Teal judgement coils in the air. End the vote on your terms and drag one player out before the crowd decides.',
+      abilities: [
+        {
+          name: 'Exile',
+          type: 'Voting',
+          description: 'Exile a player before a voting phase ends, making the other players\' votes completely useless.',
+        },
+      ],
+    },
+    Alturist: {
+      faction: 'Crew',
+      subfaction: 'Unbound',
+      description: 'Bring a dead player to life while sacrificing your own for the greater good.',
+      revealText: 'Red, gold, and white conviction burn together. Trade your own life to return a fallen ally to the board.',
+      abilities: [
+        {
+          name: 'Sacrifice',
+          type: 'Night',
+          description: 'Bring a dead player to life while sacrificing your own for the greater good.',
+        },
+      ],
+    },
+    'The Vessel': {
+      faction: 'Crew',
+      subfaction: 'Unbound',
+      description: 'Become a killer if you get killed by one.',
+      revealText: 'Purple and gold hold something unfinished inside you. The first killing blow only wakes what was already waiting.',
+      abilities: [
+        {
+          name: 'Penumbra',
+          type: 'Passive',
+          description: 'Become a killer if you get killed by one.',
+        },
+        {
+          name: 'Kill',
+          type: 'Night',
+          description: 'Eliminate a player.',
+        },
+      ],
+    },
     Narcissist: {
       faction: 'Crew',
       subfaction: 'Unbound',
@@ -1239,6 +1283,9 @@
     if (normalizedRole === 'vitalist') return 'vitalist';
     if (normalizedRole === 'warden') return 'warden';
     if (normalizedRole === 'oracle') return 'oracle';
+    if (normalizedRole === 'inquisitor') return 'inquisitor';
+    if (normalizedRole === 'alturist') return 'alturist';
+    if (normalizedRole === 'the vessel') return 'vessel';
     if (normalizedRole === 'narcissist') return 'narcissist';
     if (normalizedRole === 'teleporter') return 'teleporter';
     if (normalizedRole === 'magician') return 'magician';
@@ -1305,6 +1352,70 @@
       textClass: `${themeClass}-text`,
       isSoloWin: true,
     };
+  }
+
+  function getWinnerThemeStyles(winnerName) {
+    const normalizedWinner = String(winnerName || '').trim();
+    if (!normalizedWinner) return null;
+
+    if (normalizedWinner === 'Crew') {
+      return {
+        glowBackground: 'var(--crew)',
+        titleColor: 'var(--crew)',
+        titleShadow: '0 0 30px var(--crew-glow)',
+      };
+    }
+    if (normalizedWinner === 'Assassin') {
+      return {
+        glowBackground: 'var(--assassin)',
+        titleColor: 'var(--assassin)',
+        titleShadow: '0 0 30px var(--assassin-glow)',
+      };
+    }
+    if (normalizedWinner === 'Nobody') {
+      return {
+        glowBackground: 'rgba(190, 202, 220, 0.46)',
+        titleColor: 'hsl(214, 24%, 84%)',
+        titleShadow: '0 0 28px rgba(190, 202, 220, 0.22)',
+      };
+    }
+
+    const themeClass = getRoleThemeClass(normalizedWinner, getRoleGuideDefinition(normalizedWinner)?.faction || 'Neutral');
+    const themeStyles = {
+      sheriff: { glowBackground: 'hsl(42, 100%, 62%)', titleColor: 'hsl(42, 100%, 76%)', titleShadow: '0 0 30px rgba(227, 178, 51, 0.26)' },
+      veteran: { glowBackground: 'hsl(58, 28%, 62%)', titleColor: 'hsl(58, 34%, 76%)', titleShadow: '0 0 30px rgba(188, 192, 139, 0.24)' },
+      karma: { glowBackground: 'hsl(356, 54%, 42%)', titleColor: 'hsl(356, 54%, 62%)', titleShadow: '0 0 30px rgba(123, 18, 34, 0.26)' },
+      mirrorcaster: { glowBackground: 'var(--mirrorcaster)', titleColor: 'var(--mirrorcaster)', titleShadow: '0 0 30px rgba(132, 205, 255, 0.24)' },
+      vitalist: { glowBackground: 'var(--vitalist)', titleColor: 'var(--vitalist)', titleShadow: '0 0 30px rgba(67, 239, 128, 0.24)' },
+      warden: { glowBackground: 'var(--warden)', titleColor: 'var(--warden)', titleShadow: '0 0 30px rgba(92, 228, 226, 0.24)' },
+      oracle: { glowBackground: 'hsl(324, 100%, 62%)', titleColor: 'hsl(324, 100%, 76%)', titleShadow: '0 0 30px rgba(255, 82, 190, 0.24)' },
+      inquisitor: { glowBackground: 'hsl(188, 100%, 62%)', titleColor: 'hsl(188, 100%, 78%)', titleShadow: '0 0 30px rgba(94, 236, 255, 0.24)' },
+      narcissist: { glowBackground: 'hsl(270, 82%, 58%)', titleColor: 'hsl(270, 90%, 78%)', titleShadow: '0 0 30px rgba(124, 58, 237, 0.24)' },
+      teleporter: { glowBackground: 'var(--teleporter)', titleColor: 'var(--teleporter)', titleShadow: '0 0 30px rgba(138, 235, 255, 0.24)' },
+      magician: { glowBackground: 'var(--magician)', titleColor: 'var(--magician)', titleShadow: '0 0 30px rgba(124, 112, 255, 0.24)' },
+      investigator: { glowBackground: 'hsl(267, 86%, 68%)', titleColor: 'hsl(267, 100%, 86%)', titleShadow: '0 0 30px rgba(185, 132, 255, 0.24)' },
+      tracker: { glowBackground: 'hsl(195, 100%, 68%)', titleColor: 'hsl(195, 100%, 78%)', titleShadow: '0 0 30px rgba(122, 226, 255, 0.24)' },
+      stalker: { glowBackground: 'var(--stalker)', titleColor: 'var(--stalker)', titleShadow: '0 0 30px rgba(84, 182, 129, 0.24)' },
+      traplord: { glowBackground: 'var(--traplord)', titleColor: 'var(--traplord)', titleShadow: '0 0 30px rgba(212, 92, 202, 0.24)' },
+      redflag: { glowBackground: 'var(--redflag)', titleColor: 'var(--redflag)', titleShadow: '0 0 30px rgba(255, 76, 76, 0.24)' },
+      silencer: { glowBackground: 'var(--silencer)', titleColor: 'var(--silencer)', titleShadow: '0 0 30px rgba(214, 64, 64, 0.24)' },
+      villager: { glowBackground: 'hsl(204, 20%, 62%)', titleColor: 'hsl(204, 20%, 82%)', titleShadow: '0 0 26px rgba(191, 206, 215, 0.18)' },
+      jester: { glowBackground: 'var(--jester)', titleColor: 'var(--jester)', titleShadow: '0 0 30px var(--jester-glow)' },
+      executioner: { glowBackground: 'var(--executioner)', titleColor: 'var(--executioner)', titleShadow: '0 0 30px rgba(255, 190, 82, 0.24)' },
+      guardianangel: { glowBackground: 'var(--guardianangel)', titleColor: 'var(--guardianangel)', titleShadow: '0 0 30px rgba(246, 226, 177, 0.24)' },
+      survivalist: { glowBackground: 'var(--survivalist)', titleColor: 'var(--survivalist)', titleShadow: '0 0 30px rgba(236, 154, 62, 0.24)' },
+      amnesiac: { glowBackground: 'var(--amnesiac)', titleColor: 'var(--amnesiac)', titleShadow: '0 0 26px rgba(171, 183, 206, 0.2)' },
+      assassin: { glowBackground: 'var(--assassin)', titleColor: 'var(--assassin)', titleShadow: '0 0 30px var(--assassin-glow)' },
+      sniper: { glowBackground: 'var(--sniper)', titleColor: 'var(--sniper)', titleShadow: '0 0 30px rgba(141, 46, 46, 0.24)' },
+      tetherhex: { glowBackground: 'var(--tetherhex)', titleColor: 'var(--tetherhex)', titleShadow: '0 0 30px rgba(74, 255, 119, 0.24)' },
+      hypnotic: { glowBackground: 'var(--hypnotic)', titleColor: 'var(--hypnotic)', titleShadow: '0 0 30px rgba(196, 65, 148, 0.24)' },
+      overload: { glowBackground: 'var(--overload)', titleColor: 'var(--overload)', titleShadow: '0 0 30px rgba(99, 255, 76, 0.24)' },
+      blackout: { glowBackground: 'var(--blackout)', titleColor: 'var(--blackout)', titleShadow: '0 0 28px rgba(112, 120, 136, 0.22)' },
+      blackmailer: { glowBackground: 'var(--blackmailer)', titleColor: 'var(--blackmailer)', titleShadow: '0 0 30px rgba(226, 180, 76, 0.24)' },
+      thepurge: { glowBackground: 'var(--thepurge)', titleColor: 'var(--thepurge)', titleShadow: '0 0 30px rgba(148, 24, 24, 0.24)' },
+    };
+
+    return themeStyles[themeClass] || null;
   }
 
   function getGameoverWinnerThemeClass(winningSide, player) {
@@ -1713,6 +1824,11 @@
       disableVillagerRoleToggle.checked = !!data.disableVillagerRole;
       disableVillagerRoleToggle.disabled = !(state.isHost || state.playerId === data.hostId);
     }
+    const classicFivePlayerSetupToggle = document.getElementById('toggle-classic-five-player-setup');
+    if (classicFivePlayerSetupToggle) {
+      classicFivePlayerSetupToggle.checked = !!data.useClassicFivePlayerSetup;
+      classicFivePlayerSetupToggle.disabled = !(state.isHost || state.playerId === data.hostId);
+    }
 
     const list = document.getElementById('players-list');
     list.innerHTML = '';
@@ -1902,6 +2018,9 @@
     }
     if (/You have been spoofed by the Magician\.$/i.test(text) && String(message.source || '').trim() === 'Magician') {
       return ' system-result-magician';
+    }
+    if (/It is over when i say it is$/i.test(text) && String(message.source || '').trim() === 'The Vessel') {
+      return ' system-result-vessel';
     }
     if (/The night has been taken over by The Purge, no abilities worked\.?$/i.test(text)) {
       return ' system-result-purge';
@@ -2724,6 +2843,13 @@
       .map((p) => ({ id: p.id, name: p.name, avatarIndex: p.avatarIndex }));
   }
 
+  function getDeadTargets() {
+    if (!state.roomData || !state.playerData) return [];
+    return state.roomData.players
+      .filter((p) => !p.alive && p.id !== state.playerId)
+      .map((p) => ({ id: p.id, name: p.name, avatarIndex: p.avatarIndex }));
+  }
+
   function getVoteTargets() {
     if (!state.roomData) return [];
     return state.roomData.players
@@ -2743,9 +2869,13 @@
     const guardianAngelWinnerIds = new Set(winner?.guardianAngelWinnerIds || []);
     const survivalistWinnerIds = new Set(winner?.survivalistWinnerIds || []);
     const narcissistWinnerIds = new Set(winner?.narcissistWinnerIds || []);
+    const winnerThemeStyles = getWinnerThemeStyles(winner?.winner);
 
     glow.className = `gameover-glow ${winnerPresentation.glowClass}`;
     title.className = `gameover-faction ${winnerPresentation.textClass}`;
+    glow.style.background = winnerThemeStyles?.glowBackground || '';
+    title.style.color = winnerThemeStyles?.titleColor || '';
+    title.style.textShadow = winnerThemeStyles?.titleShadow || '';
     title.textContent = winnerPresentation.label.toUpperCase();
     reason.textContent = winnerPresentation.isSoloWin
       ? (winner.reason || 'Everyone else loses.')
@@ -2957,6 +3087,15 @@
       });
     });
 
+    document.getElementById('toggle-classic-five-player-setup').addEventListener('change', (event) => {
+      state.socket.emit('update-room-settings', { useClassicFivePlayerSetup: event.target.checked }, (response) => {
+        if (!response.success) {
+          showToast(response.error || 'Could not update room settings', 'error');
+          event.target.checked = !!state.roomData?.useClassicFivePlayerSetup;
+        }
+      });
+    });
+
     document.getElementById('btn-back-home').addEventListener('click', () => {
       state.roomCode = null;
       state.roomData = null;
@@ -3052,6 +3191,7 @@
       || activeRole === 'Jester'
       || activeRole === 'Executioner'
       || activeRole === 'Karma'
+      || activeRole === 'Inquisitor'
       || activeRole === 'Narcissist'
       || (activeRole === 'Guardian Angel' && (player.guardianAngelUsesRemaining ?? 4) <= 0)
       || (activeRole === 'Oracle' && (player.oracleEvilEyeUsesRemaining ?? 3) <= 0)
@@ -3664,13 +3804,16 @@
       || player.role === 'Executioner'
       || player.role === 'Redflag'
       || player.role === 'Karma'
+      || player.role === 'Inquisitor'
+      || player.role === 'Alturist'
+      || (player.role === 'The Vessel' && !player.vesselAwakened)
       || player.role === 'Narcissist'
       || (player.role === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0)
       || (player.role === 'Mirror Caster' && (player.mirrorUsesRemaining ?? 4) <= 0)
     ) {
-      const amnesiacTargets = player.role === 'Amnesiac' ? getAmnesiacTargets() : [];
-      if (player.role === 'Amnesiac' && amnesiacTargets.length > 0) {
-        // Fall through so Amnesiac can inherit a dead role.
+      const deadTargets = player.role === 'Amnesiac' || player.role === 'Alturist' ? getDeadTargets() : [];
+      if ((player.role === 'Amnesiac' || player.role === 'Alturist') && deadTargets.length > 0) {
+        // Fall through so Amnesiac or Alturist can use a dead-player action.
       } else {
       const executionerTargetPlayer = state.roomData?.players?.find((candidate) => candidate.id === player.executionerTargetId);
       const executionerTargetStyle = executionerTargetPlayer
@@ -3680,6 +3823,10 @@
         ? 'Wait for dawn...'
         : player.role === 'Amnesiac'
           ? 'No dead players can be remembered yet. Wait for dawn...'
+          : player.role === 'Alturist'
+            ? 'No dead players can be revived yet. Wait for dawn...'
+            : player.role === 'The Vessel'
+              ? 'Your Kill is locked. Wait for dawn...'
           : 'You have no abilities. Wait for dawn...';
       state.forceExpandedNightChat = true;
       container.innerHTML = `<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">${waitingSubtext}</p></div><div id="phase-chat-panel"></div>`;
@@ -3694,7 +3841,9 @@
       return;
     }
 
-    const targets = player.role === 'Amnesiac' ? getAmnesiacTargets() : getTargetPlayers();
+    const targets = player.role === 'Amnesiac' || player.role === 'Alturist'
+      ? getDeadTargets()
+      : getTargetPlayers();
     const isAssassin = player.faction === 'Assassin';
     const actionClass = isAssassin ? 'assassin-action' : '';
     const targetClass = isAssassin ? 'assassin-target' : '';
@@ -3849,6 +3998,12 @@
     } else if (activeRole === 'Silencer') {
       state.selectedAction = 'quietus';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="quietus">Quietus</button></div>';
+    } else if (activeRole === 'Alturist') {
+      state.selectedAction = 'sacrifice';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="sacrifice">Sacrifice</button></div>';
+    } else if (activeRole === 'The Vessel') {
+      state.selectedAction = 'kill';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="kill">Kill</button></div>';
     } else if (activeRole === 'Amnesiac') {
       state.selectedAction = 'inherit';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="inherit">Inheritance</button></div>';
@@ -3905,6 +4060,8 @@
     else if (activeRole === 'Teleporter') actionDesc = 'Choose exactly 2 players to swap every night interaction between them.';
     else if (activeRole === 'Magician') actionDesc = 'Choose a player to disappear for the night. They become immune to every interaction, but their own ability is blocked.';
     else if (activeRole === 'Silencer') actionDesc = 'Choose a player to silence until the next night.';
+    else if (activeRole === 'Alturist') actionDesc = 'Choose a dead player to bring back. You will die in their place.';
+    else if (activeRole === 'The Vessel') actionDesc = 'Choose a player to eliminate.';
     else if (activeRole === 'Amnesiac') actionDesc = 'Choose a dead player to inherit their role';
     else if (activeRole === 'Guardian Angel') actionDesc = player.guardianAngelTargetName
       ? `Protect <span class="chat-player-ref"${guardianAngelTargetStyle ? ` style="${guardianAngelTargetStyle}"` : ''}>${escapeHtml(player.guardianAngelTargetName)}</span> from death tonight.`
@@ -4147,7 +4304,9 @@
   function renderVotingPhase(container) {
     const player = state.playerData;
     const canPurify = player?.role === 'Oracle' && (player.oraclePurifyUsesRemaining ?? 2) > 0 && !player.oraclePurifiedTargetId;
-    if (canPurify) {
+    const canExile = player?.role === 'Inquisitor' && !player.inquisitorExiledTargetId;
+    const hasVotingAbility = canPurify || canExile;
+    if (hasVotingAbility) {
       if (state.oracleVotingTab !== 'ability' && state.oracleVotingTab !== 'vote') {
         state.oracleVotingTab = 'ability';
       }
@@ -4162,29 +4321,29 @@
 
     const targets = getVoteTargets();
     const aliveCount = state.totalAlive || state.roomData?.aliveCount || '?';
-    const showAbilityTab = canPurify && state.oracleVotingTab === 'ability';
-    const votingTabs = canPurify ? `
+    const showAbilityTab = hasVotingAbility && state.oracleVotingTab === 'ability';
+    const votingTabs = hasVotingAbility ? `
       <div class="oracle-voting-tabs">
         <button class="oracle-voting-tab ${showAbilityTab ? 'active' : ''}" id="btn-oracle-tab-ability" type="button">Ability</button>
         <button class="oracle-voting-tab ${showAbilityTab ? '' : 'active'}" id="btn-oracle-tab-vote" type="button">Vote</button>
       </div>` : '';
-    const oracleAbilityPanel = canPurify ? `
+    const votingAbilityPanel = hasVotingAbility ? `
       <div class="action-panel oracle-vote-panel${showAbilityTab ? '' : ' hidden'}">
-        <div class="action-title">ORACLE ABILITY</div>
-        <div class="action-subtitle">Purify a player so they cannot be voted out this phase.</div>
-        <div class="target-label">SELECT PLAYER TO PURIFY</div>
-        <div class="target-list chat-target-list" id="oracle-target-list">
+        <div class="action-title">${player.role === 'Inquisitor' ? 'INQUISITOR ABILITY' : 'ORACLE ABILITY'}</div>
+        <div class="action-subtitle">${player.role === 'Inquisitor' ? 'Exile a player instantly and make every other vote useless.' : 'Purify a player so they cannot be voted out this phase.'}</div>
+        <div class="target-label">${player.role === 'Inquisitor' ? 'SELECT PLAYER TO EXILE' : 'SELECT PLAYER TO PURIFY'}</div>
+        <div class="target-list chat-target-list" id="voting-ability-target-list">
           ${targets.filter((target) => target.id !== state.playerId).map((t) => `<div class="target-item ${state.selectedOracleTarget === t.id ? 'selected' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`).join('')}
         </div>
         <div class="chat-local-actions">
-          <button class="btn btn-crew confirm-action" id="btn-confirm-oracle" ${!state.selectedOracleTarget ? 'disabled' : ''}>Confirm ${player.oraclePurifyUsesRemaining ?? 2}/2</button>
-          <button class="btn btn-ghost chat-local-skip" id="btn-skip-oracle-ability">Skip</button>
+          <button class="btn btn-crew confirm-action" id="btn-confirm-voting-ability" ${!state.selectedOracleTarget ? 'disabled' : ''}>${player.role === 'Inquisitor' ? 'Confirm Exile' : `Confirm ${player.oraclePurifyUsesRemaining ?? 2}/2`}</button>
+          <button class="btn btn-ghost chat-local-skip" id="btn-skip-voting-ability">Skip</button>
         </div>
       </div>` : '';
 
     container.innerHTML = `
       ${votingTabs}
-      ${oracleAbilityPanel}
+      ${votingAbilityPanel}
       <div class="voting-panel${showAbilityTab ? ' hidden' : ''}">
         <div class="action-title">CAST YOUR VOTE</div>
         <div class="action-subtitle">${state.votesCast} / ${aliveCount} votes cast</div>
@@ -4215,25 +4374,26 @@
       });
     }
 
-    container.querySelectorAll('#oracle-target-list .target-item').forEach((item) => {
+    container.querySelectorAll('#voting-ability-target-list .target-item').forEach((item) => {
       item.addEventListener('click', () => {
         state.selectedOracleTarget = item.dataset.target;
         renderVotingPhase(container);
       });
     });
 
-    const confirmOracleBtn = document.getElementById('btn-confirm-oracle');
-    if (confirmOracleBtn) {
-      confirmOracleBtn.addEventListener('click', () => {
+    const confirmVotingAbilityBtn = document.getElementById('btn-confirm-voting-ability');
+    if (confirmVotingAbilityBtn) {
+      confirmVotingAbilityBtn.addEventListener('click', () => {
         if (!state.selectedOracleTarget) return;
-        state.socket.emit('voting-action', { action: 'purify', targetId: state.selectedOracleTarget }, (response) => {
+        const action = player.role === 'Inquisitor' ? 'exile' : 'purify';
+        state.socket.emit('voting-action', { action, targetId: state.selectedOracleTarget }, (response) => {
           if (response.success) {
             state.playerData = response.player || state.playerData;
             state.roomData = response.room || state.roomData;
             state.selectedOracleTarget = null;
             state.oracleVotingTab = 'vote';
             renderVotingPhase(container);
-            showToast('Purify used', 'success');
+            showToast(player.role === 'Inquisitor' ? 'Exile used' : 'Purify used', 'success');
           } else {
             showToast(response.error || 'Action failed', 'error');
           }
@@ -4241,9 +4401,9 @@
       });
     }
 
-    const skipOracleAbilityBtn = document.getElementById('btn-skip-oracle-ability');
-    if (skipOracleAbilityBtn) {
-      skipOracleAbilityBtn.addEventListener('click', () => {
+    const skipVotingAbilityBtn = document.getElementById('btn-skip-voting-ability');
+    if (skipVotingAbilityBtn) {
+      skipVotingAbilityBtn.addEventListener('click', () => {
         state.selectedOracleTarget = null;
         state.oracleVotingTab = 'vote';
         renderVotingPhase(container);
