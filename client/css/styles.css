@@ -1999,13 +1999,6 @@ body {
 
 .room-chat-panel {
   margin: 8px 0 4px;
-  flex: 0 0 auto;
-  min-height: 0;
-  max-height: clamp(320px, 44vh, 420px);
-}
-
-.room-chat-panel .chat-messages {
-  max-height: clamp(220px, 30vh, 300px);
 }
 
 .room-header {
@@ -4661,6 +4654,12 @@ body {
   overflow: hidden;
 }
 
+.phase-chat-panel.room-chat-panel {
+  flex: 0 0 clamp(320px, 42vh, 420px);
+  min-height: 320px;
+  max-height: clamp(320px, 42vh, 420px);
+}
+
 .phase-chat-panel.chat-overlay-anchor {
   display: none;
 }
@@ -5031,6 +5030,12 @@ body {
 .phase-chat-panel .chat-messages {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+.phase-chat-panel.room-chat-panel .chat-messages {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
 }
 
 .chat-panel-header {
