@@ -7,6 +7,7 @@ class GameLogic {
         Info: ['Villager', 'Investigator', 'Tracker', 'Stalker', 'Redflag', 'Traplord'],
         Protection: ['Vitalist', 'Mirror Caster', 'Warden'],
         Killing: ['Sheriff', 'Veteran'],
+        Chaos: ['Teleporter'],
         Unbound: ['Silencer'],
       },
       Assassin: {
@@ -284,11 +285,24 @@ class GameLogic {
     return true;
   }
 
+  assignRoleFromPool(room, playerId, faction, roles) {
+    const player = room.players.get(playerId);
+    if (!player) return false;
+
+    const role = this.pickRandomRole(roles);
+    if (!role) return false;
+
+    player.role = role;
+    player.faction = faction;
+    return true;
+  }
+
   assignFallbackCrewRole(room, playerId) {
     const fallbackPool = [
       ...this.getRolePoolForRoom(room, 'Crew', 'Info'),
       ...this.getRolePoolForRoom(room, 'Crew', 'Protection'),
       ...this.getRolePoolForRoom(room, 'Crew', 'Killing'),
+      ...this.getRolePoolForRoom(room, 'Crew', 'Chaos'),
       ...this.getRolePoolForRoom(room, 'Crew', 'Unbound'),
     ];
     const role = this.pickRandomRole(fallbackPool);
@@ -449,7 +463,6 @@ class GameLogic {
         { faction: 'Crew', subfaction: 'Info' },
         { faction: 'Crew', subfaction: 'Protection' },
         { faction: 'Crew', subfaction: 'Killing' },
-        { faction: 'Crew', subfaction: 'Unbound' },
         { faction: 'Assassin', subfaction: 'Power' },
         { faction: 'Assassin', subfaction: 'Concealing' },
       ];
@@ -458,6 +471,17 @@ class GameLogic {
         this.assignRoleFromSlot(room, shuffled[index], slot.faction, slot.subfaction);
         index++;
       }
+
+      this.assignRoleFromPool(
+        room,
+        shuffled[index],
+        'Crew',
+        [
+          ...this.getRolePoolForRoom(room, 'Crew', 'Unbound'),
+          ...this.getRolePoolForRoom(room, 'Crew', 'Chaos'),
+        ]
+      );
+      index++;
 
       this.assignNeutralSpecialRole(room, shuffled[index], ['Evil', 'Benign', 'Killing']);
       room.playerOrder = shuffled;
@@ -490,6 +514,11 @@ class GameLogic {
 
     if (index < shuffled.length) {
       this.assignRoleFromSlot(room, shuffled[index], 'Crew', 'Unbound');
+      index++;
+    }
+
+    if (index < shuffled.length) {
+      this.assignRoleFromSlot(room, shuffled[index], 'Crew', 'Chaos');
       index++;
     }
 
@@ -674,6 +703,15 @@ class GameLogic {
         const target = room.players.get(selectedTargetId);
         if (!target || !target.alive) return { error: 'Invalid target' };
         if (selectedTargetId === playerId) return { error: 'Cannot target yourself' };
+      }
+    } else if (player.role === 'Teleporter') {
+      if (action !== 'teleport') return { error: 'Invalid action for Teleporter' };
+      if (!Array.isArray(targetIds)) return { error: 'Invalid targets' };
+      const normalizedTargetIds = [...new Set(targetIds.map((id) => String(id || '').trim()).filter(Boolean))];
+      if (normalizedTargetIds.length !== 2) return { error: 'Choose exactly 2 players' };
+      for (const selectedTargetId of normalizedTargetIds) {
+        const target = room.players.get(selectedTargetId);
+        if (!target || !target.alive) return { error: 'Invalid target' };
       }
     } else if (player.role === 'Silencer') {
       const target = room.players.get(targetId);
@@ -898,6 +936,13 @@ class GameLogic {
         targetIds: [...new Set(targetIds.map((id) => String(id || '').trim()).filter(Boolean))],
         queuedTargetId: null,
       };
+    } else if (player.role === 'Teleporter') {
+      room.nightActions[playerId] = {
+        action,
+        targetId: null,
+        targetIds: [...new Set(targetIds.map((id) => String(id || '').trim()).filter(Boolean))],
+        queuedTargetId: null,
+      };
     } else {
       room.nightActions[playerId] = {
         action,
@@ -1014,6 +1059,10 @@ class GameLogic {
         if (blackoutAction.action === 'kill' || blackoutAction.action === 'skip' || blackoutAction.skippedAfterFlash === true) continue;
         return false;
       }
+      if (player.role === 'Teleporter') {
+        if (!room.nightActions[id]) return false;
+        continue;
+      }
       if (player.role === 'Sniper') {
         if (!room.nightActions[id]) return false;
         continue;
@@ -1081,6 +1130,16 @@ class GameLogic {
       if (nightAction.interlinkedUsedThisNight && nightAction.interlinkedTargetId) targetIds.push(nightAction.interlinkedTargetId);
       return [...new Set(targetIds)];
     };
+    const teleportSwaps = [];
+    const remapTeleportedTargetId = (targetId) => {
+      let resolvedTargetId = targetId;
+      if (!resolvedTargetId) return resolvedTargetId;
+      for (const [firstId, secondId] of teleportSwaps) {
+        if (resolvedTargetId === firstId) resolvedTargetId = secondId;
+        else if (resolvedTargetId === secondId) resolvedTargetId = firstId;
+      }
+      return resolvedTargetId;
+    };
 
     // Track who the medic protected this night
     let medicTargetThisNight = null;
@@ -1093,6 +1152,27 @@ class GameLogic {
 
     room.blackmailedPlayers = {};
     room.silencedPlayers = {};
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      if (!player || player.role !== 'Teleporter') continue;
+      const teleportTargetIds = Array.isArray(action.targetIds) ? [...new Set(action.targetIds.filter(Boolean))] : [];
+      if (action.action !== 'teleport' || teleportTargetIds.length !== 2) continue;
+      teleportSwaps.push([teleportTargetIds[0], teleportTargetIds[1]]);
+    }
+
+    for (const action of Object.values(room.nightActions)) {
+      if (!action) continue;
+      if (action.targetId) action.targetId = remapTeleportedTargetId(action.targetId);
+      if (action.queuedTargetId) action.queuedTargetId = remapTeleportedTargetId(action.queuedTargetId);
+      if (action.tranceTargetId) action.tranceTargetId = remapTeleportedTargetId(action.tranceTargetId);
+      if (action.malwareTargetId) action.malwareTargetId = remapTeleportedTargetId(action.malwareTargetId);
+      if (action.blackmailTargetId) action.blackmailTargetId = remapTeleportedTargetId(action.blackmailTargetId);
+      if (action.interlinkedTargetId) action.interlinkedTargetId = remapTeleportedTargetId(action.interlinkedTargetId);
+      if (Array.isArray(action.targetIds)) {
+        action.targetIds = action.targetIds.map((targetId) => remapTeleportedTargetId(targetId));
+      }
+    }
 
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
@@ -1243,7 +1323,7 @@ class GameLogic {
         player.mirrorUsesRemaining = Math.max(0, (player.mirrorUsesRemaining ?? 4) - 1);
       }
       if (action.action === 'bless' && player.role === 'Guardian Angel' && player.guardianAngelTargetId && !action.blessBlockedByWarden) {
-        blessedTargets.add(player.guardianAngelTargetId);
+        blessedTargets.add(remapTeleportedTargetId(player.guardianAngelTargetId));
         player.guardianAngelUsesRemaining = Math.max(0, (player.guardianAngelUsesRemaining ?? 4) - 1);
       }
       if (action.action === 'lifeguard' && player.role === 'Survivalist') {
@@ -2205,9 +2285,11 @@ class GameLogic {
     let aliveNeutralEvilCount = 0;
     let aliveNeutralKillingCount = 0;
     let aliveNeutralKillingRoles = [];
+    let totalAliveCount = 0;
 
     for (const [, player] of room.players) {
       if (!player.alive) continue;
+      totalAliveCount++;
       if (player.faction === 'Crew') aliveCrewCount++;
       else if (player.faction === 'Assassin') aliveAssassinCount++;
       else if (player.faction === 'Neutral' && this.roleCatalog?.Neutral?.Evil?.includes(player.role)) aliveNeutralEvilCount++;
@@ -2217,23 +2299,19 @@ class GameLogic {
       }
     }
 
+    // If the last remaining real contenders wipe each other out at once,
+    // nobody wins. This covers cases like Sheriff trading with a Neutral Killer.
+    if (aliveCrewCount === 0 && aliveAssassinCount === 0 && aliveNeutralKillingCount === 0 && totalAliveCount === 0) {
+      return { winner: 'Nobody', reason: 'The last contenders wiped each other out. No one wins.' };
+    }
+
     if (aliveNeutralKillingCount > 0 && aliveCrewCount === 0 && aliveAssassinCount === 0 && aliveNeutralEvilCount === 0) {
       const neutralKillingWinner = aliveNeutralKillingRoles[0] || 'Overload';
       return this.withNeutralBenignCoWinners(room, this.withGuardianAngelCoWinners(room, { winner: neutralKillingWinner, reason: `${neutralKillingWinner} has outlived everyone else!` }));
     }
 
     if (aliveAssassinCount === 0 && aliveNeutralKillingCount === 0) {
-      return this.withNeutralBenignCoWinners(room, this.withGuardianAngelCoWinners(room, { winner: 'Crew', reason: 'All Assassins have been eliminated!' }));
-    }
-
-    // Neutral Evil roles like Jester should be able to keep the game alive at parity,
-    // so the table still has a chance to vote them out instead of ending immediately.
-    if (aliveAssassinCount > 0 && aliveCrewCount > 0 && (aliveNeutralEvilCount > 0 || aliveNeutralKillingCount > 0)) {
-      return null;
-    }
-
-    if (aliveNeutralKillingCount > 0 && (aliveCrewCount > 0 || aliveAssassinCount > 0 || aliveNeutralEvilCount > 0)) {
-      return null;
+      return this.withNeutralBenignCoWinners(room, this.withGuardianAngelCoWinners(room, { winner: 'Crew', reason: 'All hostile factions have been eliminated!' }));
     }
 
     if (aliveAssassinCount >= aliveCrewCount) {
@@ -2352,6 +2430,7 @@ class GameLogic {
     if (action === 'track') return 'Tracker is following someone.';
     if (action === 'stalk') return 'Stalker is shadowing someone.';
     if (action === 'trap') return 'Traplord is setting a trap.';
+    if (action === 'teleport') return 'Teleporter is bending the room.';
     if (action === 'guard') return 'Warden has locked down a player.';
     if (action === 'protect') return 'Vitalist has protected someone.';
     if (action === 'quietus') return 'Silencer has hushed someone.';

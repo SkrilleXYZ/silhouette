@@ -22,6 +22,9 @@
   --warden: hsl(188, 88%, 66%);
   --warden-dim: hsl(194, 58%, 20%);
   --warden-glow: hsla(188, 88%, 66%, 0.34);
+  --teleporter: hsl(192, 100%, 78%);
+  --teleporter-dim: hsl(194, 56%, 20%);
+  --teleporter-glow: hsla(192, 100%, 78%, 0.34);
   --tracker: hsl(195, 100%, 72%);
   --tracker-dim: hsl(198, 58%, 18%);
   --tracker-glow: hsla(195, 100%, 72%, 0.36);
@@ -2536,6 +2539,9 @@ body {
 .role-card.role-theme-warden .role-card-glow { background: radial-gradient(circle, var(--warden) 0%, transparent 70%); }
 .role-card.role-theme-warden .role-card-inner { border-color: rgba(92, 228, 226, 0.42); box-shadow: inset 0 0 0 1px rgba(92, 228, 226, 0.08), 0 0 24px rgba(74, 198, 216, 0.14); }
 
+.role-card.role-theme-teleporter .role-card-glow { background: radial-gradient(circle, var(--teleporter) 0%, transparent 70%); }
+.role-card.role-theme-teleporter .role-card-inner { border-color: rgba(138, 235, 255, 0.42); box-shadow: inset 0 0 0 1px rgba(138, 235, 255, 0.08), 0 0 24px rgba(84, 212, 255, 0.14); }
+
 .role-card.role-theme-tracker .role-card-glow { background: radial-gradient(circle, var(--tracker) 0%, transparent 70%); }
 .role-card.role-theme-tracker .role-card-inner { border-color: rgba(122, 226, 255, 0.38); box-shadow: inset 0 0 0 1px rgba(122, 226, 255, 0.08), 0 0 24px rgba(74, 192, 230, 0.12); }
 
@@ -2627,6 +2633,7 @@ body {
 
 .role-card.role-theme-vitalist .role-faction { color: var(--vitalist); }
 .role-card.role-theme-warden .role-faction { color: var(--warden); }
+.role-card.role-theme-teleporter .role-faction { color: var(--teleporter); }
 
 .role-card.role-theme-tracker .role-faction { color: var(--tracker); }
 
@@ -2685,6 +2692,7 @@ body {
 
 .role-card.role-theme-vitalist .role-divider { background: var(--vitalist); }
 .role-card.role-theme-warden .role-divider { background: linear-gradient(90deg, #49a9ff 0%, #58e2d1 55%, #f2d36b 100%); }
+.role-card.role-theme-teleporter .role-divider { background: linear-gradient(90deg, rgba(132, 212, 255, 1) 0%, rgba(95, 245, 255, 1) 100%); }
 
 .role-card.role-theme-tracker .role-divider { background: var(--tracker); }
 
@@ -2731,6 +2739,11 @@ body {
   background-clip: text;
   color: transparent;
   text-shadow: 0 0 18px rgba(92, 228, 226, 0.18);
+}
+
+.role-card.role-theme-teleporter .role-name {
+  color: hsl(192, 100%, 92%);
+  text-shadow: 0 0 18px rgba(138, 235, 255, 0.24);
 }
 
 .role-card.role-theme-tracker .role-name {
@@ -2977,6 +2990,12 @@ body {
     linear-gradient(135deg, rgba(10, 24, 34, 0.98), rgba(10, 42, 48, 0.96) 54%, rgba(42, 46, 22, 0.92));
 }
 
+.role-reveal-panel.role-theme-teleporter {
+  background:
+    radial-gradient(circle at top, rgba(138, 235, 255, 0.24), transparent 44%),
+    linear-gradient(180deg, rgba(10, 26, 36, 0.98), rgba(6, 14, 22, 0.98));
+}
+
 .role-reveal-panel.role-theme-vitalist {
   background:
     radial-gradient(circle at top, rgba(57, 255, 123, 0.2), transparent 48%),
@@ -3109,6 +3128,10 @@ body {
 
 .role-reveal-panel.role-theme-warden.settled {
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.58), 0 0 34px rgba(92, 228, 226, 0.18);
+}
+
+.role-reveal-panel.role-theme-teleporter.settled {
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.58), 0 0 34px rgba(138, 235, 255, 0.18);
 }
 
 .role-reveal-panel.role-theme-vitalist.settled {
@@ -3330,6 +3353,12 @@ body {
   box-shadow: inset 0 0 0 1px rgba(92, 228, 226, 0.12), 0 0 14px rgba(92, 228, 226, 0.14);
 }
 
+.role-reveal-item.role-theme-teleporter.is-selected {
+  border-color: rgba(138, 235, 255, 0.55);
+  background: linear-gradient(180deg, rgba(138, 235, 255, 0.08), rgba(138, 235, 255, 0.02));
+  box-shadow: inset 0 0 0 1px rgba(138, 235, 255, 0.12), 0 0 14px rgba(138, 235, 255, 0.14);
+}
+
 .role-reveal-item.role-theme-vitalist.is-selected {
   border-color: rgba(85, 255, 149, 0.55);
   background: linear-gradient(180deg, rgba(85, 255, 149, 0.08), rgba(85, 255, 149, 0.02));
@@ -3504,6 +3533,11 @@ body {
   color: var(--warden);
 }
 
+.role-reveal-item.role-theme-teleporter .role-reveal-name,
+.role-reveal-item.role-theme-teleporter .role-reveal-faction {
+  color: var(--teleporter);
+}
+
 .role-reveal-item.role-theme-vitalist .role-reveal-name,
 .role-reveal-item.role-theme-vitalist .role-reveal-faction {
   color: var(--vitalist);
@@ -3645,6 +3679,11 @@ body {
 .role-reveal-result.role-theme-warden strong {
   color: var(--warden);
   text-shadow: 0 0 18px rgba(92, 228, 226, 0.24);
+}
+
+.role-reveal-result.role-theme-teleporter strong {
+  color: var(--teleporter);
+  text-shadow: 0 0 18px rgba(138, 235, 255, 0.24);
 }
 
 .role-reveal-result.role-theme-vitalist strong {
@@ -5527,6 +5566,7 @@ body {
 .search-target-role.role-theme-villager { color: var(--villager); text-shadow: 0 0 10px rgba(191, 206, 215, 0.14); }
 .search-target-role.role-theme-vitalist { color: var(--vitalist); text-shadow: 0 0 12px rgba(85, 255, 149, 0.16); }
 .search-target-role.role-theme-warden { color: var(--warden); text-shadow: 0 0 12px rgba(92, 228, 226, 0.18); }
+.search-target-role.role-theme-teleporter { color: var(--teleporter); text-shadow: 0 0 12px rgba(138, 235, 255, 0.18); }
 .search-target-role.role-theme-tracker { color: var(--tracker); text-shadow: 0 0 12px rgba(122, 226, 255, 0.18); }
 .search-target-role.role-theme-stalker { color: var(--stalker); text-shadow: 0 0 12px rgba(84, 182, 129, 0.18); }
 .search-target-role.role-theme-traplord { color: var(--traplord); text-shadow: 0 0 12px rgba(212, 92, 202, 0.2); }
@@ -5683,6 +5723,7 @@ body {
 .gameover-glow.crew-win { background: var(--crew); }
 .gameover-glow.assassin-win { background: var(--assassin); }
 .gameover-glow.jester-win { background: var(--jester); }
+.gameover-glow.nobody-win { background: rgba(190, 202, 220, 0.46); }
 
 .gameover-title {
   font-family: 'Cinzel', serif;
@@ -5704,6 +5745,7 @@ body {
 .gameover-faction.crew-text { color: var(--crew); text-shadow: 0 0 30px var(--crew-glow); }
 .gameover-faction.assassin-text { color: var(--assassin); text-shadow: 0 0 30px var(--assassin-glow); }
 .gameover-faction.jester-text { color: var(--jester); text-shadow: 0 0 30px var(--jester-glow); }
+.gameover-faction.nobody-text { color: hsl(214, 24%, 84%); text-shadow: 0 0 28px rgba(190, 202, 220, 0.22); }
 
 .gameover-reason {
   font-size: 0.85rem;
@@ -5784,6 +5826,7 @@ body {
 .gameover-player-role.role-theme-villager { color: var(--villager); }
 .gameover-player-role.role-theme-vitalist { color: var(--vitalist); }
 .gameover-player-role.role-theme-warden { color: var(--warden); }
+.gameover-player-role.role-theme-teleporter { color: var(--teleporter); }
 .gameover-player-role.role-theme-tracker { color: var(--tracker); }
 .gameover-player-role.role-theme-stalker { color: var(--stalker); }
 .gameover-player-role.role-theme-traplord { color: var(--traplord); }
@@ -5841,6 +5884,7 @@ body {
 .gameover-player.won:has(.gameover-player-role.role-theme-sheriff),
 .gameover-player.won:has(.gameover-player-role.role-theme-veteran),
 .gameover-player.won:has(.gameover-player-role.role-theme-warden),
+.gameover-player.won:has(.gameover-player-role.role-theme-teleporter),
 .gameover-player.won:has(.gameover-player-role.role-theme-mirrorcaster) {
   border-color: rgba(87, 214, 255, 0.46);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 30px rgba(87, 214, 255, 0.2);
@@ -6355,6 +6399,7 @@ body {
 .gpl-role.role-theme-villager { background: rgba(56, 66, 74, 0.92); color: hsl(204, 20%, 82%); box-shadow: 0 0 14px rgba(191, 206, 215, 0.1); }
 .gpl-role.role-theme-vitalist { background: rgba(20, 74, 35, 0.92); color: hsl(132, 92%, 70%); box-shadow: 0 0 16px rgba(67, 239, 128, 0.12); }
 .gpl-role.role-theme-warden { background: linear-gradient(135deg, rgba(18, 56, 70, 0.94), rgba(16, 82, 88, 0.92) 56%, rgba(94, 88, 36, 0.88)); color: var(--warden); box-shadow: 0 0 16px rgba(92, 228, 226, 0.14); }
+.gpl-role.role-theme-teleporter { background: linear-gradient(135deg, rgba(18, 58, 78, 0.94), rgba(16, 82, 104, 0.92)); color: var(--teleporter); box-shadow: 0 0 16px rgba(138, 235, 255, 0.14); }
 .gpl-role.role-theme-mirrorcaster { background: linear-gradient(135deg, rgba(58, 72, 90, 0.94), rgba(22, 56, 76, 0.94)); color: var(--mirrorcaster); box-shadow: 0 0 16px rgba(132, 205, 255, 0.14); }
 .gpl-role.role-theme-tracker { background: rgba(20, 67, 84, 0.92); color: hsl(195, 100%, 78%); box-shadow: 0 0 16px rgba(122, 226, 255, 0.14); }
 .gpl-role.role-theme-stalker { background: rgba(21, 56, 34, 0.92); color: var(--stalker); box-shadow: 0 0 16px rgba(84, 182, 129, 0.14); }
@@ -6985,6 +7030,12 @@ body {
   color: var(--warden);
 }
 
+#screen-roles .roles-guide-card.role-theme-teleporter,
+#screen-roles .roles-guide-card.role-theme-teleporter .roles-guide-card-icon {
+  border-color: rgba(138, 235, 255, 0.72);
+  color: var(--teleporter);
+}
+
 #screen-roles .roles-guide-card.role-theme-tracker,
 #screen-roles .roles-guide-card.role-theme-tracker .roles-guide-card-icon {
   border-color: rgba(8, 145, 178, 0.72);
@@ -7123,6 +7174,10 @@ body {
   box-shadow: 0 0 20px -10px rgba(92, 228, 226, 0.48);
 }
 
+#screen-roles .roles-guide-card.role-theme-teleporter:hover {
+  box-shadow: 0 0 20px -10px rgba(138, 235, 255, 0.48);
+}
+
 #screen-roles .roles-guide-card.role-theme-tracker:hover {
   box-shadow: 0 0 20px -10px rgba(6, 182, 212, 0.5);
 }
@@ -7214,6 +7269,10 @@ body {
 
 #screen-roles .roles-guide-card.role-theme-warden .roles-guide-ability-highlight {
   color: var(--warden);
+}
+
+#screen-roles .roles-guide-card.role-theme-teleporter .roles-guide-ability-highlight {
+  color: var(--teleporter);
 }
 
 #screen-roles .roles-guide-card.role-theme-tracker .roles-guide-ability-highlight {

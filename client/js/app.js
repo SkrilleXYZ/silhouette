@@ -126,6 +126,19 @@
         },
       ],
     },
+    Teleporter: {
+      faction: 'Crew',
+      subfaction: 'Chaos',
+      description: 'Choose 2 players to switch places during the night.',
+      revealText: 'Cold cyan light tears the room sideways. Swap two positions and let every night action hit the wrong place.',
+      abilities: [
+        {
+          name: 'Teleport',
+          type: 'Night',
+          description: 'Choose 2 players to switch places during the night.',
+        },
+      ],
+    },
     Investigator: {
       faction: 'Crew',
       subfaction: 'Info',
@@ -1128,6 +1141,7 @@
     if (normalizedRole === 'mirror caster') return 'mirrorcaster';
     if (normalizedRole === 'vitalist') return 'vitalist';
     if (normalizedRole === 'warden') return 'warden';
+    if (normalizedRole === 'teleporter') return 'teleporter';
     if (normalizedRole === 'investigator') return 'investigator';
     if (normalizedRole === 'tracker') return 'tracker';
     if (normalizedRole === 'stalker') return 'stalker';
@@ -1174,6 +1188,13 @@
         textClass: 'assassin-text',
       };
     }
+    if (normalizedWinner === 'Nobody') {
+      return {
+        label: 'Nobody Wins',
+        glowClass: 'nobody-win',
+        textClass: 'nobody-text',
+      };
+    }
 
     const roleInfo = getRoleGuideDefinition(normalizedWinner);
     const themeClass = getRoleThemeClass(normalizedWinner, roleInfo?.faction || 'Neutral');
@@ -1189,6 +1210,7 @@
     if (!player) return '';
     if (winningSide === 'Crew' && player.faction === 'Crew') return 'winner-crew';
     if (winningSide === 'Assassin' && player.faction === 'Assassin') return 'winner-assassin';
+    if (winningSide === 'Nobody') return '';
     if (winningSide === player.role) return `winner-${getRoleThemeClass(player.role, player.faction)}`;
     return '';
   }
@@ -2515,7 +2537,7 @@
     if (!state.roomData || !state.playerData) return [];
     return state.roomData.players.filter(p => {
       if (!p.alive) return false;
-      if (p.id === state.playerId) return state.playerData.role === 'Vitalist' || state.playerData.role === 'Mirror Caster';
+      if (p.id === state.playerId) return state.playerData.role === 'Vitalist' || state.playerData.role === 'Mirror Caster' || state.playerData.role === 'Teleporter';
       if (state.playerData.role === 'Assassin') {
         const isTeammate = state.playerData.teammates?.some(t => t.id === p.id);
         if (isTeammate) return false;
@@ -2562,7 +2584,7 @@
     }
 
     playersList.innerHTML = players.map((p, index) => `
-      <div class="gameover-player ${(survivalistWinnerIds.has(p.id) || guardianAngelWinnerIds.has(p.id) || (winningSide === 'Crew' && p.faction === 'Crew') || (winningSide === 'Assassin' && p.faction === 'Assassin') || winningSide === p.role) ? 'won' : 'lost'}" style="--gameover-delay:${320 + (index * 60)}ms;">
+      <div class="gameover-player ${(winningSide !== 'Nobody' && (survivalistWinnerIds.has(p.id) || guardianAngelWinnerIds.has(p.id) || (winningSide === 'Crew' && p.faction === 'Crew') || (winningSide === 'Assassin' && p.faction === 'Assassin') || winningSide === p.role)) ? 'won' : 'lost'}" style="--gameover-delay:${320 + (index * 60)}ms;">
         <span class="gameover-player-name" style="${getPlayerChatStyle({ type: 'player', senderId: p.id, senderName: p.name, colorHex: p.colorHex || p.colorHue })}">${p.name}</span>
         <span class="gameover-player-role ${getRoleBadgeClass(p.role, p.faction)}">
           ${p.role}
@@ -3490,7 +3512,7 @@
     const overloadLockedTargetId = player.role === 'Overload' && state.selectedAction === 'malware'
       ? player.lastOverloadTarget
       : null;
-    const traplordSelectedTargets = player.role === 'Traplord'
+    const multiSelectedTargets = (player.role === 'Traplord' || player.role === 'Teleporter')
       ? (Array.isArray(state.selectedTargets) ? state.selectedTargets : [])
       : [];
     const guardianAngelFixedTargetId = player.role === 'Guardian Angel'
@@ -3550,8 +3572,11 @@
       }
     }
 
-    if (player.role === 'Traplord') {
+    if (player.role === 'Traplord' || player.role === 'Teleporter') {
       state.selectedAction = 'trap';
+      if (player.role === 'Teleporter') {
+        state.selectedAction = 'teleport';
+      }
       if (!Array.isArray(state.selectedTargets)) {
         state.selectedTargets = [];
       }
@@ -3579,6 +3604,9 @@
     } else if (player.role === 'Traplord') {
       state.selectedAction = 'trap';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="trap">Trap</button></div>';
+    } else if (player.role === 'Teleporter') {
+      state.selectedAction = 'teleport';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="teleport">Teleport</button></div>';
     } else if (player.role === 'Silencer') {
       state.selectedAction = 'quietus';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="quietus">Quietus</button></div>';
@@ -3627,6 +3655,7 @@
     else if (player.role === 'Tracker') actionDesc = 'Choose a player to track for nighttime interactions';
     else if (player.role === 'Stalker') actionDesc = 'Choose a player to stalk for incoming interactions';
     else if (player.role === 'Traplord') actionDesc = 'Choose at least 3 players. You will learn their roles in random order.';
+    else if (player.role === 'Teleporter') actionDesc = 'Choose exactly 2 players to swap every night interaction between them.';
     else if (player.role === 'Silencer') actionDesc = 'Choose a player to silence until the next night.';
     else if (player.role === 'Amnesiac') actionDesc = 'Choose a dead player to inherit their role';
     else if (player.role === 'Guardian Angel') actionDesc = player.guardianAngelTargetName
@@ -3671,14 +3700,15 @@
       || player.role === 'Survivalist'
       || (player.role === 'Blackout' && state.selectedAction === 'flash');
     const displayedTargets = player.role === 'Guardian Angel' ? guardianAngelTargets : targets;
-    const isMultiTargetRole = player.role === 'Traplord';
+    const isMultiTargetRole = player.role === 'Traplord' || player.role === 'Teleporter';
+    const requiredMultiTargetCount = player.role === 'Teleporter' ? 2 : 3;
     container.innerHTML = `
       <div class="action-panel">
         <div class="action-title">YOUR NIGHT ACTION</div>
         <div class="action-subtitle">${actionDesc}</div>
         ${actionsHTML}
         ${isTargetlessRole ? '' : `
-        <div class="target-label">${isMultiTargetRole ? `SELECT AT LEAST 3 TARGETS${traplordSelectedTargets.length ? ` (${traplordSelectedTargets.length} SELECTED)` : ''}` : 'SELECT TARGET'}</div>
+        <div class="target-label">${isMultiTargetRole ? `${player.role === 'Teleporter' ? 'SELECT 2 TARGETS' : 'SELECT AT LEAST 3 TARGETS'}${multiSelectedTargets.length ? ` (${multiSelectedTargets.length} SELECTED)` : ''}` : 'SELECT TARGET'}</div>
         <div class="target-list chat-target-list" id="target-list">
           ${displayedTargets.map(t => {
             const isRestricted = (player.role === 'Vitalist' && t.id === player.lastMedicTarget)
@@ -3692,13 +3722,13 @@
               || (player.role === 'Hypnotic' && t.id === hypnoticLockedTargetId)
               || (player.role === 'Overload' && t.id === overloadLockedTargetId);
             const isSelected = isMultiTargetRole
-              ? traplordSelectedTargets.includes(t.id)
+              ? multiSelectedTargets.includes(t.id)
               : state.selectedTarget === t.id;
             return `<div class="target-item ${isSelected ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`;
           }).join('')}
         </div>`}
         <div class="chat-local-actions">
-          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) || (isMultiTargetRole && traplordSelectedTargets.length < 3) || (player.role === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) ? 'disabled' : ''}>${player.role === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : player.role === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : player.role === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : player.role === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 5}/5` : player.role === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : isMultiTargetRole ? `Confirm ${traplordSelectedTargets.length}/3+` : 'Confirm'}</button>
+          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) || (isMultiTargetRole && multiSelectedTargets.length < requiredMultiTargetCount) || (player.role === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) ? 'disabled' : ''}>${player.role === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : player.role === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : player.role === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : player.role === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 5}/5` : player.role === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : player.role === 'Teleporter' ? `Confirm ${multiSelectedTargets.length}/2` : isMultiTargetRole ? `Confirm ${multiSelectedTargets.length}/3+` : 'Confirm'}</button>
           <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>
         </div>
       </div>
@@ -3745,9 +3775,13 @@
         }
         if (isMultiTargetRole) {
           const targetId = item.dataset.target;
-          state.selectedTargets = traplordSelectedTargets.includes(targetId)
-            ? traplordSelectedTargets.filter((selectedId) => selectedId !== targetId)
-            : [...traplordSelectedTargets, targetId];
+          if (multiSelectedTargets.includes(targetId)) {
+            state.selectedTargets = multiSelectedTargets.filter((selectedId) => selectedId !== targetId);
+          } else if (player.role === 'Teleporter') {
+            state.selectedTargets = [...multiSelectedTargets.slice(-1), targetId];
+          } else {
+            state.selectedTargets = [...multiSelectedTargets, targetId];
+          }
         } else {
           state.selectedTarget = item.dataset.target;
         }
@@ -3760,11 +3794,11 @@
       confirmBtn.addEventListener('click', () => {
         if (!state.selectedAction) return;
         if (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) return;
-        if (isMultiTargetRole && traplordSelectedTargets.length < 3) return;
+        if (isMultiTargetRole && multiSelectedTargets.length < requiredMultiTargetCount) return;
         state.socket.emit('night-action', {
           action: state.selectedAction,
           targetId: isTargetlessRole || isMultiTargetRole ? null : state.selectedTarget,
-          targetIds: isMultiTargetRole ? traplordSelectedTargets : null,
+          targetIds: isMultiTargetRole ? multiSelectedTargets : null,
         }, (response) => {
           if (response.success) {
             if (response.player) {
@@ -3772,7 +3806,7 @@
               queueAmnesiacInheritanceTransition(previousPlayer, response.player);
               state.playerData = response.player;
               state.hasActed = !!response.player.hasSubmittedAction;
-              if (response.player.role === 'Traplord') {
+              if (response.player.role === 'Traplord' || response.player.role === 'Teleporter') {
                 state.selectedTargets = [];
               }
               if (response.player.role === 'Blackout' && state.selectedAction === 'flash' && !response.player.hasSubmittedAction) {
