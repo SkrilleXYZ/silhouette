@@ -674,7 +674,7 @@ class GameLogic {
         index++;
       }
 
-      this.assignNeutralSpecialRole(room, shuffled[index], ['Evil', 'Benign', 'Killing']);
+      this.assignNeutralSpecialRole(room, shuffled[index], ['Evil']);
       index++;
 
       room.playerOrder = shuffled;

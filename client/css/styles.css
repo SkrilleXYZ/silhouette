@@ -1999,6 +1999,13 @@ body {
 
 .room-chat-panel {
   margin: 8px 0 4px;
+  flex: 0 0 auto;
+  min-height: 0;
+  max-height: clamp(320px, 44vh, 420px);
+}
+
+.room-chat-panel .chat-messages {
+  max-height: clamp(220px, 30vh, 300px);
 }
 
 .room-header {
