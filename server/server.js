@@ -220,6 +220,14 @@ io.on('connection', (socket) => {
     }
     const playerData = game.getPlayerData(mapping.code, mapping.playerId);
     socket.emit('player-updated', { player: playerData });
+    if (result.immediateAlturistRevive) {
+      const publicData = game.getRoomPublicData(mapping.code);
+      io.to(mapping.code).emit('room-updated', publicData);
+      if (result.revivedPlayerId) {
+        const revivedPlayerData = game.getPlayerData(mapping.code, result.revivedPlayerId);
+        io.to(getPlayerChannel(result.revivedPlayerId)).emit('player-updated', { player: revivedPlayerData });
+      }
+    }
     callback({ success: true, player: playerData });
     if (game.checkAllNightActionsSubmitted(mapping.code)) {
       resolveNightPhase(mapping.code);
@@ -281,14 +289,14 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('voting-action', ({ action, targetId }, callback) => {
+  socket.on('voting-action', ({ action, targetId, targetIds }, callback) => {
     const mapping = socketMap.get(socket.id);
     if (!mapping) {
       if (callback) callback({ success: false, error: 'Not in a room' });
       return;
     }
 
-    const result = game.submitVotingAbility(mapping.code, mapping.playerId, action, targetId);
+    const result = game.submitVotingAbility(mapping.code, mapping.playerId, action, targetId, targetIds);
     if (result.error) {
       if (callback) callback({ success: false, error: result.error });
       return;

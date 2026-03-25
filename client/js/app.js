@@ -42,6 +42,7 @@
     currentRolesFaction: 'Crew',
     profilePaletteView: 'avatars',
     pendingRoleInheritance: null,
+    pendingLifeTransition: null,
     chatDraft: '',
     chatOverlayDraft: '',
     assassinChatDraft: '',
@@ -50,6 +51,7 @@
     assassinChatMessages: [],
     currentChatChannel: 'public',
     oracleVotingTab: 'ability',
+    selectedVotingAbilityTargets: [],
   };
 
   const MAX_ROOM_PLAYERS = 16;
@@ -91,7 +93,7 @@
     },
     Karma: {
       faction: 'Crew',
-      subfaction: 'Killing',
+      subfaction: 'Unbound',
       description: 'Whoever kills you dies with you.',
       revealText: 'Dark crimson payback follows your last breath. Anyone who ends you falls beside you.',
       abilities: [
@@ -307,6 +309,19 @@
         },
       ],
     },
+    Scientist: {
+      faction: 'Crew',
+      subfaction: 'Chaos',
+      description: 'Choose 2 players to switch roles after a voting session. Can only be used once. Cannot target yourself.',
+      revealText: 'Teal and violet formulas hum behind the glass. Rewrite two destinies after the town is done voting.',
+      abilities: [
+        {
+          name: 'Experiment',
+          type: 'Voting',
+          description: 'Choose 2 players to switch roles after a voting session. Can only be used once. Cannot target yourself.',
+        },
+      ],
+    },
     Silencer: {
       faction: 'Crew',
       subfaction: 'Unbound',
@@ -431,6 +446,24 @@
         },
       ],
     },
+    Disruptor: {
+      faction: 'Assassin',
+      subfaction: 'Support',
+      description: 'Revoke a voting session before it ends, or eliminate a player. Veto can be used once.',
+      revealText: 'Black-red pressure coils around the table. Cancel the vote the moment it turns against you, then cut someone down by night.',
+      abilities: [
+        {
+          name: 'Veto',
+          type: 'Voting',
+          description: 'Revoke a voting session during voting. Can be used once.',
+        },
+        {
+          name: 'Kill',
+          type: 'Night',
+          description: 'Eliminate a player.',
+        },
+      ],
+    },
     'The Purge': {
       faction: 'Assassin',
       subfaction: 'Concealing',
@@ -452,13 +485,13 @@
     Overload: {
       faction: 'Neutral',
       subfaction: 'Killing',
-      description: 'Hack players to disable their abilities, or eliminate a player. Malware can be used with Shutdown.',
+      description: 'Hack players to disable their abilities, or eliminate a player.',
       revealText: 'Toxic green code floods your vision. Infect a target with malware, then shut the system down.',
       abilities: [
         {
           name: 'Malware',
           type: 'Night',
-          description: 'Hack a player to disable their abilities for the night. Can be used with Shutdown.',
+          description: 'Hack a player to disable their abilities for the night.',
         },
         {
           name: 'Shutdown',
@@ -554,7 +587,7 @@
   ];
   const ROLE_GUIDE_GROUP_ORDER = {
     Crew: ['Info', 'Protection', 'Killing', 'Chaos', 'Unbound', 'General'],
-    Assassin: ['Power', 'Concealing', 'General'],
+    Assassin: ['Power', 'Concealing', 'Support', 'General'],
     Neutral: ['Evil', 'Benign', 'Killing', 'General'],
   };
   const LOBBY_AVATAR_FILES = [
@@ -1087,6 +1120,7 @@
     state.socket.on('player-updated', ({ player }) => {
       const previousPlayer = state.playerData;
       queueAmnesiacInheritanceTransition(previousPlayer, player);
+      queueLifeTransition(previousPlayer, player);
       state.playerData = player;
       if (player.faction !== 'Assassin' || player.alive === false) {
         state.currentChatChannel = 'public';
@@ -1097,6 +1131,7 @@
         updateRoleCard();
         renderGameContent(state.gamePhase);
         playPendingRoleInheritanceTransition();
+        playPendingLifeTransition();
       }
       renderGamePlayerList();
       renderChatBox();
@@ -1284,11 +1319,13 @@
     if (normalizedRole === 'warden') return 'warden';
     if (normalizedRole === 'oracle') return 'oracle';
     if (normalizedRole === 'inquisitor') return 'inquisitor';
+    if (normalizedRole === 'disruptor') return 'disruptor';
     if (normalizedRole === 'alturist') return 'alturist';
     if (normalizedRole === 'the vessel') return 'vessel';
     if (normalizedRole === 'narcissist') return 'narcissist';
     if (normalizedRole === 'teleporter') return 'teleporter';
     if (normalizedRole === 'magician') return 'magician';
+    if (normalizedRole === 'scientist') return 'scientist';
     if (normalizedRole === 'investigator') return 'investigator';
     if (normalizedRole === 'tracker') return 'tracker';
     if (normalizedRole === 'stalker') return 'stalker';
@@ -1390,6 +1427,7 @@
       warden: { glowBackground: 'var(--warden)', titleColor: 'var(--warden)', titleShadow: '0 0 30px rgba(92, 228, 226, 0.24)' },
       oracle: { glowBackground: 'hsl(324, 100%, 62%)', titleColor: 'hsl(324, 100%, 76%)', titleShadow: '0 0 30px rgba(255, 82, 190, 0.24)' },
       inquisitor: { glowBackground: 'hsl(188, 100%, 62%)', titleColor: 'hsl(188, 100%, 78%)', titleShadow: '0 0 30px rgba(94, 236, 255, 0.24)' },
+      disruptor: { glowBackground: 'hsl(357, 86%, 58%)', titleColor: 'hsl(357, 92%, 70%)', titleShadow: '0 0 30px rgba(222, 58, 66, 0.24)' },
       narcissist: { glowBackground: 'hsl(270, 82%, 58%)', titleColor: 'hsl(270, 90%, 78%)', titleShadow: '0 0 30px rgba(124, 58, 237, 0.24)' },
       teleporter: { glowBackground: 'var(--teleporter)', titleColor: 'var(--teleporter)', titleShadow: '0 0 30px rgba(138, 235, 255, 0.24)' },
       magician: { glowBackground: 'var(--magician)', titleColor: 'var(--magician)', titleShadow: '0 0 30px rgba(124, 112, 255, 0.24)' },
@@ -1409,6 +1447,7 @@
       sniper: { glowBackground: 'var(--sniper)', titleColor: 'var(--sniper)', titleShadow: '0 0 30px rgba(141, 46, 46, 0.24)' },
       tetherhex: { glowBackground: 'var(--tetherhex)', titleColor: 'var(--tetherhex)', titleShadow: '0 0 30px rgba(74, 255, 119, 0.24)' },
       hypnotic: { glowBackground: 'var(--hypnotic)', titleColor: 'var(--hypnotic)', titleShadow: '0 0 30px rgba(196, 65, 148, 0.24)' },
+      disruptor: { glowBackground: 'var(--disruptor)', titleColor: 'var(--disruptor)', titleShadow: '0 0 30px rgba(214, 56, 64, 0.24)' },
       overload: { glowBackground: 'var(--overload)', titleColor: 'var(--overload)', titleShadow: '0 0 30px rgba(99, 255, 76, 0.24)' },
       blackout: { glowBackground: 'var(--blackout)', titleColor: 'var(--blackout)', titleShadow: '0 0 28px rgba(112, 120, 136, 0.22)' },
       blackmailer: { glowBackground: 'var(--blackmailer)', titleColor: 'var(--blackmailer)', titleShadow: '0 0 30px rgba(226, 180, 76, 0.24)' },
@@ -2022,7 +2061,7 @@
     if (/It is over when i say it is$/i.test(text) && String(message.source || '').trim() === 'The Vessel') {
       return ' system-result-vessel';
     }
-    if (/The night has been taken over by The Purge, no abilities worked\.?$/i.test(text)) {
+    if (/The Purge has seized the night\.\s*$/i.test(text) || /The night has been taken over by The Purge, no abilities worked\.?$/i.test(text)) {
       return ' system-result-purge';
     }
     if (/You protected the chosen player\.$/i.test(text) && String(message.source || '').trim() === 'Warden') {
@@ -2039,6 +2078,12 @@
     }
     if (/The exiled player was protected by the Oracle\./i.test(text) && String(message.source || '').trim() === 'Oracle') {
       return ' system-result-oracle-protect';
+    }
+    if (/.* was exiled by the Inquisitor\./i.test(text) && String(message.source || '').trim() === 'Inquisitor') {
+      return ' system-result-inquisitor';
+    }
+    if (/The Disruptor has veto'd the voting\./i.test(text) && String(message.source || '').trim() === 'Disruptor') {
+      return ' system-result-disruptor';
     }
     if (/A mirrored shield reflected a killing blow away from you\.$/i.test(text) && String(message.source || '').trim() === 'Mirror Caster') {
       return ' system-result-mirror';
@@ -2822,13 +2867,51 @@
     }
   }
 
+  function queueLifeTransition(previousPlayer, nextPlayer) {
+    if (!previousPlayer || !nextPlayer) return;
+    if (previousPlayer.alive === false && nextPlayer.alive !== false) {
+      state.pendingLifeTransition = { type: 'revive', timestamp: Date.now() };
+    } else if (previousPlayer.alive !== false && nextPlayer.alive === false) {
+      state.pendingLifeTransition = { type: 'fall', timestamp: Date.now() };
+    }
+  }
+
+  function playPendingLifeTransition() {
+    if (!state.pendingLifeTransition) return;
+    const { type } = state.pendingLifeTransition;
+    const roleCard = document.getElementById('role-card');
+    const gameContent = document.getElementById('game-content');
+    const activePanel = gameContent
+      ? Array.from(gameContent.children).find((child) => child.id !== 'phase-chat-panel')
+      : null;
+
+    state.pendingLifeTransition = null;
+
+    const roleCardClass = type === 'revive' ? 'role-life-revive-enter' : 'role-life-fall-enter';
+    const panelClass = type === 'revive' ? 'role-life-revive-panel-enter' : 'role-life-fall-panel-enter';
+
+    if (roleCard) {
+      roleCard.classList.remove('role-life-revive-enter', 'role-life-fall-enter');
+      void roleCard.offsetWidth;
+      roleCard.classList.add(roleCardClass);
+      window.setTimeout(() => roleCard.classList.remove(roleCardClass), 880);
+    }
+
+    if (activePanel) {
+      activePanel.classList.remove('role-life-revive-panel-enter', 'role-life-fall-panel-enter');
+      void activePanel.offsetWidth;
+      activePanel.classList.add(panelClass);
+      window.setTimeout(() => activePanel.classList.remove(panelClass), 760);
+    }
+  }
+
   function getTargetPlayers() {
     if (!state.roomData || !state.playerData) return [];
     const activeRole = getActiveNightRole(state.playerData);
     return state.roomData.players.filter(p => {
       if (!p.alive) return false;
       if (p.id === state.playerId) return activeRole === 'Vitalist' || activeRole === 'Mirror Caster' || activeRole === 'Teleporter';
-      if (state.playerData.faction === 'Assassin' && activeRole === 'Assassin') {
+      if (state.playerData.faction === 'Assassin' && (activeRole === 'Assassin' || activeRole === 'Disruptor')) {
         const isTeammate = state.playerData.teammates?.some(t => t.id === p.id);
         if (isTeammate) return false;
       }
@@ -3598,7 +3681,7 @@
     const mode = getChatMode();
     const activeChannel = getActiveChatChannel();
     const assassinChatAvailable = canUseAssassinChat();
-    const canPublicChat = (mode === 'morning' || mode === 'voting') && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced;
+    const canPublicChat = ((mode === 'morning' || mode === 'voting') || (mode === 'night' && state.playerData?.alive === false)) && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced;
     const canAssassinChat = assassinChatAvailable && mode !== 'hidden' && mode !== 'ended' && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced;
     const canChat = activeChannel === 'assassin' ? canAssassinChat : canPublicChat;
     const isMorningFullscreen = mode === 'morning' && state.chatOverlayOpen;
@@ -4043,7 +4126,7 @@
     } else if (activeRole === 'Sniper') {
       state.selectedAction = 'longshot';
       actionsHTML = `<div class="action-buttons"><button class="action-btn selected ${actionClass}" data-action="longshot">Longshot</button></div>`;
-    } else if (activeRole === 'Assassin') {
+    } else if (activeRole === 'Assassin' || activeRole === 'Disruptor') {
       state.selectedAction = 'kill';
       actionsHTML = `<div class="action-buttons"><button class="action-btn selected ${actionClass}" data-action="kill">Kill</button></div>`;
     } else if (player.role === 'Imitator') {
@@ -4108,6 +4191,7 @@
     else if (activeRole === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
     else if (activeRole === 'Sniper') actionDesc = 'Mark a player with a distant shot. The bullet lands 2 rounds later.';
     else if (activeRole === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
+    else if (activeRole === 'Disruptor') actionDesc = 'Eliminate a player at night. Veto becomes available during voting.';
     else if (player.role === 'Imitator') actionDesc = 'Choose a living player to borrow their role for tonight.';
 
     const isTargetlessRole = activeRole === 'Veteran'
@@ -4305,7 +4389,9 @@
     const player = state.playerData;
     const canPurify = player?.role === 'Oracle' && (player.oraclePurifyUsesRemaining ?? 2) > 0 && !player.oraclePurifiedTargetId;
     const canExile = player?.role === 'Inquisitor' && !player.inquisitorExiledTargetId;
-    const hasVotingAbility = canPurify || canExile;
+    const canVeto = player?.role === 'Disruptor' && (player.disruptorVetoUsesRemaining ?? 1) > 0 && !player.disruptorVetoUsed;
+    const canExperiment = player?.role === 'Scientist' && (player.scientistExperimentUsesRemaining ?? 1) > 0;
+    const hasVotingAbility = canPurify || canExile || canVeto || canExperiment;
     if (hasVotingAbility) {
       if (state.oracleVotingTab !== 'ability' && state.oracleVotingTab !== 'vote') {
         state.oracleVotingTab = 'ability';
@@ -4322,6 +4408,9 @@
     const targets = getVoteTargets();
     const aliveCount = state.totalAlive || state.roomData?.aliveCount || '?';
     const showAbilityTab = hasVotingAbility && state.oracleVotingTab === 'ability';
+    const selectedVotingAbilityTargets = Array.isArray(state.selectedVotingAbilityTargets) ? state.selectedVotingAbilityTargets : [];
+    const isScientistAbility = player?.role === 'Scientist';
+    const isTargetlessVotingAbility = player?.role === 'Disruptor';
     const votingTabs = hasVotingAbility ? `
       <div class="oracle-voting-tabs">
         <button class="oracle-voting-tab ${showAbilityTab ? 'active' : ''}" id="btn-oracle-tab-ability" type="button">Ability</button>
@@ -4329,14 +4418,14 @@
       </div>` : '';
     const votingAbilityPanel = hasVotingAbility ? `
       <div class="action-panel oracle-vote-panel${showAbilityTab ? '' : ' hidden'}">
-        <div class="action-title">${player.role === 'Inquisitor' ? 'INQUISITOR ABILITY' : 'ORACLE ABILITY'}</div>
-        <div class="action-subtitle">${player.role === 'Inquisitor' ? 'Exile a player instantly and make every other vote useless.' : 'Purify a player so they cannot be voted out this phase.'}</div>
-        <div class="target-label">${player.role === 'Inquisitor' ? 'SELECT PLAYER TO EXILE' : 'SELECT PLAYER TO PURIFY'}</div>
+        <div class="action-title">${player.role === 'Inquisitor' ? 'INQUISITOR ABILITY' : player.role === 'Scientist' ? 'SCIENTIST ABILITY' : player.role === 'Disruptor' ? 'DISRUPTOR ABILITY' : 'ORACLE ABILITY'}</div>
+        <div class="action-subtitle">${player.role === 'Inquisitor' ? 'Exile a player instantly and make every other vote useless.' : player.role === 'Scientist' ? 'Choose 2 players. Their roles will be switched after this voting session ends.' : player.role === 'Disruptor' ? 'Revoke this vote instantly. If you act first, the whole session ends at once.' : 'Purify a player so they cannot be voted out this phase.'}</div>
+        ${isTargetlessVotingAbility ? '' : `<div class="target-label">${player.role === 'Inquisitor' ? 'SELECT PLAYER TO EXILE' : player.role === 'Scientist' ? `SELECT 2 PLAYERS TO SWITCH${selectedVotingAbilityTargets.length ? ` (${selectedVotingAbilityTargets.length} SELECTED)` : ''}` : 'SELECT PLAYER TO PURIFY'}</div>
         <div class="target-list chat-target-list" id="voting-ability-target-list">
-          ${targets.filter((target) => target.id !== state.playerId).map((t) => `<div class="target-item ${state.selectedOracleTarget === t.id ? 'selected' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`).join('')}
-        </div>
+          ${targets.filter((target) => target.id !== state.playerId).map((t) => `<div class="target-item ${(isScientistAbility ? selectedVotingAbilityTargets.includes(t.id) : state.selectedOracleTarget === t.id) ? 'selected' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`).join('')}
+        </div>`}
         <div class="chat-local-actions">
-          <button class="btn btn-crew confirm-action" id="btn-confirm-voting-ability" ${!state.selectedOracleTarget ? 'disabled' : ''}>${player.role === 'Inquisitor' ? 'Confirm Exile' : `Confirm ${player.oraclePurifyUsesRemaining ?? 2}/2`}</button>
+          <button class="btn ${player?.faction === 'Assassin' ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-voting-ability" ${isTargetlessVotingAbility ? '' : isScientistAbility ? selectedVotingAbilityTargets.length !== 2 ? 'disabled' : '' : !state.selectedOracleTarget ? 'disabled' : ''}>${player.role === 'Inquisitor' ? 'Confirm Exile' : player.role === 'Scientist' ? `Confirm ${selectedVotingAbilityTargets.length}/2` : player.role === 'Disruptor' ? `Confirm ${player.disruptorVetoUsesRemaining ?? 1}/1` : `Confirm ${player.oraclePurifyUsesRemaining ?? 2}/2`}</button>
           <button class="btn btn-ghost chat-local-skip" id="btn-skip-voting-ability">Skip</button>
         </div>
       </div>` : '';
@@ -4376,7 +4465,16 @@
 
     container.querySelectorAll('#voting-ability-target-list .target-item').forEach((item) => {
       item.addEventListener('click', () => {
-        state.selectedOracleTarget = item.dataset.target;
+        if (isScientistAbility) {
+          const targetId = item.dataset.target;
+          if (selectedVotingAbilityTargets.includes(targetId)) {
+            state.selectedVotingAbilityTargets = selectedVotingAbilityTargets.filter((selectedId) => selectedId !== targetId);
+          } else {
+            state.selectedVotingAbilityTargets = [...selectedVotingAbilityTargets.slice(-1), targetId];
+          }
+        } else {
+          state.selectedOracleTarget = item.dataset.target;
+        }
         renderVotingPhase(container);
       });
     });
@@ -4384,16 +4482,18 @@
     const confirmVotingAbilityBtn = document.getElementById('btn-confirm-voting-ability');
     if (confirmVotingAbilityBtn) {
       confirmVotingAbilityBtn.addEventListener('click', () => {
-        if (!state.selectedOracleTarget) return;
-        const action = player.role === 'Inquisitor' ? 'exile' : 'purify';
-        state.socket.emit('voting-action', { action, targetId: state.selectedOracleTarget }, (response) => {
+        if (!isTargetlessVotingAbility && !isScientistAbility && !state.selectedOracleTarget) return;
+        if (isScientistAbility && selectedVotingAbilityTargets.length !== 2) return;
+        const action = player.role === 'Inquisitor' ? 'exile' : player.role === 'Scientist' ? 'experiment' : player.role === 'Disruptor' ? 'veto' : 'purify';
+        state.socket.emit('voting-action', { action, targetId: (isScientistAbility || isTargetlessVotingAbility) ? null : state.selectedOracleTarget, targetIds: isScientistAbility ? selectedVotingAbilityTargets : null }, (response) => {
           if (response.success) {
             state.playerData = response.player || state.playerData;
             state.roomData = response.room || state.roomData;
             state.selectedOracleTarget = null;
+            state.selectedVotingAbilityTargets = [];
             state.oracleVotingTab = 'vote';
             renderVotingPhase(container);
-            showToast(player.role === 'Inquisitor' ? 'Exile used' : 'Purify used', 'success');
+            showToast(player.role === 'Inquisitor' ? 'Exile used' : player.role === 'Scientist' ? 'Experiment used' : player.role === 'Disruptor' ? 'Veto used' : 'Purify used', 'success');
           } else {
             showToast(response.error || 'Action failed', 'error');
           }
@@ -4405,6 +4505,7 @@
     if (skipVotingAbilityBtn) {
       skipVotingAbilityBtn.addEventListener('click', () => {
         state.selectedOracleTarget = null;
+        state.selectedVotingAbilityTargets = [];
         state.oracleVotingTab = 'vote';
         renderVotingPhase(container);
       });

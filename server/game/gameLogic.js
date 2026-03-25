@@ -6,13 +6,14 @@ class GameLogic {
       Crew: {
         Info: ['Villager', 'Investigator', 'Tracker', 'Stalker', 'Redflag', 'Traplord'],
         Protection: ['Vitalist', 'Mirror Caster', 'Warden', 'Oracle'],
-        Killing: ['Sheriff', 'Veteran', 'Karma'],
-        Chaos: ['Teleporter', 'Magician'],
-        Unbound: ['Silencer', 'Narcissist', 'Inquisitor', 'Alturist', 'The Vessel'],
+        Killing: ['Sheriff', 'Veteran'],
+        Chaos: ['Teleporter', 'Magician', 'Scientist'],
+        Unbound: ['Silencer', 'Narcissist', 'Inquisitor', 'Alturist', 'The Vessel', 'Karma'],
       },
       Assassin: {
         Power: ['Assassin', 'Sniper', 'Tetherhex'],
         Concealing: ['Hypnotic', 'Blackout', 'Blackmailer', 'The Purge'],
+        Support: ['Disruptor'],
       },
       Neutral: {
         Evil: ['Jester', 'Executioner'],
@@ -161,7 +162,11 @@ class GameLogic {
       oracleMarkedTargetId: null,
       oraclePurifiedTargetId: null,
       inquisitorExiledTargetId: null,
+      disruptorVetoUsesRemaining: 1,
+      disruptorVetoUsed: false,
       alturistReviveTargetId: null,
+      scientistExperimentUsesRemaining: 1,
+      scientistSwapTargetIds: [],
       vesselAwakened: false,
       imitatorCopiedRole: null,
       imitatorCopiedSourceId: null,
@@ -203,7 +208,11 @@ class GameLogic {
       oracleMarkedTargetId: null,
       oraclePurifiedTargetId: null,
       inquisitorExiledTargetId: null,
+      disruptorVetoUsesRemaining: 1,
+      disruptorVetoUsed: false,
       alturistReviveTargetId: null,
+      scientistExperimentUsesRemaining: 1,
+      scientistSwapTargetIds: [],
       vesselAwakened: false,
       alive: true,
       connected: true
@@ -379,7 +388,7 @@ class GameLogic {
     const guardianAngels = players.filter((player) => player.role === 'Guardian Angel');
 
     for (const guardianAngel of guardianAngels) {
-      let possibleTargets = players.filter((player) => player.id !== guardianAngel.id);
+      let possibleTargets = players.filter((player) => player.id !== guardianAngel.id && player.role !== 'The Vessel');
       if (possibleTargets.length === 0) {
         possibleTargets = players.filter((player) => player.id !== guardianAngel.id);
       }
@@ -483,6 +492,115 @@ class GameLogic {
     return { success: true, player };
   }
 
+  getScientistRoleState(player) {
+    if (!player) return null;
+    return {
+      role: player.role,
+      faction: player.faction,
+      veteranUsesRemaining: player.veteranUsesRemaining ?? 4,
+      mirrorUsesRemaining: player.mirrorUsesRemaining ?? 4,
+      guardianAngelUsesRemaining: player.guardianAngelUsesRemaining ?? 4,
+      survivalistUsesRemaining: player.survivalistUsesRemaining ?? 5,
+      blackoutFlashUsesRemaining: player.blackoutFlashUsesRemaining ?? 3,
+      purgeFascismUsesRemaining: player.purgeFascismUsesRemaining ?? 1,
+      executionerTargetId: player.executionerTargetId || null,
+      guardianAngelTargetId: player.guardianAngelTargetId || null,
+      wardenGuardedTargetId: player.wardenGuardedTargetId || null,
+      oracleEvilEyeUsesRemaining: player.oracleEvilEyeUsesRemaining ?? 3,
+      oraclePurifyUsesRemaining: player.oraclePurifyUsesRemaining ?? 2,
+      oracleMarkedTargetId: player.oracleMarkedTargetId || null,
+      oraclePurifiedTargetId: player.oraclePurifiedTargetId || null,
+      inquisitorExiledTargetId: player.inquisitorExiledTargetId || null,
+      disruptorVetoUsesRemaining: player.disruptorVetoUsesRemaining ?? 1,
+      disruptorVetoUsed: !!player.disruptorVetoUsed,
+      alturistReviveTargetId: player.alturistReviveTargetId || null,
+      scientistExperimentUsesRemaining: player.scientistExperimentUsesRemaining ?? 1,
+      scientistSwapTargetIds: Array.isArray(player.scientistSwapTargetIds) ? [...player.scientistSwapTargetIds] : [],
+      vesselAwakened: !!player.vesselAwakened,
+      imitatorCopiedRole: player.imitatorCopiedRole || null,
+      imitatorCopiedSourceId: player.imitatorCopiedSourceId || null,
+      imitatorCycleTargetIds: Array.isArray(player.imitatorCycleTargetIds) ? [...player.imitatorCycleTargetIds] : [],
+    };
+  }
+
+  setScientistRoleState(player, roleState) {
+    if (!player || !roleState) return;
+    Object.assign(player, {
+      role: roleState.role,
+      faction: roleState.faction,
+      veteranUsesRemaining: roleState.veteranUsesRemaining,
+      mirrorUsesRemaining: roleState.mirrorUsesRemaining,
+      guardianAngelUsesRemaining: roleState.guardianAngelUsesRemaining,
+      survivalistUsesRemaining: roleState.survivalistUsesRemaining,
+      blackoutFlashUsesRemaining: roleState.blackoutFlashUsesRemaining,
+      purgeFascismUsesRemaining: roleState.purgeFascismUsesRemaining,
+      executionerTargetId: roleState.executionerTargetId,
+      guardianAngelTargetId: roleState.guardianAngelTargetId,
+      wardenGuardedTargetId: roleState.wardenGuardedTargetId,
+      oracleEvilEyeUsesRemaining: roleState.oracleEvilEyeUsesRemaining,
+      oraclePurifyUsesRemaining: roleState.oraclePurifyUsesRemaining,
+      oracleMarkedTargetId: roleState.oracleMarkedTargetId,
+      oraclePurifiedTargetId: roleState.oraclePurifiedTargetId,
+      inquisitorExiledTargetId: roleState.inquisitorExiledTargetId,
+      disruptorVetoUsesRemaining: roleState.disruptorVetoUsesRemaining,
+      disruptorVetoUsed: !!roleState.disruptorVetoUsed,
+      alturistReviveTargetId: roleState.alturistReviveTargetId,
+      scientistExperimentUsesRemaining: roleState.scientistExperimentUsesRemaining,
+      scientistSwapTargetIds: Array.isArray(roleState.scientistSwapTargetIds) ? [...roleState.scientistSwapTargetIds] : [],
+      vesselAwakened: !!roleState.vesselAwakened,
+      imitatorCopiedRole: roleState.imitatorCopiedRole,
+      imitatorCopiedSourceId: roleState.imitatorCopiedSourceId,
+      imitatorCycleTargetIds: Array.isArray(roleState.imitatorCycleTargetIds) ? [...roleState.imitatorCycleTargetIds] : [],
+    });
+  }
+
+  swapScientistRolePackages(room, firstPlayerId, secondPlayerId) {
+    const firstPlayer = room.players.get(firstPlayerId);
+    const secondPlayer = room.players.get(secondPlayerId);
+    if (!firstPlayer || !secondPlayer) return false;
+
+    const firstState = this.getScientistRoleState(firstPlayer);
+    const secondState = this.getScientistRoleState(secondPlayer);
+    this.setScientistRoleState(firstPlayer, secondState);
+    this.setScientistRoleState(secondPlayer, firstState);
+
+    const swapRoomMapEntries = (mapObject) => {
+      if (!mapObject || typeof mapObject !== 'object') return;
+      const firstValue = Object.prototype.hasOwnProperty.call(mapObject, firstPlayerId) ? mapObject[firstPlayerId] : undefined;
+      const secondValue = Object.prototype.hasOwnProperty.call(mapObject, secondPlayerId) ? mapObject[secondPlayerId] : undefined;
+
+      if (secondValue === undefined) delete mapObject[firstPlayerId];
+      else mapObject[firstPlayerId] = Array.isArray(secondValue) ? [...secondValue] : secondValue;
+
+      if (firstValue === undefined) delete mapObject[secondPlayerId];
+      else mapObject[secondPlayerId] = Array.isArray(firstValue) ? [...firstValue] : firstValue;
+    };
+
+    swapRoomMapEntries(room.lastWardenTargets);
+    swapRoomMapEntries(room.lastMagicianTargets);
+    swapRoomMapEntries(room.lastMirrorTargets);
+    swapRoomMapEntries(room.lastInvestigatorTargets);
+    swapRoomMapEntries(room.lastTrackerTargets);
+    swapRoomMapEntries(room.lastStalkerTargets);
+    swapRoomMapEntries(room.lastTetherhexTargets);
+    swapRoomMapEntries(room.lastSilencerTargets);
+    swapRoomMapEntries(room.lastHypnoticTargets);
+    swapRoomMapEntries(room.lastOverloadTargets);
+    swapRoomMapEntries(room.lastBlackoutFlashNight);
+
+    const firstNightAction = room.nightActions?.[firstPlayerId];
+    const secondNightAction = room.nightActions?.[secondPlayerId];
+    if (room.nightActions) {
+      if (secondNightAction === undefined) delete room.nightActions[firstPlayerId];
+      else room.nightActions[firstPlayerId] = secondNightAction;
+
+      if (firstNightAction === undefined) delete room.nightActions[secondPlayerId];
+      else room.nightActions[secondPlayerId] = firstNightAction;
+    }
+
+    return true;
+  }
+
   assignRoles(code) {
     const room = this.rooms.get(code);
     if (!room) return null;
@@ -565,13 +683,23 @@ class GameLogic {
         { faction: 'Crew', subfaction: 'Protection' },
         { faction: 'Crew', subfaction: 'Killing' },
         { faction: 'Assassin', subfaction: 'Power' },
-        { faction: 'Assassin', subfaction: 'Concealing' },
       ];
 
       for (const slot of slotPlan) {
         this.assignRoleFromSlot(room, shuffled[index], slot.faction, slot.subfaction);
         index++;
       }
+
+      this.assignRoleFromPool(
+        room,
+        shuffled[index],
+        'Assassin',
+        [
+          ...this.getRolePoolForRoom(room, 'Assassin', 'Concealing'),
+          ...this.getRolePoolForRoom(room, 'Assassin', 'Support'),
+        ]
+      );
+      index++;
 
       this.assignRoleFromPool(
         room,
@@ -624,8 +752,21 @@ class GameLogic {
     }
 
     for (let i = 0; i < assassinCount; i++) {
-      const subfaction = i === 1 ? 'Concealing' : 'Power';
-      this.assignRoleFromSlot(room, shuffled[index], 'Assassin', subfaction);
+      if (i === 0) {
+        this.assignRoleFromSlot(room, shuffled[index], 'Assassin', 'Power');
+      } else if (i === 1) {
+        this.assignRoleFromPool(
+          room,
+          shuffled[index],
+          'Assassin',
+          [
+            ...this.getRolePoolForRoom(room, 'Assassin', 'Concealing'),
+            ...this.getRolePoolForRoom(room, 'Assassin', 'Support'),
+          ]
+        );
+      } else {
+        this.assignRoleFromSlot(room, shuffled[index], 'Assassin', 'Support');
+      }
       index++;
     }
 
@@ -730,7 +871,11 @@ class GameLogic {
       player.oracleMarkedTargetId = null;
       player.oraclePurifiedTargetId = null;
       player.inquisitorExiledTargetId = null;
+      player.disruptorVetoUsesRemaining = 1;
+      player.disruptorVetoUsed = false;
       player.alturistReviveTargetId = null;
+      player.scientistExperimentUsesRemaining = 1;
+      player.scientistSwapTargetIds = [];
       player.vesselAwakened = false;
       player.imitatorCopiedRole = null;
       player.imitatorCopiedSourceId = null;
@@ -911,6 +1056,17 @@ class GameLogic {
       const target = room.players.get(targetId);
       if (!target || target.alive) return { error: 'Invalid target' };
       if (action !== 'sacrifice') return { error: 'Invalid action for Alturist' };
+      player.alive = false;
+      target.alive = true;
+      room.nightActions[playerId] = { action: 'skip', targetId: null, queuedTargetId: null };
+      room.lastAction = Date.now();
+      return {
+        success: true,
+        room,
+        player: this.getPlayerData(code, playerId),
+        immediateAlturistRevive: true,
+        revivedPlayerId: targetId,
+      };
     } else if (activeRole === 'The Vessel') {
       const target = room.players.get(targetId);
       if (!player.vesselAwakened) return { error: 'Your Kill is still locked' };
@@ -1289,6 +1445,7 @@ class GameLogic {
       if (activeRole === 'Redflag') continue;
       if (activeRole === 'Karma') continue;
       if (activeRole === 'Inquisitor') continue;
+      if (activeRole === 'Scientist') continue;
       if (activeRole === 'Narcissist') continue;
       if (activeRole === 'The Vessel' && !player.vesselAwakened) continue;
       if (activeRole === 'Alturist') {
@@ -1452,7 +1609,7 @@ class GameLogic {
     const fascismActive = purgeFascismActive.size > 0;
     const isSuppressedByPurge = (player) => fascismActive && player?.faction !== 'Assassin';
     if (fascismActive) {
-      messages.push({ type: 'purge', text: 'The night has been taken over by The Purge, no abilities worked' });
+      messages.push({ type: 'purge', text: 'The Purge has seized the night.' });
     }
 
     for (const [playerId, action] of Object.entries(room.nightActions)) {
@@ -2761,18 +2918,17 @@ class GameLogic {
     return { success: true, room };
   }
 
-  submitVotingAbility(code, playerId, action, targetId) {
+  submitVotingAbility(code, playerId, action, targetId, targetIds = null) {
     const room = this.rooms.get(code);
     if (!room || room.state !== 'voting') return { error: 'Not in voting phase' };
 
     const player = room.players.get(playerId);
     if (!player || !player.alive) return { error: 'Invalid player' };
 
-    const target = room.players.get(targetId);
-    if (!target || !target.alive) return { error: 'Invalid target' };
-    if (targetId === playerId) return { error: 'Cannot target yourself' };
-
     if (player.role === 'Oracle') {
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
+      if (targetId === playerId) return { error: 'Cannot target yourself' };
       if (action !== 'purify') return { error: 'Invalid action for Oracle' };
       if ((player.oraclePurifyUsesRemaining ?? 2) <= 0) return { error: 'You have no Purify uses remaining' };
       player.oraclePurifiedTargetId = targetId;
@@ -2781,9 +2937,38 @@ class GameLogic {
     }
 
     if (player.role === 'Inquisitor') {
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
+      if (targetId === playerId) return { error: 'Cannot target yourself' };
       if (action !== 'exile') return { error: 'Invalid action for Inquisitor' };
       player.inquisitorExiledTargetId = targetId;
       return { success: true, room, resolveNow: true };
+    }
+
+    if (player.role === 'Disruptor') {
+      if (action !== 'veto') return { error: 'Invalid action for Disruptor' };
+      if ((player.disruptorVetoUsesRemaining ?? 1) <= 0 || player.disruptorVetoUsed) {
+        return { error: 'You have no Veto uses remaining' };
+      }
+      player.disruptorVetoUsesRemaining = 0;
+      player.disruptorVetoUsed = true;
+      return { success: true, room, resolveNow: true };
+    }
+
+    if (player.role === 'Scientist') {
+      if (action !== 'experiment') return { error: 'Invalid action for Scientist' };
+      if ((player.scientistExperimentUsesRemaining ?? 1) <= 0) return { error: 'You have no Experiment uses remaining' };
+      if (!Array.isArray(targetIds)) return { error: 'Invalid targets' };
+      const normalizedTargetIds = [...new Set(targetIds.map((id) => String(id || '').trim()).filter(Boolean))];
+      if (normalizedTargetIds.length !== 2) return { error: 'Choose exactly 2 players' };
+      if (normalizedTargetIds.includes(playerId)) return { error: 'Cannot target yourself' };
+      for (const selectedTargetId of normalizedTargetIds) {
+        const target = room.players.get(selectedTargetId);
+        if (!target || !target.alive) return { error: 'Invalid target' };
+      }
+      player.scientistSwapTargetIds = normalizedTargetIds;
+      player.scientistExperimentUsesRemaining = 0;
+      return { success: true, room };
     }
 
     return { error: 'You have no voting ability' };
@@ -2831,6 +3016,26 @@ class GameLogic {
     const room = this.rooms.get(code);
     if (!room) return null;
 
+    const applyScientistExperiment = () => {
+      const scientist = Array.from(room.players.values()).find((candidate) => (
+        candidate.role === 'Scientist'
+        && candidate.alive
+        && Array.isArray(candidate.scientistSwapTargetIds)
+        && candidate.scientistSwapTargetIds.length === 2
+      ));
+
+      if (!scientist) return null;
+      const [firstPlayerId, secondPlayerId] = scientist.scientistSwapTargetIds;
+      scientist.scientistSwapTargetIds = [];
+
+      const firstPlayer = room.players.get(firstPlayerId);
+      const secondPlayer = room.players.get(secondPlayerId);
+      if (!firstPlayer || !secondPlayer || !firstPlayer.alive || !secondPlayer.alive) return null;
+
+      this.swapScientistRolePackages(room, firstPlayerId, secondPlayerId);
+      return `${firstPlayer.name} and ${secondPlayer.name} had their roles switched by the Scientist.`;
+    };
+
     const inquisitorExile = Array.from(room.players.values()).find((candidate) => (
       candidate.role === 'Inquisitor'
       && candidate.alive
@@ -2845,12 +3050,11 @@ class GameLogic {
 
       const message = {
         type: 'eliminated',
-        text: room.anonymousEjects
-          ? `${player.name} was exiled by the Inquisitor.`
-          : `${player.name} was exiled by the Inquisitor. They were a ${player.role}.`,
+        text: `${player.name} was exiled by the Inquisitor.`,
         playerId: eliminated,
         role: player.role,
         faction: player.faction,
+        source: 'Inquisitor',
         public: true
       };
 
@@ -2869,6 +3073,51 @@ class GameLogic {
         }
       }
 
+      const executionerWinner = Array.from(room.players.values()).find((candidate) => (
+        candidate.role === 'Executioner'
+        && candidate.executionerTargetId === eliminated
+      ));
+
+      if (executionerWinner) {
+        room.state = 'ended';
+        room.winner = this.withNeutralBenignCoWinners(room, this.withGuardianAngelCoWinners(room, {
+          winner: 'Executioner',
+          reason: `${executionerWinner.name} got their target voted out. Everyone else loses.`,
+        }));
+
+        return {
+          room,
+          message,
+          voteCounts: {},
+          eliminated,
+          winner: room.winner
+        };
+      }
+
+      if (player.role === 'Jester') {
+        room.state = 'ended';
+        room.winner = this.withNeutralBenignCoWinners(room, this.withGuardianAngelCoWinners(room, {
+          winner: 'Jester',
+          reason: 'Jester tricked the town into voting them out. Everyone else loses.',
+        }));
+
+        return {
+          room,
+          message,
+          voteCounts: {},
+          eliminated,
+          winner: room.winner
+        };
+      }
+
+      const scientistMessage = applyScientistExperiment();
+      if (scientistMessage) {
+        this.appendToPhaseSummary(code, scientistMessage);
+      }
+      for (const [, candidate] of room.players) {
+        candidate.scientistSwapTargetIds = [];
+      }
+
       const winCheck = this.checkWinCondition(code);
       if (winCheck) {
         room.state = 'ended';
@@ -2882,6 +3131,59 @@ class GameLogic {
         message,
         voteCounts: {},
         eliminated,
+        winner: room.winner
+      };
+    }
+
+    const disruptorVeto = Array.from(room.players.values()).find((candidate) => (
+      candidate.role === 'Disruptor'
+      && candidate.alive
+      && candidate.disruptorVetoUsed
+    ));
+
+    if (disruptorVeto) {
+      const message = {
+        type: 'system',
+        text: 'The Disruptor has veto\'d the voting.',
+        source: 'Disruptor',
+        public: true
+      };
+
+      room.eliminatedToday = null;
+      room.votes = {};
+      for (const [, candidate] of room.players) {
+        candidate.oraclePurifiedTargetId = null;
+        candidate.inquisitorExiledTargetId = null;
+        candidate.disruptorVetoUsed = false;
+      }
+      this.appendToPhaseSummary(code, message.text);
+
+      const scientistMessage = applyScientistExperiment();
+      if (scientistMessage) {
+        this.appendToPhaseSummary(code, scientistMessage);
+      }
+      for (const [, candidate] of room.players) {
+        candidate.scientistSwapTargetIds = [];
+      }
+
+      const winCheck = this.checkWinCondition(code);
+      if (winCheck) {
+        room.state = 'ended';
+        room.winner = winCheck;
+      } else {
+        room.state = 'night';
+        room.nightCount++;
+        room.nightActions = {};
+        room.blackmailedPlayers = {};
+        room.silencedPlayers = {};
+        this.beginPhaseSummary(code, `Night ${room.nightCount} begins. Chat is locked until morning.`);
+      }
+
+      return {
+        room,
+        message,
+        voteCounts: {},
+        eliminated: null,
         winner: room.winner
       };
     }
@@ -3011,6 +3313,7 @@ class GameLogic {
     for (const [, candidate] of room.players) {
       candidate.oraclePurifiedTargetId = null;
       candidate.inquisitorExiledTargetId = null;
+      candidate.disruptorVetoUsed = false;
     }
     this.appendToPhaseSummary(code, message.text);
 
@@ -3019,6 +3322,14 @@ class GameLogic {
       if (candidate.guardianAngelTargetId === eliminated) {
         this.convertGuardianAngelToAmnesiac(room, candidate.id);
       }
+    }
+
+    const scientistMessage = applyScientistExperiment();
+    if (scientistMessage) {
+      this.appendToPhaseSummary(code, scientistMessage);
+    }
+    for (const [, candidate] of room.players) {
+      candidate.scientistSwapTargetIds = [];
     }
 
     const winCheck = this.checkWinCondition(code);
@@ -3081,6 +3392,8 @@ class GameLogic {
       return { winner: 'Nobody', reason: 'The last contenders wiped each other out. No one wins.' };
     }
 
+    // Neutral killers still win even if a living Guardian Angel is tied to them.
+    // That Guardian Angel is treated as a co-winner, not a blocker the killer has to eliminate.
     if (aliveNeutralKillingCount > 0 && aliveCrewCount === 0 && aliveAssassinCount === 0 && aliveNeutralEvilCount === 0) {
       const neutralKillingWinner = aliveNeutralKillingRoles[0] || 'Overload';
       return this.withNarcissistCoWinners(room, this.withNeutralBenignCoWinners(room, this.withGuardianAngelCoWinners(room, { winner: neutralKillingWinner, reason: `${neutralKillingWinner} has outlived everyone else!` })));
@@ -3235,7 +3548,7 @@ class GameLogic {
     if (action === 'trance') return 'Hypnotic has cast a trance over someone.';
     if (action === 'malware') return 'Overload has infected someone with malware.';
     if (action === 'flash') return 'Blackout has blinded the room.';
-    if (action === 'fascism') return 'The Purge has seized the night.';
+    if (action === 'fascism') return 'A crushing force has settled over the night.';
     if (action === 'blackmail') return 'Blackmailer has silenced someone.';
     if (action === 'lifeguard') return 'Survivalist has prepared to survive the night.';
     if (action === 'mirror') return 'Mirror Caster has woven a reflective shield.';
@@ -3480,6 +3793,10 @@ class GameLogic {
       inquisitorExiledTargetName: player.role === 'Inquisitor' && player.inquisitorExiledTargetId
         ? (room.players.get(player.inquisitorExiledTargetId)?.name || null)
         : null,
+      disruptorVetoUsesRemaining: player.role === 'Disruptor' ? (player.disruptorVetoUsesRemaining ?? 1) : null,
+      disruptorVetoUsed: player.role === 'Disruptor' ? !!player.disruptorVetoUsed : false,
+      scientistExperimentUsesRemaining: player.role === 'Scientist' ? (player.scientistExperimentUsesRemaining ?? 1) : null,
+      scientistSwapTargetIds: player.role === 'Scientist' ? (Array.isArray(player.scientistSwapTargetIds) ? [...player.scientistSwapTargetIds] : []) : [],
       alturistReviveTargetId: activeRole === 'Alturist' ? (player.alturistReviveTargetId || null) : null,
       alturistReviveTargetName: activeRole === 'Alturist' && player.alturistReviveTargetId
         ? (room.players.get(player.alturistReviveTargetId)?.name || null)
