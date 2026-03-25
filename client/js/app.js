@@ -1915,6 +1915,8 @@
       startBtn.disabled = true;
       startCount.textContent = 'Waiting for host...';
     }
+
+    renderChatBox();
   }
 
   function updatePhaseUI(phase, nightCount) {
@@ -1955,6 +1957,7 @@
   }
 
   function getChatMode() {
+    if (state.currentScreen === 'room' && state.roomData?.state === 'lobby') return 'lobby';
     if (state.gamePhase === 'morning') return 'morning';
     if (state.gamePhase === 'voting') return 'voting';
     if (state.gamePhase === 'night') return 'night';
@@ -2069,6 +2072,9 @@
     if (/You have been spoofed by the Magician\.$/i.test(text) && String(message.source || '').trim() === 'Magician') {
       return ' system-result-magician';
     }
+    if (/You have been killed by .*\.$/i.test(text) && String(message.source || '').trim() === 'Death') {
+      return ' system-result-killed';
+    }
     if (/It is over when i say it is$/i.test(text) && String(message.source || '').trim() === 'The Vessel') {
       return ' system-result-vessel';
     }
@@ -2142,6 +2148,10 @@
       const oracleRevealMatch = String(message.text || '').trim().match(/^(.*?) was killed by (.*?)\.$/i);
       if (oracleRevealMatch && String(message.source || '').trim() === 'Oracle') {
         return `${formatPlayerNameReference(oracleRevealMatch[1])} was killed by ${formatPlayerNameReference(oracleRevealMatch[2])}.`;
+      }
+      const privateKilledByMatch = String(message.text || '').trim().match(/^You have been killed by (.*?)\.$/i);
+      if (privateKilledByMatch && String(message.source || '').trim() === 'Death') {
+        return `You have been killed by ${formatPlayerNameReference(privateKilledByMatch[1])}.`;
       }
     }
 
@@ -3710,12 +3720,12 @@
     const mode = getChatMode();
     const activeChannel = getActiveChatChannel();
     const assassinChatAvailable = canUseAssassinChat();
-    const canPublicChat = ((mode === 'morning' || mode === 'voting') || (mode === 'night' && state.playerData?.alive === false)) && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced;
+    const canPublicChat = (mode === 'lobby' || mode === 'morning' || mode === 'voting' || (mode === 'night' && state.playerData?.alive === false)) && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced;
     const canAssassinChat = assassinChatAvailable && mode !== 'hidden' && mode !== 'ended' && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced;
     const canChat = activeChannel === 'assassin' ? canAssassinChat : canPublicChat;
-    const isMorningFullscreen = mode === 'morning' && state.chatOverlayOpen;
+    const isMorningFullscreen = (mode === 'morning' || mode === 'lobby') && state.chatOverlayOpen;
     const isForcedExpandedNight = mode === 'night' && !!state.forceExpandedNightChat && !state.chatOverlayOpen;
-    const isExpandedMode = (mode === 'morning' && !isMorningFullscreen) || isForcedExpandedNight;
+    const isExpandedMode = ((mode === 'morning' || mode === 'lobby') && !isMorningFullscreen) || isForcedExpandedNight;
     const isDockedMode = mode !== 'hidden' && !isExpandedMode;
     const isOverlayOpen = state.chatOverlayOpen;
     const subtitle = activeChannel === 'assassin'
@@ -3727,7 +3737,7 @@
             ? 'You have been silenced'
             : 'Assassin chat is unavailable.')
       : (canPublicChat
-        ? 'Chat is open for discussion.'
+        ? (mode === 'lobby' ? 'Chat before the game starts.' : 'Chat is open for discussion.')
         : mode === 'readonly'
           ? 'Waiting for the next phase...'
           : state.playerData?.isBlackmailed

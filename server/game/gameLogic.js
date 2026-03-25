@@ -2793,6 +2793,14 @@ class GameLogic {
     for (const deadId of killed) {
       const deadPlayer = room.players.get(deadId);
       if (deadPlayer) {
+        const killerId = killAttributions.get(deadId);
+        const killer = killerId ? room.players.get(killerId) : null;
+        if (killer) {
+          if (!privateMessages[deadId]) privateMessages[deadId] = [];
+          privateMessages[deadId].push(
+            this.createPrivateSystemMessage(code, `You have been killed by ${killer.name}.`, 'Death')
+          );
+        }
         deadPlayer.alive = false;
         const deathText = tetheredVictims.has(deadId)
           ? `${deadPlayer.name} has been Tethered.`
