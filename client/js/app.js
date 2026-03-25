@@ -3760,9 +3760,10 @@
     ) && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced;
     const canAssassinChat = assassinChatAvailable && mode !== 'hidden' && mode !== 'ended' && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced;
     const canChat = activeChannel === 'assassin' ? canAssassinChat : canPublicChat;
-    const supportsInlineChat = mode === 'lobby' || mode === 'morning' || mode === 'voting' || mode === 'night';
-    const isMorningFullscreen = (mode === 'morning' || mode === 'lobby') && state.chatOverlayOpen;
-    const isExpandedMode = supportsInlineChat && !state.chatOverlayOpen;
+    const isDaytimeInline = mode === 'lobby' || mode === 'morning';
+    const isDaytimeFullscreen = isDaytimeInline && state.chatOverlayOpen;
+    const isForcedExpandedNight = mode === 'night' && !!state.forceExpandedNightChat && !state.chatOverlayOpen;
+    const isExpandedMode = (isDaytimeInline && !isDaytimeFullscreen) || isForcedExpandedNight;
     const isDockedMode = mode !== 'hidden' && !isExpandedMode;
     const isOverlayOpen = state.chatOverlayOpen;
     const subtitle = activeChannel === 'assassin'
@@ -3785,10 +3786,10 @@
     const gameContainer = document.querySelector('.game-container');
     const messages = getRenderableChatMessages(activeChannel);
     const overlay = ensureChatOverlay();
-    const isStandaloneOverlay = supportsInlineChat && isOverlayOpen;
+    const isStandaloneOverlay = isOverlayOpen;
     const isDeadSpectator = state.playerData?.alive === false;
 
-    panel.className = `phase-chat-panel ${isStandaloneOverlay ? 'chat-overlay-anchor' : isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}${mode === 'lobby' ? ' chat-lobby' : ''}`;
+    panel.className = `phase-chat-panel ${isStandaloneOverlay ? 'chat-overlay-anchor' : isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}${mode === 'lobby' ? ' chat-lobby' : ''}${mode === 'morning' ? ' chat-morning' : ''}`;
     if (gameContainer) {
       gameContainer.classList.toggle('chat-overlay-active', isStandaloneOverlay);
     }
