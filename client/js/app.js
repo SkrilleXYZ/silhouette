@@ -3756,6 +3756,7 @@
       gameContainer.classList.toggle('chat-overlay-active', isStandaloneOverlay);
     }
     overlay.classList.toggle('active', isStandaloneOverlay);
+    overlay.classList.toggle('lobby-chat-fullscreen', mode === 'lobby' && isStandaloneOverlay);
 
     if (mode === 'hidden') {
       panel.innerHTML = '';

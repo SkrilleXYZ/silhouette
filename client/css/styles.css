@@ -4671,6 +4671,10 @@ body {
   animation: chatSheetRise 0.28s cubic-bezier(.2,.85,.2,1);
 }
 
+.chat-fullscreen-overlay.lobby-chat-fullscreen {
+  z-index: 160;
+}
+
 .chat-fullscreen-shell {
   width: min(100%, 480px);
   height: 100dvh;
