@@ -281,6 +281,26 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('voting-action', ({ action, targetId }, callback) => {
+    const mapping = socketMap.get(socket.id);
+    if (!mapping) {
+      if (callback) callback({ success: false, error: 'Not in a room' });
+      return;
+    }
+
+    const result = game.submitVotingAbility(mapping.code, mapping.playerId, action, targetId);
+    if (result.error) {
+      if (callback) callback({ success: false, error: result.error });
+      return;
+    }
+
+    const playerData = game.getPlayerData(mapping.code, mapping.playerId);
+    const publicData = game.getRoomPublicData(mapping.code);
+    socket.emit('player-updated', { player: playerData });
+    io.to(mapping.code).emit('room-updated', publicData);
+    if (callback) callback({ success: true, player: playerData, room: publicData });
+  });
+
   socket.on('request-player-data', (callback) => {
     const mapping = socketMap.get(socket.id);
     if (!mapping) {

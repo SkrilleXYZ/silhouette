@@ -2568,6 +2568,8 @@ body {
 
 .role-card.role-theme-amnesiac .role-card-glow { background: radial-gradient(circle, var(--amnesiac) 0%, transparent 70%); }
 .role-card.role-theme-amnesiac .role-card-inner { border-color: rgba(171, 183, 206, 0.32); box-shadow: inset 0 0 0 1px rgba(171, 183, 206, 0.06), 0 0 18px rgba(128, 140, 165, 0.1); }
+.role-card.role-theme-imitator .role-card-glow { background: radial-gradient(circle, rgba(255, 212, 212, 0.9) 0%, transparent 70%); }
+.role-card.role-theme-imitator .role-card-inner { border-color: rgba(255, 188, 188, 0.34); box-shadow: inset 0 0 0 1px rgba(255, 188, 188, 0.07), 0 0 22px rgba(224, 120, 120, 0.12); }
 
 .role-card.role-theme-investigator .role-card-glow { background: radial-gradient(circle, var(--investigator) 0%, transparent 70%); }
 .role-card.role-theme-investigator .role-card-inner { border-color: rgba(185, 132, 255, 0.36); box-shadow: inset 0 0 0 1px rgba(185, 132, 255, 0.08), 0 0 24px rgba(151, 106, 223, 0.12); }
@@ -2645,6 +2647,7 @@ body {
 .role-card.role-theme-guardianangel .role-faction { color: var(--guardianangel); }
 .role-card.role-theme-survivalist .role-faction { color: var(--survivalist); }
 .role-card.role-theme-amnesiac .role-faction { color: var(--amnesiac); }
+.role-card.role-theme-imitator .role-faction { color: hsl(357, 52%, 78%); }
 
 .role-card.role-theme-investigator .role-faction { color: var(--investigator); }
 
@@ -2704,6 +2707,7 @@ body {
 .role-card.role-theme-guardianangel .role-divider { background: var(--guardianangel); }
 .role-card.role-theme-survivalist .role-divider { background: var(--survivalist); }
 .role-card.role-theme-amnesiac .role-divider { background: var(--amnesiac); }
+.role-card.role-theme-imitator .role-divider { background: linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,150,150,0.75)); }
 
 .role-card.role-theme-investigator .role-divider { background: var(--investigator); }
 
@@ -2739,6 +2743,18 @@ body {
   background-clip: text;
   color: transparent;
   text-shadow: 0 0 18px rgba(92, 228, 226, 0.18);
+}
+
+.role-card.role-theme-oracle .role-card-glow { background: radial-gradient(circle, rgba(255, 82, 190, 0.9) 0%, transparent 70%); }
+.role-card.role-theme-oracle .role-card-inner { border-color: rgba(255, 82, 190, 0.38); box-shadow: inset 0 0 0 1px rgba(255, 82, 190, 0.08), 0 0 26px rgba(255, 82, 190, 0.14); }
+.role-card.role-theme-oracle .role-faction { color: hsl(324, 100%, 76%); }
+.role-card.role-theme-oracle .role-divider { background: linear-gradient(90deg, rgba(255, 210, 242, 0.95), rgba(255, 82, 190, 0.92)); }
+.role-card.role-theme-oracle .role-name {
+  background: linear-gradient(90deg, #ffd8f2 0%, #ff7ac9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 18px rgba(255, 82, 190, 0.22);
 }
 
 .role-card.role-theme-teleporter .role-name {
@@ -2789,6 +2805,11 @@ body {
 .role-card.role-theme-amnesiac .role-name {
   color: hsl(215, 22%, 88%);
   text-shadow: 0 0 14px rgba(171, 183, 206, 0.16);
+}
+
+.role-card.role-theme-imitator .role-name {
+  color: hsl(0, 0%, 96%);
+  text-shadow: 0 0 18px rgba(255, 164, 164, 0.24);
 }
 
 .role-card.role-theme-investigator .role-name {
@@ -5191,6 +5212,32 @@ body {
   pointer-events: none;
 }
 
+.chat-message.system.system-result-oracle,
+.chat-message.system.system-result-oracle-protect {
+  border-color: rgba(255, 82, 190, 0.44);
+  background:
+    radial-gradient(circle at 84% 18%, rgba(255, 220, 244, 0.18), transparent 16%),
+    radial-gradient(circle at 18% 112%, rgba(88, 8, 62, 0.3), transparent 42%),
+    linear-gradient(135deg, rgba(44, 8, 34, 0.98), rgba(18, 4, 16, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 220, 244, 0.06),
+    0 0 0 1px rgba(255, 82, 190, 0.05),
+    0 16px 28px -24px rgba(255, 82, 190, 0.24);
+  overflow: hidden;
+}
+
+.chat-message.system.system-result-oracle::after,
+.chat-message.system.system-result-oracle-protect::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(112deg, transparent 0%, rgba(255, 214, 238, 0.08) 42%, transparent 66%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(40, 4, 30, 0.18) 100%);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
 .chat-message-meta {
   font-size: 0.52rem;
   letter-spacing: 1px;
@@ -5365,6 +5412,14 @@ body {
 .chat-message.system.system-result-redflag .chat-message-text {
   color: hsl(0, 100%, 95%);
   text-shadow: 0 1px 8px rgba(255, 176, 176, 0.08);
+}
+
+.chat-message.system.system-result-oracle .chat-message-meta,
+.chat-message.system.system-result-oracle .chat-message-text,
+.chat-message.system.system-result-oracle-protect .chat-message-meta,
+.chat-message.system.system-result-oracle-protect .chat-message-text {
+  color: hsl(324, 100%, 95%);
+  text-shadow: 0 1px 8px rgba(255, 190, 228, 0.08);
 }
 
 .chat-message.system.phase-morning .chat-message-meta,
@@ -7090,6 +7145,12 @@ body {
   color: var(--warden);
 }
 
+#screen-roles .roles-guide-card.role-theme-oracle,
+#screen-roles .roles-guide-card.role-theme-oracle .roles-guide-card-icon {
+  border-color: rgba(255, 82, 190, 0.72);
+  color: hsl(324, 100%, 82%);
+}
+
 #screen-roles .roles-guide-card.role-theme-teleporter,
 #screen-roles .roles-guide-card.role-theme-teleporter .roles-guide-card-icon {
   border-color: rgba(138, 235, 255, 0.72);
@@ -7148,6 +7209,12 @@ body {
 #screen-roles .roles-guide-card.role-theme-survivalist .roles-guide-card-icon {
   border-color: rgba(210, 102, 28, 0.74);
   color: var(--survivalist);
+}
+
+#screen-roles .roles-guide-card.role-theme-imitator,
+#screen-roles .roles-guide-card.role-theme-imitator .roles-guide-card-icon {
+  border-color: rgba(236, 182, 182, 0.72);
+  color: hsl(357, 52%, 82%);
 }
 
 #screen-roles .roles-guide-card.role-theme-sheriff,
@@ -7234,6 +7301,10 @@ body {
   box-shadow: 0 0 20px -10px rgba(92, 228, 226, 0.48);
 }
 
+#screen-roles .roles-guide-card.role-theme-oracle:hover {
+  box-shadow: 0 0 20px -10px rgba(255, 82, 190, 0.44);
+}
+
 #screen-roles .roles-guide-card.role-theme-teleporter:hover {
   box-shadow: 0 0 20px -10px rgba(138, 235, 255, 0.48);
 }
@@ -7272,6 +7343,10 @@ body {
 
 #screen-roles .roles-guide-card.role-theme-survivalist:hover {
   box-shadow: 0 0 20px -10px rgba(236, 120, 54, 0.44);
+}
+
+#screen-roles .roles-guide-card.role-theme-imitator:hover {
+  box-shadow: 0 0 20px -10px rgba(226, 142, 142, 0.42);
 }
 
 #screen-roles .roles-guide-card.role-theme-sheriff:hover,
@@ -7331,6 +7406,10 @@ body {
   color: var(--warden);
 }
 
+#screen-roles .roles-guide-card.role-theme-oracle .roles-guide-ability-highlight {
+  color: hsl(324, 100%, 82%);
+}
+
 #screen-roles .roles-guide-card.role-theme-teleporter .roles-guide-ability-highlight {
   color: var(--teleporter);
 }
@@ -7369,6 +7448,10 @@ body {
 
 #screen-roles .roles-guide-card.role-theme-survivalist .roles-guide-ability-highlight {
   color: var(--survivalist);
+}
+
+#screen-roles .roles-guide-card.role-theme-imitator .roles-guide-ability-highlight {
+  color: hsl(357, 52%, 82%);
 }
 
 #screen-roles .roles-guide-card.role-theme-sheriff .roles-guide-ability-highlight {
