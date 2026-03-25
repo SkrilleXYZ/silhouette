@@ -1178,6 +1178,7 @@
     if (normalizedRole === 'mirror caster') return 'mirrorcaster';
     if (normalizedRole === 'vitalist') return 'vitalist';
     if (normalizedRole === 'warden') return 'warden';
+    if (normalizedRole === 'oracle') return 'oracle';
     if (normalizedRole === 'teleporter') return 'teleporter';
     if (normalizedRole === 'investigator') return 'investigator';
     if (normalizedRole === 'tracker') return 'tracker';
@@ -1305,6 +1306,14 @@
       .replace(
         'Can be used 4 times.',
         '<span class="roles-guide-ability-highlight">Can be used 4 times.</span>'
+      )
+      .replace(
+        'Can be used 3 times.',
+        '<span class="roles-guide-ability-highlight">Can be used 3 times.</span>'
+      )
+      .replace(
+        'Can be used 2 times.',
+        '<span class="roles-guide-ability-highlight">Can be used 2 times.</span>'
       );
   }
 
