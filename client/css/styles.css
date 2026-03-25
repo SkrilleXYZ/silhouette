@@ -2621,8 +2621,8 @@ body {
 
 .role-card.role-theme-amnesiac .role-card-glow { background: radial-gradient(circle, var(--amnesiac) 0%, transparent 70%); }
 .role-card.role-theme-amnesiac .role-card-inner { border-color: rgba(171, 183, 206, 0.32); box-shadow: inset 0 0 0 1px rgba(171, 183, 206, 0.06), 0 0 18px rgba(128, 140, 165, 0.1); }
-.role-card.role-theme-imitator .role-card-glow { background: radial-gradient(circle, rgba(255, 212, 212, 0.9) 0%, transparent 70%); }
-.role-card.role-theme-imitator .role-card-inner { border-color: rgba(255, 188, 188, 0.34); box-shadow: inset 0 0 0 1px rgba(255, 188, 188, 0.07), 0 0 22px rgba(224, 120, 120, 0.12); }
+.role-card.role-theme-imitator .role-card-glow { background: radial-gradient(circle, rgba(255, 240, 246, 0.96) 0%, rgba(255, 164, 196, 0.28) 48%, transparent 74%); }
+.role-card.role-theme-imitator .role-card-inner { border-color: rgba(255, 206, 224, 0.42); box-shadow: inset 0 0 0 1px rgba(255, 220, 232, 0.1), 0 0 28px rgba(214, 108, 146, 0.18); }
 
 .role-card.role-theme-investigator .role-card-glow { background: radial-gradient(circle, var(--investigator) 0%, transparent 70%); }
 .role-card.role-theme-investigator .role-card-inner { border-color: rgba(185, 132, 255, 0.36); box-shadow: inset 0 0 0 1px rgba(185, 132, 255, 0.08), 0 0 24px rgba(151, 106, 223, 0.12); }
@@ -2706,7 +2706,7 @@ body {
 .role-card.role-theme-guardianangel .role-faction { color: var(--guardianangel); }
 .role-card.role-theme-survivalist .role-faction { color: var(--survivalist); }
 .role-card.role-theme-amnesiac .role-faction { color: var(--amnesiac); }
-.role-card.role-theme-imitator .role-faction { color: hsl(357, 52%, 78%); }
+.role-card.role-theme-imitator .role-faction { color: hsl(338, 74%, 84%); }
 
 .role-card.role-theme-investigator .role-faction { color: var(--investigator); }
 
@@ -2770,7 +2770,7 @@ body {
 .role-card.role-theme-guardianangel .role-divider { background: var(--guardianangel); }
 .role-card.role-theme-survivalist .role-divider { background: var(--survivalist); }
 .role-card.role-theme-amnesiac .role-divider { background: var(--amnesiac); }
-.role-card.role-theme-imitator .role-divider { background: linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,150,150,0.75)); }
+.role-card.role-theme-imitator .role-divider { background: linear-gradient(90deg, rgba(255, 248, 252, 0.96), rgba(255, 202, 222, 0.88), rgba(255, 136, 176, 0.82)); }
 
 .role-card.role-theme-investigator .role-divider { background: var(--investigator); }
 
@@ -2965,8 +2965,11 @@ body {
 }
 
 .role-card.role-theme-imitator .role-name {
-  color: hsl(0, 0%, 96%);
-  text-shadow: 0 0 18px rgba(255, 164, 164, 0.24);
+  background: linear-gradient(90deg, #fff9fc 0%, #ffdceb 52%, #ff9fbe 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 20px rgba(255, 164, 196, 0.28);
 }
 
 .role-card.role-theme-investigator .role-name {

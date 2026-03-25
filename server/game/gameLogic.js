@@ -428,6 +428,10 @@ class GameLogic {
     return player.role;
   }
 
+  canUseNightPublicChat(player) {
+    return this.getEffectiveNightRole(player) === 'Inquisitor';
+  }
+
   clearImitatorMimic(player) {
     if (!player) return;
     player.imitatorCopiedRole = null;
@@ -1130,10 +1134,10 @@ class GameLogic {
     } else if (activeRole === 'Veteran') {
       if (action !== 'instinct') return { error: 'Invalid action for Veteran' };
       if ((player.veteranUsesRemaining ?? 4) <= 0) return { error: 'You have no Instinct uses remaining' };
-    } else if (activeRole === 'Assassin') {
+    } else if (activeRole === 'Assassin' || activeRole === 'Disruptor') {
       const target = room.players.get(targetId);
       if (!target || !target.alive) return { error: 'Invalid target' };
-      if (action !== 'kill') return { error: 'Invalid action for Assassin' };
+      if (action !== 'kill') return { error: `Invalid action for ${activeRole}` };
       if (player.faction === 'Assassin' && target.faction === 'Assassin') return { error: 'Cannot kill teammates' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
     } else if (activeRole === 'Sniper') {
@@ -3711,12 +3715,15 @@ class GameLogic {
   addChatMessage(code, playerId, text) {
     const room = this.rooms.get(code);
     if (!room) return { error: 'Room not found' };
-    if (room.state !== 'lobby' && room.state !== 'morning' && room.state !== 'voting') {
-      return { error: 'Chat is only available in lobby, morning, and voting' };
-    }
-
     const player = room.players.get(playerId);
     if (!player) return { error: 'Player not found' };
+    const canChatThisPhase = room.state === 'lobby'
+      || room.state === 'morning'
+      || room.state === 'voting'
+      || (room.state === 'night' && this.canUseNightPublicChat(player));
+    if (!canChatThisPhase) {
+      return { error: 'Chat is only available in lobby, morning, and voting' };
+    }
     if (room.blackmailedPlayers?.[playerId]) return { error: 'You have been blackmailed' };
     if (room.silencedPlayers?.[playerId]) return { error: 'You have been silenced' };
 

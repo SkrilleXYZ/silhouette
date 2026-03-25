@@ -1481,11 +1481,21 @@
     return player.imitatorCopiedRole || player.role || null;
   }
 
+  function canUseNightPublicChat(player) {
+    return getActiveNightRole(player) === 'Inquisitor';
+  }
+
   function getDisplayedRoleTheme(player) {
     const activeRole = getActiveNightRole(player);
     if (!player || !activeRole) return '';
     const roleInfo = getRoleDefinition(activeRole);
     return getRoleBadgeClass(activeRole, roleInfo.faction);
+  }
+
+  function getInGameRoleDescription(roleInfo) {
+    const description = String(roleInfo?.description || '');
+    if (roleInfo?.faction !== 'Assassin') return description;
+    return description.replace(/\s*Can be used with Kill\.\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
   }
 
   function getRolesForFaction(faction) {
@@ -2829,9 +2839,9 @@
     } else if (player.role === 'Imitator') {
       desc.textContent = player.imitatorCopiedRole
         ? `Borrowing ${player.imitatorCopiedRole} tonight. Survive until the end to win with whoever remains.`
-        : roleInfo.description;
+        : getInGameRoleDescription(roleInfo);
     } else {
-      desc.textContent = roleInfo.description;
+      desc.textContent = getInGameRoleDescription(roleInfo);
     }
 
     if (player.faction === 'Assassin' && player.teammates && player.teammates.length > 0) {
@@ -3455,7 +3465,19 @@
   function renderMorningPhase(container, messagesContainer) {
     container.style.display = 'flex';
     messagesContainer.style.display = 'none';
-    container.innerHTML = '<div id="phase-chat-panel"></div>';
+    state.chatOverlayOpen = false;
+    state.forceExpandedNightChat = false;
+    const overlay = document.getElementById('chat-fullscreen-overlay');
+    if (overlay) {
+      overlay.classList.remove('active');
+      overlay.innerHTML = '';
+    }
+    container.innerHTML = `
+      <div class="morning-chat-intro">
+        <div class="action-title">MORNING DISCUSSION</div>
+        <div class="action-subtitle">Use the chat to discuss what happened during the night before voting begins.</div>
+      </div>
+      <div id="phase-chat-panel"></div>`;
     renderChatBox();
 
     state.socket.emit('request-player-data', (response) => {
@@ -3465,6 +3487,7 @@
         state.chatMessages = response.room?.chatMessages || state.chatMessages;
         updateRoleCard();
         updateAliveCount();
+        renderGamePlayerList();
         renderChatBox();
       }
     });
@@ -3720,12 +3743,17 @@
     const mode = getChatMode();
     const activeChannel = getActiveChatChannel();
     const assassinChatAvailable = canUseAssassinChat();
-    const canPublicChat = (mode === 'lobby' || mode === 'morning' || mode === 'voting' || (mode === 'night' && state.playerData?.alive === false)) && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced;
+    const canPublicChat = (
+      mode === 'lobby'
+      || mode === 'morning'
+      || mode === 'voting'
+      || (mode === 'night' && (state.playerData?.alive === false || canUseNightPublicChat(state.playerData)))
+    ) && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced;
     const canAssassinChat = assassinChatAvailable && mode !== 'hidden' && mode !== 'ended' && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced;
     const canChat = activeChannel === 'assassin' ? canAssassinChat : canPublicChat;
+    const supportsInlineChat = mode === 'lobby' || mode === 'morning' || mode === 'voting' || mode === 'night';
     const isMorningFullscreen = (mode === 'morning' || mode === 'lobby') && state.chatOverlayOpen;
-    const isForcedExpandedNight = mode === 'night' && !!state.forceExpandedNightChat && !state.chatOverlayOpen;
-    const isExpandedMode = ((mode === 'morning' || mode === 'lobby') && !isMorningFullscreen) || isForcedExpandedNight;
+    const isExpandedMode = supportsInlineChat && !state.chatOverlayOpen;
     const isDockedMode = mode !== 'hidden' && !isExpandedMode;
     const isOverlayOpen = state.chatOverlayOpen;
     const subtitle = activeChannel === 'assassin'
@@ -3748,7 +3776,7 @@
     const gameContainer = document.querySelector('.game-container');
     const messages = getRenderableChatMessages(activeChannel);
     const overlay = ensureChatOverlay();
-    const isStandaloneOverlay = isDockedMode && isOverlayOpen;
+    const isStandaloneOverlay = supportsInlineChat && isOverlayOpen;
     const isDeadSpectator = state.playerData?.alive === false;
 
     panel.className = `phase-chat-panel ${isStandaloneOverlay ? 'chat-overlay-anchor' : isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}${mode === 'lobby' ? ' chat-lobby' : ''}`;
@@ -3928,6 +3956,7 @@
       || player.role === 'Redflag'
       || player.role === 'Karma'
       || player.role === 'Inquisitor'
+      || player.role === 'Scientist'
       || player.role === 'Alturist'
       || (player.role === 'The Vessel' && !player.vesselAwakened)
       || player.role === 'Narcissist'
@@ -3946,6 +3975,8 @@
         ? 'Wait for dawn...'
         : player.role === 'Amnesiac'
           ? 'No dead players can be remembered yet. Wait for dawn...'
+          : player.role === 'Scientist'
+            ? 'Your experiment can only be used during voting. Wait for dawn...'
           : player.role === 'Alturist'
             ? 'No dead players can be revived yet. Wait for dawn...'
             : player.role === 'The Vessel'
@@ -3956,6 +3987,16 @@
       renderChatBox();
       return;
       }
+    }
+
+    const imitatorTargets = player.role === 'Imitator' && !player.imitatorCopiedRole
+      ? getTargetPlayers().filter((target) => (player.imitatorAvailableTargetIds || []).includes(target.id))
+      : [];
+    if (player.role === 'Imitator' && !player.imitatorCopiedRole && imitatorTargets.length === 0) {
+      state.forceExpandedNightChat = true;
+      container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">No roles can be copied tonight. Wait for dawn...</p></div><div id="phase-chat-panel"></div>';
+      renderChatBox();
+      return;
     }
 
     if (state.hasActed) {
