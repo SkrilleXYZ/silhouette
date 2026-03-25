@@ -1159,6 +1159,16 @@ class GameLogic {
       const teleportTargetIds = Array.isArray(action.targetIds) ? [...new Set(action.targetIds.filter(Boolean))] : [];
       if (action.action !== 'teleport' || teleportTargetIds.length !== 2) continue;
       teleportSwaps.push([teleportTargetIds[0], teleportTargetIds[1]]);
+      for (const teleportedPlayerId of teleportTargetIds) {
+        if (teleportedPlayerId === playerId) continue;
+        const otherTeleportedPlayerId = teleportTargetIds.find((candidateId) => candidateId !== teleportedPlayerId);
+        const otherTeleportedPlayer = room.players.get(otherTeleportedPlayerId);
+        if (!otherTeleportedPlayer) continue;
+        if (!privateMessages[teleportedPlayerId]) privateMessages[teleportedPlayerId] = [];
+        privateMessages[teleportedPlayerId].push(
+          this.createPrivateSystemMessage(code, `You have been teleported with ${otherTeleportedPlayer.name}.`, 'Teleporter')
+        );
+      }
     }
 
     for (const action of Object.values(room.nightActions)) {
@@ -1180,6 +1190,10 @@ class GameLogic {
       if (action.action === 'guard' && action.targetId) {
         guardedTargets.add(action.targetId);
         nextWardenTargets[playerId] = action.targetId;
+        if (!privateMessages[playerId]) privateMessages[playerId] = [];
+        privateMessages[playerId].push(
+          this.createPrivateSystemMessage(code, 'You protected the chosen player.', 'Warden')
+        );
       } else {
         nextWardenTargets[playerId] = null;
       }
@@ -1188,6 +1202,7 @@ class GameLogic {
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       if (!player) continue;
+      if (player.role === 'Warden' && action.action === 'guard') continue;
 
       if (action.targetId && guardedTargets.has(action.targetId)) {
         pushWardenBlockedMessage(playerId);

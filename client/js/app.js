@@ -418,6 +418,11 @@
     { key: 'Assassin', label: 'Assassin', icon: 'Assassin' },
     { key: 'Neutral', label: 'Neutral', icon: 'Neutral' },
   ];
+  const ROLE_GUIDE_GROUP_ORDER = {
+    Crew: ['Info', 'Protection', 'Killing', 'Chaos', 'Unbound', 'General'],
+    Assassin: ['Power', 'Concealing', 'General'],
+    Neutral: ['Evil', 'Benign', 'Killing', 'General'],
+  };
   const LOBBY_AVATAR_FILES = [
     'Avatar 1.png',
     'Avatar 11.png',
@@ -1306,7 +1311,17 @@
       return groups;
     }, {});
 
-    const orderedGroups = Object.entries(groupedRoles).sort(([left], [right]) => left.localeCompare(right));
+    const orderedGroups = Object.entries(groupedRoles).sort(([left], [right]) => {
+      const groupOrder = ROLE_GUIDE_GROUP_ORDER[activeFaction] || [];
+      const leftIndex = groupOrder.indexOf(left);
+      const rightIndex = groupOrder.indexOf(right);
+      if (leftIndex !== -1 || rightIndex !== -1) {
+        const safeLeftIndex = leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex;
+        const safeRightIndex = rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex;
+        if (safeLeftIndex !== safeRightIndex) return safeLeftIndex - safeRightIndex;
+      }
+      return left.localeCompare(right);
+    });
     let cardIndex = 0;
 
     grid.innerHTML = orderedGroups.map(([groupName, roles]) => `
@@ -1766,6 +1781,12 @@
     if (/You have been hacked by the Overload\.$/i.test(text) && String(message.source || '').trim() === 'Overload') {
       return ' system-result-overload';
     }
+    if (/You have been teleported with .*\.$/i.test(text) && String(message.source || '').trim() === 'Teleporter') {
+      return ' system-result-teleporter';
+    }
+    if (/You protected the chosen player\.$/i.test(text) && String(message.source || '').trim() === 'Warden') {
+      return ' system-result-warden-confirm';
+    }
     if (/This player was guarded by the Warden\.$/i.test(text) && String(message.source || '').trim() === 'Warden') {
       return ' system-result-warden';
     }
@@ -1860,6 +1881,11 @@
       const noVisitorMatch = text.match(/^(.*?) was not interacted by anyone tonight\.$/i);
       if (noVisitorMatch) {
         return `${formatPlayerNameReference(noVisitorMatch[1])} <span class="chat-result-highlight is-tracker-muted">was not interacted by anyone tonight.</span>`;
+      }
+
+      const teleportedMatch = text.match(/^You have been teleported with (.*?)\.$/i);
+      if (teleportedMatch) {
+        return `You have been teleported with ${formatPlayerNameReference(teleportedMatch[1])}.`;
       }
 
       const trapMatch = text.match(/^Your trap uncovered these roles: (.*?)\.$/i);

@@ -5095,6 +5095,30 @@ body {
   pointer-events: none;
 }
 
+.chat-message.system.private.system-result-teleporter {
+  border-color: rgba(138, 235, 255, 0.42);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(222, 250, 255, 0.18), transparent 16%),
+    radial-gradient(circle at 18% 112%, rgba(28, 92, 112, 0.26), transparent 42%),
+    linear-gradient(135deg, rgba(14, 34, 52, 0.98), rgba(8, 18, 30, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(240, 254, 255, 0.06),
+    0 0 0 1px rgba(138, 235, 255, 0.05),
+    0 16px 28px -24px rgba(138, 235, 255, 0.24);
+  overflow: hidden;
+}
+
+.chat-message.system.private.system-result-teleporter::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(112deg, transparent 0%, rgba(194, 244, 255, 0.07) 38%, rgba(120, 227, 255, 0.06) 58%, transparent 74%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(8, 18, 30, 0.18) 100%);
+  opacity: 0.92;
+  pointer-events: none;
+}
+
 .chat-message.system.private.system-result-warden {
   border-color: rgba(92, 228, 226, 0.4);
   background:
@@ -5116,6 +5140,30 @@ body {
     linear-gradient(112deg, transparent 0%, rgba(173, 242, 255, 0.06) 38%, rgba(250, 224, 121, 0.08) 56%, transparent 72%),
     linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(8, 20, 28, 0.18) 100%);
   opacity: 0.92;
+  pointer-events: none;
+}
+
+.chat-message.system.private.system-result-warden-confirm {
+  border-color: rgba(122, 235, 255, 0.42);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(228, 252, 255, 0.18), transparent 16%),
+    radial-gradient(circle at 18% 112%, rgba(36, 108, 118, 0.28), transparent 42%),
+    linear-gradient(135deg, rgba(16, 44, 58, 0.98), rgba(10, 24, 30, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(242, 255, 255, 0.06),
+    0 0 0 1px rgba(122, 235, 255, 0.05),
+    0 16px 28px -24px rgba(122, 235, 255, 0.24);
+  overflow: hidden;
+}
+
+.chat-message.system.private.system-result-warden-confirm::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(112deg, transparent 0%, rgba(184, 245, 255, 0.06) 38%, rgba(255, 242, 180, 0.06) 56%, transparent 74%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(8, 20, 28, 0.16) 100%);
+  opacity: 0.94;
   pointer-events: none;
 }
 
@@ -5295,10 +5343,22 @@ body {
   text-shadow: 0 1px 8px rgba(176, 255, 164, 0.08);
 }
 
+.chat-message.system.private.system-result-teleporter .chat-message-meta,
+.chat-message.system.private.system-result-teleporter .chat-message-text {
+  color: hsl(192, 100%, 95%);
+  text-shadow: 0 1px 8px rgba(222, 250, 255, 0.08);
+}
+
 .chat-message.system.private.system-result-warden .chat-message-meta,
 .chat-message.system.private.system-result-warden .chat-message-text {
   color: hsl(190, 100%, 95%);
   text-shadow: 0 1px 8px rgba(212, 251, 246, 0.08);
+}
+
+.chat-message.system.private.system-result-warden-confirm .chat-message-meta,
+.chat-message.system.private.system-result-warden-confirm .chat-message-text {
+  color: hsl(190, 100%, 95%);
+  text-shadow: 0 1px 8px rgba(228, 252, 255, 0.08);
 }
 
 .chat-message.system.system-result-redflag .chat-message-meta,
