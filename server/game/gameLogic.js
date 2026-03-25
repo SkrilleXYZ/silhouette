@@ -1272,9 +1272,15 @@ class GameLogic {
     const nextPendingLongshots = [];
     const resolvingLongshots = [];
     const wardenBlockedActors = new Set();
+    const veteranCounterKilledActors = new Set();
     const registerKillAttribution = (victimId, killerId) => {
       if (!victimId || !killerId) return;
       killAttributions.set(victimId, killerId);
+    };
+    const markVeteranCounterKill = (actorId) => {
+      if (!actorId || veteranCounterKilledActors.has(actorId)) return;
+      veteranCounterKilledActors.add(actorId);
+      killed.add(actorId);
     };
     const pushWardenBlockedMessage = (actorId) => {
       if (!actorId || wardenBlockedActors.has(actorId)) return;
@@ -1499,8 +1505,38 @@ class GameLogic {
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       const activeRole = this.getEffectiveNightRole(player);
+      if (!player || activeRole !== 'Veteran') continue;
+      if (isSuppressedByPurge(player)) continue;
+      if (spoofedTargets.has(playerId)) continue;
+      if (action.action !== 'instinct') continue;
+      veteranAlertIds.add(playerId);
+      player.veteranUsesRemaining = Math.max(0, (player.veteranUsesRemaining ?? 4) - 1);
+    }
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      const activeRole = this.getEffectiveNightRole(player);
+      if (!player) continue;
+      if (isSuppressedByPurge(player)) continue;
+      if (activeRole === 'Veteran' && action.action === 'instinct') continue;
+
+      const interactionTargetIds = getInteractionTargetIds(action);
+      const guardianTargetId = this.getGuardianBlessTargetId(room, player);
+      if (activeRole === 'Guardian Angel' && action.action === 'bless' && guardianTargetId && !action.blessBlockedByWarden && !action.blessBlockedBySpoof) {
+        interactionTargetIds.push(remapTeleportedTargetId(guardianTargetId));
+      }
+
+      if (interactionTargetIds.some((targetId) => veteranAlertIds.has(targetId))) {
+        markVeteranCounterKill(playerId);
+      }
+    }
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      const activeRole = this.getEffectiveNightRole(player);
       if (!player || activeRole !== 'Tetherhex') continue;
       if (isSuppressedByPurge(player)) continue;
+      if (spoofedTargets.has(playerId) || veteranCounterKilledActors.has(playerId)) continue;
       const previousTargets = room.lastTetherhexTargets[playerId] || [];
       if (action.interlinkedUsedThisNight && action.interlinkedTargetId) {
         nextTetherhexTargets[playerId] = [...previousTargets.slice(-1), action.interlinkedTargetId];
@@ -1513,6 +1549,7 @@ class GameLogic {
       const player = room.players.get(playerId);
       const activeRole = this.getEffectiveNightRole(player);
       if (!player || activeRole !== 'Hypnotic') continue;
+      if (spoofedTargets.has(playerId) || veteranCounterKilledActors.has(playerId)) continue;
       if (action.tranceUsedThisNight && action.tranceTargetId) {
         hypnotizedTargets.add(action.tranceTargetId);
         nextHypnoticTargets[playerId] = action.tranceTargetId;
@@ -1530,6 +1567,7 @@ class GameLogic {
       const activeRole = this.getEffectiveNightRole(player);
       if (!player || activeRole !== 'Overload') continue;
       if (isSuppressedByPurge(player)) continue;
+      if (spoofedTargets.has(playerId) || veteranCounterKilledActors.has(playerId)) continue;
       if (action.malwareUsedThisNight && action.malwareTargetId) {
         overloadedTargets.add(action.malwareTargetId);
         nextOverloadTargets[playerId] = action.malwareTargetId;
@@ -1546,6 +1584,7 @@ class GameLogic {
       const player = room.players.get(playerId);
       const activeRole = this.getEffectiveNightRole(player);
       if (!player || activeRole !== 'Blackmailer') continue;
+      if (spoofedTargets.has(playerId) || veteranCounterKilledActors.has(playerId)) continue;
       if (action.blackmailUsedThisNight && action.blackmailTargetId) {
         blackmailedTargets.add(action.blackmailTargetId);
         room.blackmailedPlayers[action.blackmailTargetId] = true;
@@ -1561,6 +1600,7 @@ class GameLogic {
       const activeRole = this.getEffectiveNightRole(player);
       if (!player || activeRole !== 'Silencer') continue;
       if (isSuppressedByPurge(player)) continue;
+      if (spoofedTargets.has(playerId) || veteranCounterKilledActors.has(playerId)) continue;
       if (action.action === 'quietus' && action.targetId) {
         silencedTargets.add(action.targetId);
         room.silencedPlayers[action.targetId] = true;
@@ -1579,6 +1619,7 @@ class GameLogic {
       const activeRole = this.getEffectiveNightRole(player);
       if (!player || activeRole !== 'Oracle') continue;
       if (isSuppressedByPurge(player)) continue;
+      if (spoofedTargets.has(playerId) || veteranCounterKilledActors.has(playerId)) continue;
       if (action.action === 'evil-eye' && action.targetId) {
         nextOracleTargets[playerId] = action.targetId;
         player.oracleMarkedTargetId = action.targetId;
@@ -1589,7 +1630,7 @@ class GameLogic {
       }
     }
 
-    const disabledAbilityTargets = new Set([...hypnotizedTargets, ...overloadedTargets, ...silencedTargets, ...spoofedTargets]);
+    const disabledAbilityTargets = new Set([...hypnotizedTargets, ...overloadedTargets, ...silencedTargets, ...spoofedTargets, ...veteranCounterKilledActors]);
 
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
@@ -1598,8 +1639,7 @@ class GameLogic {
       if (isSuppressedByPurge(player)) continue;
       if (disabledAbilityTargets.has(playerId)) continue;
       if (action.action === 'instinct' && activeRole === 'Veteran') {
-        veteranAlertIds.add(playerId);
-        player.veteranUsesRemaining = Math.max(0, (player.veteranUsesRemaining ?? 4) - 1);
+        continue;
       }
       if (action.action === 'protect' && action.targetId) {
         protected_.add(action.targetId);
@@ -2072,6 +2112,7 @@ class GameLogic {
       const activeRole = this.getEffectiveNightRole(player);
       if (!player || activeRole !== 'Hypnotic') continue;
       if (isSuppressedByPurge(player)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
 
       if (action.action === 'kill' && action.targetId) {
         if (veteranAlertIds.has(action.targetId)) {
@@ -2118,6 +2159,7 @@ class GameLogic {
       const activeRole = this.getEffectiveNightRole(player);
       if (!player || activeRole !== 'Overload') continue;
       if (isSuppressedByPurge(player)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
 
       if (action.action === 'kill' && action.targetId) {
         if (veteranAlertIds.has(action.targetId)) {
@@ -2164,6 +2206,7 @@ class GameLogic {
       const activeRole = this.getEffectiveNightRole(player);
       if (!player || activeRole !== 'Blackout') continue;
       if (isSuppressedByPurge(player)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
 
       if (action.action === 'kill' && action.targetId) {
         if (veteranAlertIds.has(action.targetId)) {
@@ -2209,6 +2252,7 @@ class GameLogic {
       const player = room.players.get(playerId);
       const activeRole = this.getEffectiveNightRole(player);
       if (!player || activeRole !== 'The Purge') continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
 
       if (action.action === 'kill' && action.targetId) {
         if (veteranAlertIds.has(action.targetId)) {
@@ -2255,6 +2299,7 @@ class GameLogic {
       const activeRole = this.getEffectiveNightRole(player);
       if (!player || activeRole !== 'Blackmailer') continue;
       if (isSuppressedByPurge(player)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
 
       if (action.action === 'kill' && action.targetId) {
         if (veteranAlertIds.has(action.targetId)) {
@@ -2301,6 +2346,7 @@ class GameLogic {
       const activeRole = this.getEffectiveNightRole(player);
       if (!player || activeRole !== 'Tetherhex') continue;
       if (isSuppressedByPurge(player)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
 
       if (action.action === 'kill' && action.targetId) {
         if (veteranAlertIds.has(action.targetId)) {
@@ -2347,6 +2393,7 @@ class GameLogic {
       const activeRole = this.getEffectiveNightRole(player);
       if (!player || activeRole !== 'Tetherhex') continue;
       if (isSuppressedByPurge(player)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
       if (!action.interlinkedUsedThisNight || !action.interlinkedTargetId) continue;
       if (!killed.has(playerId)) continue;
       const linkedTarget = room.players.get(action.interlinkedTargetId);
@@ -2411,7 +2458,7 @@ class GameLogic {
           if (!killer) continue;
           messages.push({
             type: 'system',
-            text: `${killer.name} confesses to murdering ${deadPlayer.name}.`,
+            text: `${deadPlayer.name} was killed by ${killer.name}.`,
             playerId: killerId,
             targetId: deadId,
             source: 'Oracle',
@@ -2428,7 +2475,7 @@ class GameLogic {
         if (player.alive) {
           if (!privateMessages[player.id]) privateMessages[player.id] = [];
           privateMessages[player.id].push(
-            this.createPrivateSystemMessage(code, 'Your target has died. You have become the Amnesiac.', 'Executioner')
+            this.createPrivateSystemMessage(code, 'Your target has died. You have become an Amnesiac.', 'Executioner')
           );
         }
       }
@@ -2441,7 +2488,7 @@ class GameLogic {
         if (player.alive) {
           if (!privateMessages[player.id]) privateMessages[player.id] = [];
           privateMessages[player.id].push(
-            this.createPrivateSystemMessage(code, 'Your target has died. You have become the Amnesiac.', 'Guardian Angel')
+            this.createPrivateSystemMessage(code, 'Your target has died. You have become an Amnesiac.', 'Guardian Angel')
           );
         }
       }

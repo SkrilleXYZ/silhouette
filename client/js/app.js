@@ -33,6 +33,7 @@
     allPlayersWithRoles: [],
     playerListOpen: false,
     chatOverlayOpen: false,
+    forceExpandedNightChat: false,
     roleRevealActive: false,
     roleRevealEndsAt: 0,
     roleRevealTimeout: null,
@@ -48,6 +49,7 @@
     selectedTargets: [],
     assassinChatMessages: [],
     currentChatChannel: 'public',
+    oracleVotingTab: 'ability',
   };
 
   const MAX_ROOM_PLAYERS = 16;
@@ -1913,7 +1915,7 @@
     if (/.* confesses to murdering .*\.$/i.test(text) && String(message.source || '').trim() === 'Redflag') {
       return ' system-result-redflag';
     }
-    if (/.* confesses to murdering .*\.$/i.test(text) && String(message.source || '').trim() === 'Oracle') {
+    if ((/.* confesses to murdering .*\.$/i.test(text) || /.* was killed by .*\.$/i.test(text)) && String(message.source || '').trim() === 'Oracle') {
       return ' system-result-oracle';
     }
     if (/The exiled player was protected by the Oracle\./i.test(text) && String(message.source || '').trim() === 'Oracle') {
@@ -1931,10 +1933,10 @@
     if (/A Guardian Angel blessed you through the night\.$/i.test(text) && String(message.source || '').trim() === 'Guardian Angel') {
       return ' system-result-guardian-angel';
     }
-    if (/Your target has died\. You have become the Amnesiac\.$/i.test(text) && String(message.source || '').trim() === 'Executioner') {
+    if (/Your target has died\. You have become an Amnesiac\.$/i.test(text) && String(message.source || '').trim() === 'Executioner') {
       return ' system-result-executioner-shift';
     }
-    if (/Your target has died\. You have become the Amnesiac\.$/i.test(text) && String(message.source || '').trim() === 'Guardian Angel') {
+    if (/Your target has died\. You have become an Amnesiac\.$/i.test(text) && String(message.source || '').trim() === 'Guardian Angel') {
       return ' system-result-guardian-shift';
     }
     if (/You were protected by the Vitalist during the night\.$/i.test(text)) {
@@ -1961,6 +1963,10 @@
       const redflagConfessionMatch = String(message.text || '').trim().match(/^(.*?) confesses to murdering (.*?)\.$/i);
       if (redflagConfessionMatch && (String(message.source || '').trim() === 'Redflag' || String(message.source || '').trim() === 'Oracle')) {
         return `${formatPlayerNameReference(redflagConfessionMatch[1])} confesses to murdering ${formatPlayerNameReference(redflagConfessionMatch[2])}.`;
+      }
+      const oracleRevealMatch = String(message.text || '').trim().match(/^(.*?) was killed by (.*?)\.$/i);
+      if (oracleRevealMatch && String(message.source || '').trim() === 'Oracle') {
+        return `${formatPlayerNameReference(oracleRevealMatch[1])} was killed by ${formatPlayerNameReference(oracleRevealMatch[2])}.`;
       }
     }
 
@@ -2373,7 +2379,13 @@
     if (!player) return;
     const activeRole = getActiveNightRole(player);
 
-    if (player.role === 'Villager' || player.role === 'Jester' || (player.role === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0)) {
+    if (
+      player.role === 'Villager'
+      || player.role === 'Jester'
+      || player.role === 'Karma'
+      || player.role === 'Narcissist'
+      || (player.role === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0)
+    ) {
       container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">You have no abilities. Wait for dawn...</p></div><div id="phase-chat-panel"></div>';
       renderChatBox();
       return;
@@ -3361,6 +3373,16 @@
     else state.chatDraft = value;
   }
 
+  function setAllChatDraftValues(channel, value) {
+    if (channel === 'assassin') {
+      state.assassinChatDraft = value;
+      state.assassinChatOverlayDraft = value;
+      return;
+    }
+    state.chatDraft = value;
+    state.chatOverlayDraft = value;
+  }
+
   function bindChatComposer(form, canChat, channel = 'public') {
     if (!form || !canChat) return;
 
@@ -3379,11 +3401,15 @@
       if (!text) return;
 
       const eventName = channel === 'assassin' ? 'send-assassin-chat-message' : 'send-chat-message';
+      const previousText = text;
+      if (input) input.value = '';
+      setAllChatDraftValues(channel, '');
       state.socket.emit(eventName, { text }, (response) => {
         if (response.success) {
-          if (input) input.value = '';
-          setChatDraftValue(isOverlayForm, channel, '');
+          setAllChatDraftValues(channel, '');
         } else {
+          if (input) input.value = previousText;
+          setAllChatDraftValues(channel, previousText);
           showToast(response.error || 'Message failed to send', 'error');
         }
       });
@@ -3436,7 +3462,8 @@
     const canAssassinChat = assassinChatAvailable && mode !== 'hidden' && mode !== 'ended' && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced;
     const canChat = activeChannel === 'assassin' ? canAssassinChat : canPublicChat;
     const isMorningFullscreen = mode === 'morning' && state.chatOverlayOpen;
-    const isExpandedMode = mode === 'morning' && !isMorningFullscreen;
+    const isForcedExpandedNight = mode === 'night' && !!state.forceExpandedNightChat && !state.chatOverlayOpen;
+    const isExpandedMode = (mode === 'morning' && !isMorningFullscreen) || isForcedExpandedNight;
     const isDockedMode = mode !== 'hidden' && !isExpandedMode;
     const isOverlayOpen = state.chatOverlayOpen;
     const subtitle = activeChannel === 'assassin'
@@ -3611,6 +3638,7 @@
     const messages = document.getElementById('game-messages');
     content.style.display = 'flex';
     messages.style.display = 'none';
+    state.forceExpandedNightChat = false;
 
     if (state.playerData && !state.playerData.alive) {
       content.innerHTML = '<div id="phase-chat-panel"></div>';
@@ -3635,6 +3663,8 @@
       || player.role === 'Jester'
       || player.role === 'Executioner'
       || player.role === 'Redflag'
+      || player.role === 'Karma'
+      || player.role === 'Narcissist'
       || (player.role === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0)
       || (player.role === 'Mirror Caster' && (player.mirrorUsesRemaining ?? 4) <= 0)
     ) {
@@ -3651,6 +3681,7 @@
         : player.role === 'Amnesiac'
           ? 'No dead players can be remembered yet. Wait for dawn...'
           : 'You have no abilities. Wait for dawn...';
+      state.forceExpandedNightChat = true;
       container.innerHTML = `<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">${waitingSubtext}</p></div><div id="phase-chat-panel"></div>`;
       renderChatBox();
       return;
@@ -3916,7 +3947,7 @@
     else if (activeRole === 'Veteran') actionDesc = 'Stand watch tonight.';
     else if (activeRole === 'Mirror Caster') actionDesc = 'Choose a player to mirror tonight';
     else if (activeRole === 'Warden') actionDesc = 'Choose a player to block all night interactions on.';
-    else if (activeRole === 'Oracle') actionDesc = 'Choose a player. If they die tonight, the killer will confess.';
+    else if (activeRole === 'Oracle') actionDesc = 'Choose a player. If they die tonight, the killer will confess. Purify becomes available during voting.';
     else if (activeRole === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
     else if (activeRole === 'Sniper') actionDesc = 'Mark a player with a distant shot. The bullet lands 2 rounds later.';
     else if (activeRole === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
@@ -4116,6 +4147,13 @@
   function renderVotingPhase(container) {
     const player = state.playerData;
     const canPurify = player?.role === 'Oracle' && (player.oraclePurifyUsesRemaining ?? 2) > 0 && !player.oraclePurifiedTargetId;
+    if (canPurify) {
+      if (state.oracleVotingTab !== 'ability' && state.oracleVotingTab !== 'vote') {
+        state.oracleVotingTab = 'ability';
+      }
+    } else {
+      state.oracleVotingTab = 'vote';
+    }
     if (state.hasVoted) {
       container.innerHTML = '<div class="action-confirmed"><div class="confirmed-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><p class="confirmed-text">VOTE SUBMITTED</p><p class="confirmed-detail">Waiting for others...</p></div><div id="phase-chat-panel"></div>';
       renderChatBox();
@@ -4124,9 +4162,15 @@
 
     const targets = getVoteTargets();
     const aliveCount = state.totalAlive || state.roomData?.aliveCount || '?';
-    const oraclePanel = canPurify ? `
-      <div class="action-panel oracle-vote-panel">
-        <div class="action-title">ORACLE</div>
+    const showAbilityTab = canPurify && state.oracleVotingTab === 'ability';
+    const votingTabs = canPurify ? `
+      <div class="oracle-voting-tabs">
+        <button class="oracle-voting-tab ${showAbilityTab ? 'active' : ''}" id="btn-oracle-tab-ability" type="button">Ability</button>
+        <button class="oracle-voting-tab ${showAbilityTab ? '' : 'active'}" id="btn-oracle-tab-vote" type="button">Vote</button>
+      </div>` : '';
+    const oracleAbilityPanel = canPurify ? `
+      <div class="action-panel oracle-vote-panel${showAbilityTab ? '' : ' hidden'}">
+        <div class="action-title">ORACLE ABILITY</div>
         <div class="action-subtitle">Purify a player so they cannot be voted out this phase.</div>
         <div class="target-label">SELECT PLAYER TO PURIFY</div>
         <div class="target-list chat-target-list" id="oracle-target-list">
@@ -4134,12 +4178,14 @@
         </div>
         <div class="chat-local-actions">
           <button class="btn btn-crew confirm-action" id="btn-confirm-oracle" ${!state.selectedOracleTarget ? 'disabled' : ''}>Confirm ${player.oraclePurifyUsesRemaining ?? 2}/2</button>
+          <button class="btn btn-ghost chat-local-skip" id="btn-skip-oracle-ability">Skip</button>
         </div>
       </div>` : '';
 
     container.innerHTML = `
-      ${oraclePanel}
-      <div class="voting-panel">
+      ${votingTabs}
+      ${oracleAbilityPanel}
+      <div class="voting-panel${showAbilityTab ? ' hidden' : ''}">
         <div class="action-title">CAST YOUR VOTE</div>
         <div class="action-subtitle">${state.votesCast} / ${aliveCount} votes cast</div>
         <div class="target-label">SELECT PLAYER</div>
@@ -4152,6 +4198,22 @@
         </div>
       </div>
       <div id="phase-chat-panel"></div>`;
+
+    const oracleTabAbilityBtn = document.getElementById('btn-oracle-tab-ability');
+    if (oracleTabAbilityBtn) {
+      oracleTabAbilityBtn.addEventListener('click', () => {
+        state.oracleVotingTab = 'ability';
+        renderVotingPhase(container);
+      });
+    }
+
+    const oracleTabVoteBtn = document.getElementById('btn-oracle-tab-vote');
+    if (oracleTabVoteBtn) {
+      oracleTabVoteBtn.addEventListener('click', () => {
+        state.oracleVotingTab = 'vote';
+        renderVotingPhase(container);
+      });
+    }
 
     container.querySelectorAll('#oracle-target-list .target-item').forEach((item) => {
       item.addEventListener('click', () => {
@@ -4169,12 +4231,22 @@
             state.playerData = response.player || state.playerData;
             state.roomData = response.room || state.roomData;
             state.selectedOracleTarget = null;
+            state.oracleVotingTab = 'vote';
             renderVotingPhase(container);
             showToast('Purify used', 'success');
           } else {
             showToast(response.error || 'Action failed', 'error');
           }
         });
+      });
+    }
+
+    const skipOracleAbilityBtn = document.getElementById('btn-skip-oracle-ability');
+    if (skipOracleAbilityBtn) {
+      skipOracleAbilityBtn.addEventListener('click', () => {
+        state.selectedOracleTarget = null;
+        state.oracleVotingTab = 'vote';
+        renderVotingPhase(container);
       });
     }
 
