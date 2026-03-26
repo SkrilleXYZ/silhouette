@@ -293,13 +293,23 @@ class GameLogic {
     return roles[Math.floor(Math.random() * roles.length)];
   }
 
+  getAssignedRoleNames(room) {
+    if (!room?.players) return new Set();
+    return new Set(
+      Array.from(room.players.values())
+        .map((player) => player?.role)
+        .filter(Boolean)
+    );
+  }
+
   getRolePoolForRoom(room, faction, subfaction) {
     const basePool = this.roleCatalog?.[faction]?.[subfaction] || [];
     if (!Array.isArray(basePool)) return [];
+    const assignedRoles = this.getAssignedRoleNames(room);
     if (room?.disableVillagerRole && faction === 'Crew' && subfaction === 'Info') {
-      return basePool.filter((role) => role !== 'Villager');
+      return basePool.filter((role) => role !== 'Villager' && !assignedRoles.has(role));
     }
-    return [...basePool];
+    return basePool.filter((role) => !assignedRoles.has(role));
   }
 
   pickRoleForSlot(room, faction, subfaction) {
@@ -323,7 +333,11 @@ class GameLogic {
     const player = room.players.get(playerId);
     if (!player) return false;
 
-    const role = this.pickRandomRole(roles);
+    const assignedRoles = this.getAssignedRoleNames(room);
+    const availableRoles = Array.isArray(roles)
+      ? roles.filter((role) => role && !assignedRoles.has(role))
+      : [];
+    const role = this.pickRandomRole(availableRoles);
     if (!role) return false;
 
     player.role = role;
@@ -472,7 +486,10 @@ class GameLogic {
     const player = room.players.get(playerId);
     if (!player) return false;
 
-    const pool = categories.flatMap((category) => this.roleCatalog?.Neutral?.[category] || []);
+    const assignedRoles = this.getAssignedRoleNames(room);
+    const pool = categories
+      .flatMap((category) => this.roleCatalog?.Neutral?.[category] || [])
+      .filter((role) => !assignedRoles.has(role));
     const role = this.pickRandomRole(pool);
     if (!role) return false;
 
@@ -3759,9 +3776,11 @@ class GameLogic {
     return message;
   }
 
-  getNightActionSummaryLine(code, action) {
+  getNightActionSummaryLine(code, action, playerId = null) {
     const room = this.rooms.get(code);
     if (!room || !action) return null;
+    const actor = playerId ? room.players.get(playerId) : null;
+    const activeRole = actor ? this.getEffectiveNightRole(actor) : null;
 
     if (room.hiddenRoleList) {
       if (action === 'skip') return null;
@@ -3778,7 +3797,7 @@ class GameLogic {
     if (action === 'abracadabra') return 'Magician has made a player disappear.';
     if (action === 'guard') return 'Warden has locked down a player.';
     if (action === 'sacrifice') return 'Alturist is preparing a sacrifice.';
-    if (action === 'mimic') return 'Imitator has copied a player.';
+    if (action === 'mimic') return 'Imitator has shifted abilities.';
     if (action === 'inherit') return 'Amnesiac has claimed a forgotten role.';
     if (action === 'evil-eye') return 'Oracle has marked someone with the Evil Eye.';
     if (action === 'douse' || action === 'ignite') return 'Arsonist is playing with fire.';
@@ -3795,7 +3814,10 @@ class GameLogic {
     if (action === 'instinct') return 'Veteran is standing watch.';
     if (action === 'longshot') return 'Sniper has lined up a distant shot.';
     if (action === 'interlinked') return 'Tetherhex has forged a lethal bond.';
-    if (action === 'kill') return 'An Assassin has moved through the shadows.';
+    if (action === 'kill') {
+      if (activeRole === 'The Vessel') return 'The Vessel has taken revenge.';
+      return 'An Assassin has moved through the shadows.';
+    }
     return null;
   }
 
@@ -3806,8 +3828,8 @@ class GameLogic {
     const lines = [];
     const seen = new Set();
 
-    for (const { action } of Object.values(room.nightActions)) {
-      const line = this.getNightActionSummaryLine(code, action);
+    for (const [playerId, { action }] of Object.entries(room.nightActions)) {
+      const line = this.getNightActionSummaryLine(code, action, playerId);
       if (!line || seen.has(line)) continue;
       seen.add(line);
       lines.push(line);

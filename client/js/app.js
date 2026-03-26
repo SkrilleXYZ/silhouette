@@ -3790,7 +3790,9 @@
     const canChat = activeChannel === 'assassin' ? canAssassinChat : canPublicChat;
     const isDaytimeInline = mode === 'lobby' || mode === 'morning';
     const isDaytimeFullscreen = isDaytimeInline && state.chatOverlayOpen;
-    const isForcedExpandedNight = mode === 'night' && !!state.forceExpandedNightChat && !state.chatOverlayOpen;
+    const isForcedExpandedNight = mode === 'night'
+      && !state.chatOverlayOpen
+      && (!!state.forceExpandedNightChat || state.playerData?.alive === false);
     const isExpandedMode = (isDaytimeInline && !isDaytimeFullscreen) || isForcedExpandedNight;
     const isDockedMode = mode !== 'hidden' && !isExpandedMode;
     const isOverlayOpen = state.chatOverlayOpen;
@@ -3991,6 +3993,7 @@
       player.role === 'Villager'
       || player.role === 'Jester'
       || player.role === 'Executioner'
+      || player.role === 'Amnesiac'
       || player.role === 'Redflag'
       || player.role === 'Karma'
       || player.role === 'Inquisitor'
@@ -4353,13 +4356,16 @@
     const isMultiTargetRole = activeRole === 'Traplord' || activeRole === 'Teleporter' || (activeRole === 'Arsonist' && state.selectedAction === 'douse');
     const requiredMultiTargetCount = activeRole === 'Teleporter' ? 2 : activeRole === 'Arsonist' && state.selectedAction === 'douse' ? arsonistDouseTargetCount : 3;
     const shouldShowTargetList = !isTargetlessRole || activeRole === 'Arsonist';
+    const actionPanelClass = isTargetlessRole && activeRole !== 'Arsonist'
+      ? 'action-panel action-panel-spacious'
+      : 'action-panel';
     const targetLabel = activeRole === 'Arsonist' && state.selectedAction === 'ignite'
       ? `DOUSED PLAYERS${displayedTargets.length ? ` (${displayedTargets.length})` : ''}`
       : isMultiTargetRole
         ? `${activeRole === 'Teleporter' ? 'SELECT 2 TARGETS' : activeRole === 'Arsonist' ? `SELECT ${arsonistDouseTargetCount} TARGET${arsonistDouseTargetCount === 1 ? '' : 'S'}` : 'SELECT AT LEAST 3 TARGETS'}${multiSelectedTargets.length ? ` (${multiSelectedTargets.length} SELECTED)` : ''}`
         : 'SELECT TARGET';
     container.innerHTML = `
-      <div class="action-panel">
+      <div class="${actionPanelClass}">
         <div class="action-title">YOUR NIGHT ACTION</div>
         <div class="action-subtitle">${actionDesc}</div>
         ${actionsHTML}
@@ -4577,8 +4583,8 @@
       </div>` : '';
     const votingAbilityPanel = hasVotingAbility ? `
       <div class="action-panel oracle-vote-panel${showAbilityTab ? '' : ' hidden'}">
-        <div class="action-title">${player.role === 'Inquisitor' ? 'INQUISITOR ABILITY' : player.role === 'Scientist' ? 'SCIENTIST ABILITY' : player.role === 'Disruptor' ? 'DISRUPTOR ABILITY' : 'ORACLE ABILITY'}</div>
-        <div class="action-subtitle">${player.role === 'Inquisitor' ? 'Exile a player instantly and make every other vote useless.' : player.role === 'Scientist' ? 'Choose 2 players. Their roles will be switched after this voting session ends.' : player.role === 'Disruptor' ? 'Revoke this vote instantly. If you act first, the whole session ends at once.' : 'Purify a player so they cannot be voted out this phase.'}</div>
+        <div class="action-title">${player.role === 'Inquisitor' ? 'INQUISITOR ABILITY' : player.role === 'Scientist' ? 'SCIENTIST ABILITY' : player.role === 'Disruptor' ? 'VETO' : 'ORACLE ABILITY'}</div>
+        <div class="action-subtitle">${player.role === 'Inquisitor' ? 'Exile a player instantly and make every other vote useless.' : player.role === 'Scientist' ? 'Choose 2 players. Their roles will be switched after this voting session ends.' : player.role === 'Disruptor' ? 'Revoke this vote instantly.' : 'Purify a player so they cannot be voted out this phase.'}</div>
         ${isTargetlessVotingAbility ? '' : `<div class="target-label">${player.role === 'Inquisitor' ? 'SELECT PLAYER TO EXILE' : player.role === 'Scientist' ? `SELECT 2 PLAYERS TO SWITCH${selectedVotingAbilityTargets.length ? ` (${selectedVotingAbilityTargets.length} SELECTED)` : ''}` : 'SELECT PLAYER TO PURIFY'}</div>
         <div class="target-list chat-target-list" id="voting-ability-target-list">
           ${targets.filter((target) => target.id !== state.playerId).map((t) => `<div class="target-item ${(isScientistAbility ? selectedVotingAbilityTargets.includes(t.id) : state.selectedOracleTarget === t.id) ? 'selected' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`).join('')}
