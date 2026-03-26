@@ -231,6 +231,19 @@
         },
       ],
     },
+    Swapper: {
+      faction: 'Crew',
+      subfaction: 'Chaos',
+      description: 'Choose 2 players to swap places before a voting phase.',
+      revealText: 'Prismatic light folds across the table. Switch two seats before the vote lands and let the wrong fate fall in the wrong place.',
+      abilities: [
+        {
+          name: 'Swap',
+          type: 'Voting',
+          description: 'Choose 2 players to swap places before a voting phase.',
+        },
+      ],
+    },
     Magician: {
       faction: 'Crew',
       subfaction: 'Chaos',
@@ -560,13 +573,13 @@
     Survivalist: {
       faction: 'Neutral',
       subfaction: 'Benign',
-      description: 'Protect yourself from getting killed. Can be used 5 times. Survive until the end of the game no matter who wins.',
+      description: 'Protect yourself from getting killed. Can be used 4 times. Survive until the end of the game no matter who wins.',
       revealText: 'Warm gold-orange fire wraps around you. Endure the whole game and claim victory beside whoever remains.',
       abilities: [
         {
           name: 'Lifeguard',
           type: 'Night',
-          description: 'Protect yourself from getting killed. Can be used 5 times.',
+          description: 'Protect yourself from getting killed. Can be used 4 times.',
         },
       ],
     },
@@ -1350,6 +1363,7 @@
     if (normalizedRole === 'the vessel') return 'vessel';
     if (normalizedRole === 'narcissist') return 'narcissist';
     if (normalizedRole === 'teleporter') return 'teleporter';
+    if (normalizedRole === 'swapper') return 'swapper';
     if (normalizedRole === 'magician') return 'magician';
     if (normalizedRole === 'scientist') return 'scientist';
     if (normalizedRole === 'investigator') return 'investigator';
@@ -1457,6 +1471,7 @@
       disruptor: { glowBackground: 'hsl(357, 86%, 58%)', titleColor: 'hsl(357, 92%, 70%)', titleShadow: '0 0 30px rgba(222, 58, 66, 0.24)' },
       narcissist: { glowBackground: 'hsl(270, 82%, 58%)', titleColor: 'hsl(270, 90%, 78%)', titleShadow: '0 0 30px rgba(124, 58, 237, 0.24)' },
       teleporter: { glowBackground: 'var(--teleporter)', titleColor: 'var(--teleporter)', titleShadow: '0 0 30px rgba(126, 184, 255, 0.24)' },
+      swapper: { glowBackground: 'hsl(286, 100%, 68%)', titleColor: 'hsl(48, 100%, 84%)', titleShadow: '0 0 30px rgba(176, 104, 255, 0.26)' },
       magician: { glowBackground: 'var(--magician)', titleColor: 'var(--magician)', titleShadow: '0 0 30px rgba(124, 112, 255, 0.24)' },
       scientist: { glowBackground: 'var(--scientist)', titleColor: 'var(--scientist)', titleShadow: '0 0 30px rgba(84, 232, 214, 0.24)' },
       investigator: { glowBackground: 'hsl(267, 86%, 68%)', titleColor: 'hsl(267, 100%, 86%)', titleShadow: '0 0 30px rgba(185, 132, 255, 0.24)' },
@@ -2029,11 +2044,35 @@
     if (/was found dead|was eliminated by vote/i.test(text)) return 'summary-death';
     if (/was exiled by the Inquisitor\./i.test(text)) return 'summary-inquisitor';
     if (/The Disruptor has veto'd the voting\./i.test(text)) return 'summary-disruptor';
+    if (/had their places swapped by the Swapper\./i.test(text)) return 'summary-swapper';
     if (/used their gun/i.test(text)) return 'summary-shoot';
     if (/Sheriff is investigating someone/i.test(text)) return 'summary-search';
     if (/Investigator is examining someone/i.test(text)) return 'summary-examine';
     if (/Tracker is following someone/i.test(text)) return 'summary-track';
     if (/Stalker is shadowing someone/i.test(text)) return 'summary-stalk';
+    if (/Traplord is setting traps\./i.test(text)) return 'summary-traplord';
+    if (/Teleporter is bending the room\./i.test(text)) return 'summary-teleporter';
+    if (/Magician has made a player disappear\./i.test(text)) return 'summary-magician';
+    if (/Warden has locked down a player\./i.test(text)) return 'summary-warden';
+    if (/Alturist is preparing a sacrifice\./i.test(text)) return 'summary-alturist';
+    if (/Imitator has shifted abilities\./i.test(text)) return 'summary-imitator';
+    if (/Amnesiac has claimed a forgotten role\./i.test(text)) return 'summary-amnesiac';
+    if (/Oracle has marked someone with the Evil Eye\./i.test(text)) return 'summary-oracle';
+    if (/Arsonist is playing with fire\./i.test(text)) return 'summary-arsonist';
+    if (/Vitalist has protected someone\./i.test(text)) return 'summary-vitalist';
+    if (/Silencer has hushed someone\./i.test(text)) return 'summary-silencer';
+    if (/Guardian Angel has blessed their target\./i.test(text)) return 'summary-guardianangel';
+    if (/Hypnotic has cast a trance over someone\./i.test(text)) return 'summary-hypnotic';
+    if (/Someone has been hacked by the Overload\./i.test(text)) return 'summary-overload';
+    if (/Blackout has blinded the room\./i.test(text)) return 'summary-blackout';
+    if (/A crushing force has settled over the night\./i.test(text)) return 'summary-thepurge';
+    if (/Blackmailer has silenced someone\./i.test(text)) return 'summary-blackmailer';
+    if (/Survivalist has prepared to survive the night\./i.test(text)) return 'summary-survivalist';
+    if (/Mirror Caster has woven a reflective shield\./i.test(text)) return 'summary-mirrorcaster';
+    if (/Veteran is standing watch\./i.test(text)) return 'summary-veteran';
+    if (/Sniper has lined up a distant shot\./i.test(text)) return 'summary-sniper';
+    if (/Tetherhex has forged a lethal bond\./i.test(text)) return 'summary-tetherhex';
+    if (/The Vessel has taken revenge\./i.test(text)) return 'summary-vessel';
     if (/The exiled player was protected by the Oracle\./i.test(text)) return 'summary-oracle-protect';
     if (/protected someone/i.test(text)) return 'summary-protect';
     if (/moved through the shadows/i.test(text)) return 'summary-kill';
@@ -2613,7 +2652,7 @@
     const player = state.playerData;
     if (!player) return;
     const activeRole = getActiveNightRole(player);
-    const shouldUseExpandedSelfNightChat = activeRole === 'Veteran' || activeRole === 'Survivalist';
+    const shouldUseExpandedSelfNightChat = activeRole === 'Veteran' || activeRole === 'Survivalist' || activeRole === 'Guardian Angel';
 
     if (
       player.role === 'Villager'
@@ -3368,7 +3407,7 @@
       || activeRole === 'Narcissist'
       || (activeRole === 'Guardian Angel' && (player.guardianAngelUsesRemaining ?? 4) <= 0)
       || (activeRole === 'Oracle' && (player.oracleEvilEyeUsesRemaining ?? 3) <= 0)
-      || (activeRole === 'Survivalist' && (player.survivalistUsesRemaining ?? 5) <= 0)
+      || (activeRole === 'Survivalist' && (player.survivalistUsesRemaining ?? 4) <= 0)
       || (activeRole === 'Veteran' && (player.veteranUsesRemaining ?? 4) <= 0)
       || (activeRole === 'Mirror Caster' && (player.mirrorUsesRemaining ?? 4) <= 0)
     ) {
@@ -4005,6 +4044,7 @@
       || player.role === 'Karma'
       || player.role === 'Inquisitor'
       || player.role === 'Scientist'
+      || player.role === 'Swapper'
       || player.role === 'Alturist'
       || (player.role === 'The Vessel' && !player.vesselAwakened)
       || player.role === 'Narcissist'
@@ -4023,8 +4063,10 @@
         ? 'Wait for dawn...'
         : player.role === 'Amnesiac'
           ? 'No dead players can be remembered yet. Wait for dawn...'
-          : player.role === 'Scientist'
-            ? 'Your experiment can only be used during voting. Wait for dawn...'
+        : player.role === 'Scientist'
+          ? 'Your experiment can only be used during voting. Wait for dawn...'
+          : player.role === 'Swapper'
+            ? 'Your swap can only be used during voting. Wait for dawn...'
           : player.role === 'Alturist'
             ? 'No dead players can be revived yet. Wait for dawn...'
             : player.role === 'The Vessel'
@@ -4106,6 +4148,17 @@
     const guardianAngelFixedTargetId = activeRole === 'Guardian Angel'
       ? (player.guardianAngelTargetId || null)
       : null;
+    const guardianAngelTargetPlayer = guardianAngelFixedTargetId
+      ? state.roomData?.players?.find((candidate) => candidate.id === guardianAngelFixedTargetId)
+      : null;
+    const guardianAngelTargetStyle = guardianAngelTargetPlayer
+      ? getPlayerChatStyle({
+          type: 'player',
+          senderId: guardianAngelTargetPlayer.id,
+          senderName: guardianAngelTargetPlayer.name,
+          colorHex: guardianAngelTargetPlayer.colorHex,
+        })
+      : '';
     const guardianAngelTargets = guardianAngelFixedTargetId
       ? targets.filter((target) => target.id === guardianAngelFixedTargetId)
       : [];
@@ -4404,7 +4457,7 @@
           }).join('')}
         </div>` : ''}
         <div class="chat-local-actions">
-          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) || (isMultiTargetRole && multiSelectedTargets.length < requiredMultiTargetCount) || (activeRole === 'Arsonist' && state.selectedAction === 'ignite' && !arsonistCanIgniteTonight) || (activeRole === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) || (activeRole === 'The Purge' && state.selectedAction === 'fascism' && !purgeCanUseFascismTonight) ? 'disabled' : ''}>${activeRole === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : activeRole === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : activeRole === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : activeRole === 'Oracle' ? `Confirm ${player.oracleEvilEyeUsesRemaining ?? 3}/3` : activeRole === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 5}/5` : activeRole === 'Arsonist' && state.selectedAction === 'ignite' ? `Ignite ${arsonistDousedTargetIds.length}` : activeRole === 'Arsonist' ? `Confirm ${multiSelectedTargets.length}/${arsonistDouseTargetCount}` : activeRole === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : activeRole === 'The Purge' && state.selectedAction === 'fascism' ? `Confirm ${player.purgeFascismUsesRemaining ?? 1}/1` : activeRole === 'Teleporter' ? `Confirm ${multiSelectedTargets.length}/2` : isMultiTargetRole ? `Confirm ${multiSelectedTargets.length}/3+` : 'Confirm'}</button>
+          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) || (isMultiTargetRole && multiSelectedTargets.length < requiredMultiTargetCount) || (activeRole === 'Arsonist' && state.selectedAction === 'ignite' && !arsonistCanIgniteTonight) || (activeRole === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) || (activeRole === 'The Purge' && state.selectedAction === 'fascism' && !purgeCanUseFascismTonight) ? 'disabled' : ''}>${activeRole === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : activeRole === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : activeRole === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : activeRole === 'Oracle' ? `Confirm ${player.oracleEvilEyeUsesRemaining ?? 3}/3` : activeRole === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 4}/4` : activeRole === 'Arsonist' && state.selectedAction === 'ignite' ? `Ignite ${arsonistDousedTargetIds.length}` : activeRole === 'Arsonist' ? `Confirm ${multiSelectedTargets.length}/${arsonistDouseTargetCount}` : activeRole === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : activeRole === 'The Purge' && state.selectedAction === 'fascism' ? `Confirm ${player.purgeFascismUsesRemaining ?? 1}/1` : activeRole === 'Teleporter' ? `Confirm ${multiSelectedTargets.length}/2` : isMultiTargetRole ? `Confirm ${multiSelectedTargets.length}/3+` : 'Confirm'}</button>
           <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>
         </div>
       </div>
@@ -4462,6 +4515,8 @@
             state.selectedTargets = multiSelectedTargets.filter((selectedId) => selectedId !== targetId);
           } else if (activeRole === 'Teleporter') {
             state.selectedTargets = [...multiSelectedTargets.slice(-1), targetId];
+          } else if (activeRole === 'Arsonist' && state.selectedAction === 'douse') {
+            state.selectedTargets = [...multiSelectedTargets.slice(-(requiredMultiTargetCount - 1)), targetId];
           } else {
             state.selectedTargets = [...multiSelectedTargets, targetId];
           }
@@ -4570,7 +4625,8 @@
       && !player.inquisitorExiledTargetId;
     const canVeto = player?.role === 'Disruptor' && (player.disruptorVetoUsesRemaining ?? 1) > 0 && !player.disruptorVetoUsed;
     const canExperiment = player?.role === 'Scientist' && (player.scientistExperimentUsesRemaining ?? 1) > 0;
-    const hasVotingAbility = canPurify || canExile || canVeto || canExperiment;
+    const canSwapVote = player?.role === 'Swapper';
+    const hasVotingAbility = canPurify || canExile || canVeto || canExperiment || canSwapVote;
     if (hasVotingAbility) {
       if (state.oracleVotingTab !== 'ability' && state.oracleVotingTab !== 'vote') {
         state.oracleVotingTab = 'ability';
@@ -4589,17 +4645,18 @@
     const showAbilityTab = hasVotingAbility && state.oracleVotingTab === 'ability';
     const selectedVotingAbilityTargets = Array.isArray(state.selectedVotingAbilityTargets) ? state.selectedVotingAbilityTargets : [];
     const isScientistAbility = player?.role === 'Scientist';
+    const isSwapperAbility = player?.role === 'Swapper';
     const isTargetlessVotingAbility = player?.role === 'Disruptor';
     const votingAbilityPanel = hasVotingAbility ? `
       <div class="action-panel oracle-vote-panel${showAbilityTab ? '' : ' hidden'}">
-        <div class="action-title">${player.role === 'Inquisitor' ? 'INQUISITOR ABILITY' : player.role === 'Scientist' ? 'SCIENTIST ABILITY' : player.role === 'Disruptor' ? 'VETO' : 'ORACLE ABILITY'}</div>
-        <div class="action-subtitle">${player.role === 'Inquisitor' ? 'Exile a player instantly and make every other vote useless.' : player.role === 'Scientist' ? 'Choose 2 players. Their roles will be switched after this voting session ends.' : player.role === 'Disruptor' ? 'Revoke this vote instantly.' : 'Purify a player so they cannot be voted out this phase.'}</div>
-        ${isTargetlessVotingAbility ? '' : `<div class="target-label">${player.role === 'Inquisitor' ? 'SELECT PLAYER TO EXILE' : player.role === 'Scientist' ? `SELECT 2 PLAYERS TO SWITCH${selectedVotingAbilityTargets.length ? ` (${selectedVotingAbilityTargets.length} SELECTED)` : ''}` : 'SELECT PLAYER TO PURIFY'}</div>
+        <div class="action-title">${player.role === 'Inquisitor' ? 'INQUISITOR ABILITY' : player.role === 'Scientist' ? 'SCIENTIST ABILITY' : player.role === 'Swapper' ? 'SWAP' : player.role === 'Disruptor' ? 'VETO' : 'ORACLE ABILITY'}</div>
+        <div class="action-subtitle">${player.role === 'Inquisitor' ? 'Exile a player instantly and make every other vote useless.' : player.role === 'Scientist' ? 'Choose 2 players. Their roles will be switched after this voting session ends.' : player.role === 'Swapper' ? 'Choose 2 players to swap places before this voting phase resolves.' : player.role === 'Disruptor' ? 'Revoke this vote instantly.' : 'Purify a player so they cannot be voted out this phase.'}</div>
+        ${isTargetlessVotingAbility ? '' : `<div class="target-label">${player.role === 'Inquisitor' ? 'SELECT PLAYER TO EXILE' : player.role === 'Scientist' ? `SELECT 2 PLAYERS TO SWITCH${selectedVotingAbilityTargets.length ? ` (${selectedVotingAbilityTargets.length} SELECTED)` : ''}` : player.role === 'Swapper' ? `SELECT 2 PLAYERS TO SWAP${selectedVotingAbilityTargets.length ? ` (${selectedVotingAbilityTargets.length} SELECTED)` : ''}` : 'SELECT PLAYER TO PURIFY'}</div>
         <div class="target-list chat-target-list" id="voting-ability-target-list">
-          ${targets.filter((target) => target.id !== state.playerId).map((t) => `<div class="target-item ${(isScientistAbility ? selectedVotingAbilityTargets.includes(t.id) : state.selectedOracleTarget === t.id) ? 'selected' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`).join('')}
+          ${targets.filter((target) => target.id !== state.playerId).map((t) => `<div class="target-item ${((isScientistAbility || isSwapperAbility) ? selectedVotingAbilityTargets.includes(t.id) : state.selectedOracleTarget === t.id) ? 'selected' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`).join('')}
         </div>`}
         <div class="chat-local-actions">
-          <button class="btn ${player?.faction === 'Assassin' ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-voting-ability" ${isTargetlessVotingAbility ? '' : isScientistAbility ? selectedVotingAbilityTargets.length !== 2 ? 'disabled' : '' : !state.selectedOracleTarget ? 'disabled' : ''}>${player.role === 'Inquisitor' ? 'Confirm Exile' : player.role === 'Scientist' ? `Confirm ${selectedVotingAbilityTargets.length}/2` : player.role === 'Disruptor' ? `Confirm ${player.disruptorVetoUsesRemaining ?? 1}/1` : `Confirm ${player.oraclePurifyUsesRemaining ?? 2}/2`}</button>
+          <button class="btn ${player?.faction === 'Assassin' ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-voting-ability" ${isTargetlessVotingAbility ? '' : (isScientistAbility || isSwapperAbility) ? selectedVotingAbilityTargets.length !== 2 ? 'disabled' : '' : !state.selectedOracleTarget ? 'disabled' : ''}>${player.role === 'Inquisitor' ? 'Confirm Exile' : (player.role === 'Scientist' || player.role === 'Swapper') ? `Confirm ${selectedVotingAbilityTargets.length}/2` : player.role === 'Disruptor' ? `Confirm ${player.disruptorVetoUsesRemaining ?? 1}/1` : `Confirm ${player.oraclePurifyUsesRemaining ?? 2}/2`}</button>
           <button class="btn btn-ghost chat-local-skip" id="btn-skip-voting-ability">Skip</button>
         </div>
       </div>` : '';
@@ -4622,7 +4679,7 @@
 
     container.querySelectorAll('#voting-ability-target-list .target-item').forEach((item) => {
       item.addEventListener('click', () => {
-        if (isScientistAbility) {
+        if (isScientistAbility || isSwapperAbility) {
           const targetId = item.dataset.target;
           if (selectedVotingAbilityTargets.includes(targetId)) {
             state.selectedVotingAbilityTargets = selectedVotingAbilityTargets.filter((selectedId) => selectedId !== targetId);
@@ -4639,10 +4696,10 @@
     const confirmVotingAbilityBtn = document.getElementById('btn-confirm-voting-ability');
     if (confirmVotingAbilityBtn) {
       confirmVotingAbilityBtn.addEventListener('click', () => {
-        if (!isTargetlessVotingAbility && !isScientistAbility && !state.selectedOracleTarget) return;
-        if (isScientistAbility && selectedVotingAbilityTargets.length !== 2) return;
-        const action = player.role === 'Inquisitor' ? 'exile' : player.role === 'Scientist' ? 'experiment' : player.role === 'Disruptor' ? 'veto' : 'purify';
-        state.socket.emit('voting-action', { action, targetId: (isScientistAbility || isTargetlessVotingAbility) ? null : state.selectedOracleTarget, targetIds: isScientistAbility ? selectedVotingAbilityTargets : null }, (response) => {
+        if (!isTargetlessVotingAbility && !isScientistAbility && !isSwapperAbility && !state.selectedOracleTarget) return;
+        if ((isScientistAbility || isSwapperAbility) && selectedVotingAbilityTargets.length !== 2) return;
+        const action = player.role === 'Inquisitor' ? 'exile' : player.role === 'Scientist' ? 'experiment' : player.role === 'Swapper' ? 'swap' : player.role === 'Disruptor' ? 'veto' : 'purify';
+        state.socket.emit('voting-action', { action, targetId: (isScientistAbility || isSwapperAbility || isTargetlessVotingAbility) ? null : state.selectedOracleTarget, targetIds: (isScientistAbility || isSwapperAbility) ? selectedVotingAbilityTargets : null }, (response) => {
           if (response.success) {
             state.playerData = response.player || state.playerData;
             state.roomData = response.room || state.roomData;
@@ -4650,7 +4707,7 @@
             state.selectedVotingAbilityTargets = [];
             state.oracleVotingTab = 'vote';
             renderVotingPhase(container);
-            showToast(player.role === 'Inquisitor' ? 'Exile used' : player.role === 'Scientist' ? 'Experiment used' : player.role === 'Disruptor' ? 'Veto used' : 'Purify used', 'success');
+            showToast(player.role === 'Inquisitor' ? 'Exile used' : player.role === 'Scientist' ? 'Experiment used' : player.role === 'Swapper' ? 'Swap used' : player.role === 'Disruptor' ? 'Veto used' : 'Purify used', 'success');
           } else {
             showToast(response.error || 'Action failed', 'error');
           }
