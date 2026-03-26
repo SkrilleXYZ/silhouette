@@ -583,6 +583,7 @@
     'The Pestilence': {
       faction: 'Neutral',
       subfaction: 'Killing',
+      hiddenFromReveal: true,
       description: 'You cannot be killed and can only lose by being voted or exiled out. Eliminate players until you are the last one standing.',
       revealText: 'Dark violet ruin crowns you in silence. No blade can finish what the plague has already made eternal.',
       abilities: [
