@@ -5474,31 +5474,31 @@ body {
   z-index: 0;
 }
 
-.chat-message.system.private.system-result-search {
+.chat-message.system.system-result-search {
   border-color: rgba(255, 208, 80, 0.34);
   background: linear-gradient(180deg, rgba(69, 51, 14, 0.92), rgba(25, 19, 8, 0.96));
   box-shadow: inset 0 1px 0 rgba(255, 226, 145, 0.08), 0 0 0 1px rgba(255, 208, 80, 0.06);
 }
 
-.chat-message.system.private.system-result-examine {
+.chat-message.system.system-result-examine {
   border-color: rgba(185, 132, 255, 0.34);
   background: linear-gradient(180deg, rgba(56, 30, 88, 0.92), rgba(18, 11, 30, 0.96));
   box-shadow: inset 0 1px 0 rgba(221, 191, 255, 0.08), 0 0 0 1px rgba(185, 132, 255, 0.06);
 }
 
-.chat-message.system.private.system-result-tracker {
+.chat-message.system.system-result-tracker {
   border-color: rgba(122, 226, 255, 0.34);
   background: linear-gradient(180deg, rgba(18, 66, 88, 0.92), rgba(8, 20, 28, 0.96));
   box-shadow: inset 0 1px 0 rgba(196, 243, 255, 0.08), 0 0 0 1px rgba(122, 226, 255, 0.06);
 }
 
-.chat-message.system.private.system-result-stalker {
+.chat-message.system.system-result-stalker {
   border-color: rgba(84, 182, 129, 0.34);
   background: linear-gradient(180deg, rgba(18, 62, 40, 0.92), rgba(8, 22, 14, 0.96));
   box-shadow: inset 0 1px 0 rgba(205, 255, 225, 0.08), 0 0 0 1px rgba(84, 182, 129, 0.06);
 }
 
-.chat-message.system.private.system-result-trap {
+.chat-message.system.system-result-trap {
   border-color: rgba(212, 92, 202, 0.38);
   background:
     radial-gradient(circle at 82% 18%, rgba(246, 180, 240, 0.18), transparent 16%),
@@ -5511,7 +5511,7 @@ body {
   overflow: hidden;
 }
 
-.chat-message.system.private.system-result-trap::after {
+.chat-message.system.system-result-trap::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -5522,13 +5522,13 @@ body {
   pointer-events: none;
 }
 
-.chat-message.system.private.system-result-protect {
+.chat-message.system.system-result-protect {
   border-color: rgba(85, 255, 149, 0.34);
   background: linear-gradient(180deg, rgba(17, 67, 35, 0.92), rgba(8, 22, 14, 0.96));
   box-shadow: inset 0 1px 0 rgba(180, 255, 206, 0.08), 0 0 0 1px rgba(85, 255, 149, 0.06);
 }
 
-.chat-message.system.private.system-result-mirror {
+.chat-message.system.system-result-mirror {
   border-color: rgba(164, 222, 255, 0.38);
   background:
     radial-gradient(circle at 82% 18%, rgba(224, 245, 255, 0.18), transparent 16%),
@@ -5541,7 +5541,7 @@ body {
   overflow: hidden;
 }
 
-.chat-message.system.private.system-result-vitalist {
+.chat-message.system.system-result-vitalist {
   border-color: rgba(96, 255, 156, 0.38);
   background:
     radial-gradient(circle at 82% 18%, rgba(199, 255, 220, 0.18), transparent 16%),
@@ -5554,7 +5554,7 @@ body {
   overflow: hidden;
 }
 
-.chat-message.system.private.system-result-survivalist {
+.chat-message.system.system-result-survivalist {
   border-color: rgba(255, 173, 96, 0.38);
   background:
     radial-gradient(circle at 82% 18%, rgba(255, 224, 180, 0.18), transparent 16%),
@@ -5567,7 +5567,7 @@ body {
   overflow: hidden;
 }
 
-.chat-message.system.private.system-result-guardian-angel {
+.chat-message.system.system-result-guardian-angel {
   border-color: rgba(255, 228, 176, 0.4);
   background:
     radial-gradient(circle at 82% 18%, rgba(255, 246, 214, 0.2), transparent 16%),
@@ -5580,7 +5580,7 @@ body {
   overflow: hidden;
 }
 
-.chat-message.system.private.system-result-executioner-shift {
+.chat-message.system.system-result-executioner-shift {
   border-color: rgba(255, 198, 88, 0.4);
   background:
     radial-gradient(circle at 82% 18%, rgba(255, 228, 166, 0.18), transparent 16%),
@@ -5593,7 +5593,7 @@ body {
   overflow: hidden;
 }
 
-.chat-message.system.private.system-result-guardian-shift {
+.chat-message.system.system-result-guardian-shift {
   border-color: rgba(196, 236, 255, 0.4);
   background:
     radial-gradient(circle at 82% 18%, rgba(238, 249, 255, 0.18), transparent 16%),
@@ -5606,7 +5606,7 @@ body {
   overflow: hidden;
 }
 
-.chat-message.system.private.system-result-blackout {
+.chat-message.system.system-result-blackout {
   border-color: rgba(124, 134, 150, 0.34);
   background:
     radial-gradient(circle at 18% 35%, rgba(255, 255, 255, 0.08), transparent 20%),
@@ -5620,7 +5620,7 @@ body {
   overflow: hidden;
 }
 
-.chat-message.system.private.system-result-blackout::after {
+.chat-message.system.system-result-blackout::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -5630,7 +5630,7 @@ body {
   pointer-events: none;
 }
 
-.chat-message.system.private.system-result-blackmail {
+.chat-message.system.system-result-blackmail {
   border-color: rgba(214, 164, 64, 0.38);
   background:
     radial-gradient(circle at 84% 18%, rgba(245, 209, 122, 0.16), transparent 16%),
@@ -5643,7 +5643,7 @@ body {
   overflow: hidden;
 }
 
-.chat-message.system.private.system-result-blackmail::after {
+.chat-message.system.system-result-blackmail::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -5654,7 +5654,7 @@ body {
   pointer-events: none;
 }
 
-.chat-message.system.private.system-result-silenced {
+.chat-message.system.system-result-silenced {
   border-color: rgba(214, 64, 64, 0.38);
   background:
     radial-gradient(circle at 82% 18%, rgba(255, 184, 184, 0.16), transparent 16%),
@@ -5667,7 +5667,7 @@ body {
   overflow: hidden;
 }
 
-.chat-message.system.private.system-result-silenced::after {
+.chat-message.system.system-result-silenced::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -5678,7 +5678,7 @@ body {
   pointer-events: none;
 }
 
-.chat-message.system.private.system-result-hypnotic {
+.chat-message.system.system-result-hypnotic {
   border-color: rgba(196, 65, 148, 0.38);
   background:
     radial-gradient(circle at 82% 18%, rgba(236, 162, 215, 0.16), transparent 16%),
@@ -5691,7 +5691,7 @@ body {
   overflow: hidden;
 }
 
-.chat-message.system.private.system-result-hypnotic::after {
+.chat-message.system.system-result-hypnotic::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -5702,7 +5702,7 @@ body {
   pointer-events: none;
 }
 
-.chat-message.system.private.system-result-overload {
+.chat-message.system.system-result-overload {
   border-color: rgba(99, 255, 76, 0.4);
   background:
     radial-gradient(circle at 82% 18%, rgba(176, 255, 164, 0.18), transparent 16%),
@@ -5715,7 +5715,7 @@ body {
   overflow: hidden;
 }
 
-.chat-message.system.private.system-result-overload::after {
+.chat-message.system.system-result-overload::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -5726,7 +5726,7 @@ body {
   pointer-events: none;
 }
 
-.chat-message.system.private.system-result-teleporter {
+.chat-message.system.system-result-teleporter {
   border-color: rgba(138, 235, 255, 0.42);
   background:
     radial-gradient(circle at 82% 18%, rgba(222, 250, 255, 0.18), transparent 16%),
@@ -5739,7 +5739,7 @@ body {
   overflow: hidden;
 }
 
-.chat-message.system.private.system-result-teleporter::after {
+.chat-message.system.system-result-teleporter::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -5750,7 +5750,7 @@ body {
   pointer-events: none;
 }
 
-.chat-message.system.private.system-result-magician {
+.chat-message.system.system-result-magician {
   border-color: rgba(132, 112, 255, 0.42);
   background:
     radial-gradient(circle at 82% 18%, rgba(218, 210, 255, 0.18), transparent 16%),
@@ -5763,7 +5763,7 @@ body {
   overflow: hidden;
 }
 
-.chat-message.system.private.system-result-magician::after {
+.chat-message.system.system-result-magician::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -5774,7 +5774,7 @@ body {
   pointer-events: none;
 }
 
-.chat-message.system.private.system-result-killed {
+.chat-message.system.system-result-killed {
   border-color: rgba(255, 74, 74, 0.62);
   background:
     radial-gradient(circle at 84% 18%, rgba(255, 216, 216, 0.22), transparent 18%),
@@ -5787,7 +5787,7 @@ body {
   overflow: hidden;
 }
 
-.chat-message.system.private.system-result-killed::after {
+.chat-message.system.system-result-killed::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -5798,7 +5798,7 @@ body {
   pointer-events: none;
 }
 
-.chat-message.system.private.system-result-vessel {
+.chat-message.system.system-result-vessel {
   border-color: rgba(201, 160, 255, 0.5);
   background:
     radial-gradient(circle at 84% 18%, rgba(255, 228, 156, 0.28), transparent 16%),
@@ -5811,7 +5811,7 @@ body {
   overflow: hidden;
 }
 
-.chat-message.system.private.system-result-vessel::after {
+.chat-message.system.system-result-vessel::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -5846,7 +5846,7 @@ body {
   pointer-events: none;
 }
 
-.chat-message.system.private.system-result-warden {
+.chat-message.system.system-result-warden {
   border-color: rgba(92, 228, 226, 0.4);
   background:
     radial-gradient(circle at 82% 18%, rgba(212, 251, 246, 0.18), transparent 16%),
@@ -5859,7 +5859,7 @@ body {
   overflow: hidden;
 }
 
-.chat-message.system.private.system-result-warden::after {
+.chat-message.system.system-result-warden::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -5870,7 +5870,7 @@ body {
   pointer-events: none;
 }
 
-.chat-message.system.private.system-result-warden-confirm {
+.chat-message.system.system-result-warden-confirm {
   border-color: rgba(122, 235, 255, 0.42);
   background:
     radial-gradient(circle at 82% 18%, rgba(228, 252, 255, 0.18), transparent 16%),
@@ -5883,7 +5883,7 @@ body {
   overflow: hidden;
 }
 
-.chat-message.system.private.system-result-warden-confirm::after {
+.chat-message.system.system-result-warden-confirm::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -5994,128 +5994,128 @@ body {
   text-shadow: 0 1px 4px rgba(0,0,0,0.45);
 }
 
-.chat-message.system.private.system-result-search .chat-message-meta,
-.chat-message.system.private.system-result-search .chat-message-text {
+.chat-message.system.system-result-search .chat-message-meta,
+.chat-message.system.system-result-search .chat-message-text {
   color: hsl(45, 100%, 95%);
   text-shadow: none;
 }
 
-.chat-message.system.private.system-result-examine .chat-message-meta,
-.chat-message.system.private.system-result-examine .chat-message-text {
+.chat-message.system.system-result-examine .chat-message-meta,
+.chat-message.system.system-result-examine .chat-message-text {
   color: hsl(274, 100%, 95%);
   text-shadow: none;
 }
 
-.chat-message.system.private.system-result-tracker .chat-message-meta,
-.chat-message.system.private.system-result-tracker .chat-message-text {
+.chat-message.system.system-result-tracker .chat-message-meta,
+.chat-message.system.system-result-tracker .chat-message-text {
   color: hsl(194, 100%, 95%);
   text-shadow: none;
 }
 
-.chat-message.system.private.system-result-stalker .chat-message-meta,
-.chat-message.system.private.system-result-stalker .chat-message-text {
+.chat-message.system.system-result-stalker .chat-message-meta,
+.chat-message.system.system-result-stalker .chat-message-text {
   color: hsl(144, 100%, 95%);
   text-shadow: none;
 }
 
-.chat-message.system.private.system-result-trap .chat-message-meta,
-.chat-message.system.private.system-result-trap .chat-message-text {
+.chat-message.system.system-result-trap .chat-message-meta,
+.chat-message.system.system-result-trap .chat-message-text {
   color: hsl(304, 100%, 95%);
   text-shadow: 0 1px 8px rgba(246, 180, 240, 0.08);
 }
 
-.chat-message.system.private.system-result-protect .chat-message-meta,
-.chat-message.system.private.system-result-protect .chat-message-text {
+.chat-message.system.system-result-protect .chat-message-meta,
+.chat-message.system.system-result-protect .chat-message-text {
   color: hsl(146, 100%, 95%);
   text-shadow: none;
 }
 
-.chat-message.system.private.system-result-mirror .chat-message-meta,
-.chat-message.system.private.system-result-mirror .chat-message-text {
+.chat-message.system.system-result-mirror .chat-message-meta,
+.chat-message.system.system-result-mirror .chat-message-text {
   color: hsl(198, 100%, 95%);
   text-shadow: 0 1px 8px rgba(224, 245, 255, 0.08);
 }
 
-.chat-message.system.private.system-result-vitalist .chat-message-meta,
-.chat-message.system.private.system-result-vitalist .chat-message-text {
+.chat-message.system.system-result-vitalist .chat-message-meta,
+.chat-message.system.system-result-vitalist .chat-message-text {
   color: hsl(146, 100%, 95%);
   text-shadow: 0 1px 8px rgba(199, 255, 220, 0.08);
 }
 
-.chat-message.system.private.system-result-survivalist .chat-message-meta,
-.chat-message.system.private.system-result-survivalist .chat-message-text {
+.chat-message.system.system-result-survivalist .chat-message-meta,
+.chat-message.system.system-result-survivalist .chat-message-text {
   color: hsl(34, 100%, 94%);
   text-shadow: 0 1px 8px rgba(255, 224, 180, 0.08);
 }
 
-.chat-message.system.private.system-result-guardian-angel .chat-message-meta,
-.chat-message.system.private.system-result-guardian-angel .chat-message-text {
+.chat-message.system.system-result-guardian-angel .chat-message-meta,
+.chat-message.system.system-result-guardian-angel .chat-message-text {
   color: hsl(46, 100%, 95%);
   text-shadow: 0 1px 8px rgba(255, 246, 214, 0.08);
 }
 
-.chat-message.system.private.system-result-executioner-shift .chat-message-meta,
-.chat-message.system.private.system-result-executioner-shift .chat-message-text {
+.chat-message.system.system-result-executioner-shift .chat-message-meta,
+.chat-message.system.system-result-executioner-shift .chat-message-text {
   color: hsl(42, 100%, 95%);
   text-shadow: 0 1px 8px rgba(255, 228, 166, 0.08);
 }
 
-.chat-message.system.private.system-result-guardian-shift .chat-message-meta,
-.chat-message.system.private.system-result-guardian-shift .chat-message-text {
+.chat-message.system.system-result-guardian-shift .chat-message-meta,
+.chat-message.system.system-result-guardian-shift .chat-message-text {
   color: hsl(198, 100%, 95%);
   text-shadow: 0 1px 8px rgba(238, 249, 255, 0.08);
 }
 
-.chat-message.system.private.system-result-blackout .chat-message-meta,
-.chat-message.system.private.system-result-blackout .chat-message-text {
+.chat-message.system.system-result-blackout .chat-message-meta,
+.chat-message.system.system-result-blackout .chat-message-text {
   color: hsl(212, 42%, 95%);
   text-shadow: 0 1px 10px rgba(218, 228, 247, 0.08);
 }
 
-.chat-message.system.private.system-result-blackmail .chat-message-meta,
-.chat-message.system.private.system-result-blackmail .chat-message-text {
+.chat-message.system.system-result-blackmail .chat-message-meta,
+.chat-message.system.system-result-blackmail .chat-message-text {
   color: hsl(42, 100%, 94%);
   text-shadow: 0 1px 8px rgba(255, 201, 93, 0.08);
 }
 
-.chat-message.system.private.system-result-silenced .chat-message-meta,
-.chat-message.system.private.system-result-silenced .chat-message-text {
+.chat-message.system.system-result-silenced .chat-message-meta,
+.chat-message.system.system-result-silenced .chat-message-text {
   color: hsl(0, 100%, 95%);
   text-shadow: 0 1px 8px rgba(255, 184, 184, 0.08);
 }
 
-.chat-message.system.private.system-result-hypnotic .chat-message-meta,
-.chat-message.system.private.system-result-hypnotic .chat-message-text {
+.chat-message.system.system-result-hypnotic .chat-message-meta,
+.chat-message.system.system-result-hypnotic .chat-message-text {
   color: hsl(321, 100%, 95%);
   text-shadow: 0 1px 8px rgba(236, 162, 215, 0.08);
 }
 
-.chat-message.system.private.system-result-overload .chat-message-meta,
-.chat-message.system.private.system-result-overload .chat-message-text {
+.chat-message.system.system-result-overload .chat-message-meta,
+.chat-message.system.system-result-overload .chat-message-text {
   color: hsl(112, 100%, 94%);
   text-shadow: 0 1px 8px rgba(176, 255, 164, 0.08);
 }
 
-.chat-message.system.private.system-result-teleporter .chat-message-meta,
-.chat-message.system.private.system-result-teleporter .chat-message-text {
+.chat-message.system.system-result-teleporter .chat-message-meta,
+.chat-message.system.system-result-teleporter .chat-message-text {
   color: hsl(192, 100%, 95%);
   text-shadow: 0 1px 8px rgba(222, 250, 255, 0.08);
 }
 
-.chat-message.system.private.system-result-magician .chat-message-meta,
-.chat-message.system.private.system-result-magician .chat-message-text {
+.chat-message.system.system-result-magician .chat-message-meta,
+.chat-message.system.system-result-magician .chat-message-text {
   color: hsl(248, 100%, 96%);
   text-shadow: 0 1px 8px rgba(220, 214, 255, 0.08);
 }
 
-.chat-message.system.private.system-result-killed .chat-message-meta,
-.chat-message.system.private.system-result-killed .chat-message-text {
+.chat-message.system.system-result-killed .chat-message-meta,
+.chat-message.system.system-result-killed .chat-message-text {
   color: hsl(0, 100%, 95%);
   text-shadow: 0 1px 8px rgba(255, 204, 204, 0.08);
 }
 
-.chat-message.system.private.system-result-vessel .chat-message-meta,
-.chat-message.system.private.system-result-vessel .chat-message-text {
+.chat-message.system.system-result-vessel .chat-message-meta,
+.chat-message.system.system-result-vessel .chat-message-text {
   color: hsl(280, 100%, 96%);
   text-shadow: 0 1px 8px rgba(229, 214, 255, 0.08);
 }
@@ -6126,14 +6126,14 @@ body {
   text-shadow: 0 1px 8px rgba(255, 214, 214, 0.08);
 }
 
-.chat-message.system.private.system-result-warden .chat-message-meta,
-.chat-message.system.private.system-result-warden .chat-message-text {
+.chat-message.system.system-result-warden .chat-message-meta,
+.chat-message.system.system-result-warden .chat-message-text {
   color: hsl(190, 100%, 95%);
   text-shadow: 0 1px 8px rgba(212, 251, 246, 0.08);
 }
 
-.chat-message.system.private.system-result-warden-confirm .chat-message-meta,
-.chat-message.system.private.system-result-warden-confirm .chat-message-text {
+.chat-message.system.system-result-warden-confirm .chat-message-meta,
+.chat-message.system.system-result-warden-confirm .chat-message-text {
   color: hsl(190, 100%, 95%);
   text-shadow: 0 1px 8px rgba(228, 252, 255, 0.08);
 }
@@ -6354,11 +6354,38 @@ body {
   box-shadow: inset 0 1px 0 rgba(166, 255, 198, 0.08), 0 0 0 1px rgba(85, 255, 149, 0.08);
 }
 
+.chat-summary-line.summary-oracle-protect {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(255, 215, 238, 0.16), transparent 18%),
+    linear-gradient(135deg, rgba(38, 8, 26, 0.96), rgba(86, 12, 58, 0.9));
+  border-color: rgba(255, 84, 190, 0.42);
+  color: hsl(324, 100%, 95%);
+  box-shadow: inset 0 1px 0 rgba(255, 194, 232, 0.08), 0 0 0 1px rgba(255, 84, 190, 0.08);
+}
+
 .chat-summary-line.summary-kill {
   background: linear-gradient(135deg, hsla(0, 76%, 36%, 0.24), hsla(0, 70%, 13%, 0.3));
   border-color: hsla(0, 86%, 58%, 0.44);
   color: hsl(0, 100%, 95%);
   box-shadow: inset 0 1px 0 rgba(255, 164, 170, 0.08), 0 0 0 1px rgba(255, 72, 84, 0.08);
+}
+
+.chat-summary-line.summary-inquisitor {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(220, 252, 255, 0.16), transparent 18%),
+    linear-gradient(135deg, rgba(8, 24, 30, 0.96), rgba(8, 58, 68, 0.9));
+  border-color: rgba(94, 236, 255, 0.42);
+  color: hsl(188, 100%, 95%);
+  box-shadow: inset 0 1px 0 rgba(214, 255, 252, 0.08), 0 0 0 1px rgba(84, 255, 236, 0.08);
+}
+
+.chat-summary-line.summary-disruptor {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(255, 226, 230, 0.16), transparent 18%),
+    linear-gradient(135deg, rgba(36, 8, 12, 0.96), rgba(72, 12, 18, 0.9));
+  border-color: rgba(214, 56, 64, 0.42);
+  color: hsl(356, 100%, 94%);
+  box-shadow: inset 0 1px 0 rgba(255, 170, 176, 0.08), 0 0 0 1px rgba(255, 92, 102, 0.08);
 }
 
 .chat-empty {

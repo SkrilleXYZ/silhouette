@@ -2027,11 +2027,14 @@
     if (/alive players:/i.test(text)) return 'summary-alive';
     if (/has been Tethered\./i.test(text)) return 'summary-tethered';
     if (/was found dead|was eliminated by vote/i.test(text)) return 'summary-death';
+    if (/was exiled by the Inquisitor\./i.test(text)) return 'summary-inquisitor';
+    if (/The Disruptor has veto'd the voting\./i.test(text)) return 'summary-disruptor';
     if (/used their gun/i.test(text)) return 'summary-shoot';
     if (/Sheriff is investigating someone/i.test(text)) return 'summary-search';
     if (/Investigator is examining someone/i.test(text)) return 'summary-examine';
     if (/Tracker is following someone/i.test(text)) return 'summary-track';
     if (/Stalker is shadowing someone/i.test(text)) return 'summary-stalk';
+    if (/The exiled player was protected by the Oracle\./i.test(text)) return 'summary-oracle-protect';
     if (/protected someone/i.test(text)) return 'summary-protect';
     if (/moved through the shadows/i.test(text)) return 'summary-kill';
     return '';
@@ -4195,6 +4198,10 @@
     if (activeRole === 'Guardian Angel') {
       state.selectedAction = 'bless';
       state.selectedTarget = guardianAngelFixedTargetId;
+    }
+
+    if (activeRole === 'Sheriff' && !state.selectedAction) {
+      state.selectedAction = 'shoot';
     }
 
     if (player.role === 'Imitator' && !player.imitatorCopiedRole) {

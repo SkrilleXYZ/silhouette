@@ -450,6 +450,15 @@ class GameLogic {
     return this.getEffectiveNightRole(player) === 'Inquisitor';
   }
 
+  hasSubmittedAssassinKill(room, excludePlayerId = null) {
+    if (!room?.nightActions) return false;
+    return Object.entries(room.nightActions).some(([actorId, actionState]) => {
+      if (!actionState || actorId === excludePlayerId || actionState.action !== 'kill') return false;
+      const actor = room.players.get(actorId);
+      return !!actor && actor.alive && actor.faction === 'Assassin';
+    });
+  }
+
   clearImitatorMimic(player) {
     if (!player) return;
     player.imitatorCopiedRole = null;
@@ -818,6 +827,11 @@ class GameLogic {
       index++;
     }
 
+    if (count === 10 && index < shuffled.length) {
+      this.assignNeutralSpecialRole(room, shuffled[index], ['Evil', 'Benign', 'Killing']);
+      index++;
+    }
+
     this.assignRoleFromSlot(room, shuffled[index], 'Crew', 'Killing');
     index++;
 
@@ -1176,6 +1190,7 @@ class GameLogic {
       const target = room.players.get(targetId);
       if (!target || !target.alive) return { error: 'Invalid target' };
       if (action !== 'kill') return { error: `Invalid action for ${activeRole}` };
+      if (this.hasSubmittedAssassinKill(room, playerId)) return { error: 'Another assassin has already chosen the kill tonight' };
       if (player.faction === 'Assassin' && target.faction === 'Assassin') return { error: 'Cannot kill teammates' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
     } else if (activeRole === 'Sniper') {
@@ -1190,6 +1205,7 @@ class GameLogic {
       if (!target || !target.alive) return { error: 'Invalid target' };
       if (action !== 'interlinked' && action !== 'kill') return { error: 'Invalid action for Tetherhex' };
       if (action === 'kill') {
+        if (this.hasSubmittedAssassinKill(room, playerId)) return { error: 'Another assassin has already chosen the kill tonight' };
         if (player.faction === 'Assassin' && target.faction === 'Assassin') return { error: 'Cannot kill teammates' };
         if (targetId === playerId) return { error: 'Cannot target yourself' };
         if (existingAction.action === 'kill' && existingAction.targetId === targetId) {
@@ -1219,6 +1235,8 @@ class GameLogic {
         }
       } else if (existingAction.action === 'kill' && existingAction.targetId === targetId) {
         return { error: 'You already chose that kill target tonight' };
+      } else if (this.hasSubmittedAssassinKill(room, playerId)) {
+        return { error: 'Another assassin has already chosen the kill tonight' };
       }
     } else if (activeRole === 'Overload') {
       const existingAction = room.nightActions[playerId] || {};
@@ -1269,6 +1287,7 @@ class GameLogic {
       } else if (action === 'kill') {
         const target = room.players.get(targetId);
         if (!target || !target.alive) return { error: 'Invalid target' };
+        if (this.hasSubmittedAssassinKill(room, playerId)) return { error: 'Another assassin has already chosen the kill tonight' };
         if (player.faction === 'Assassin' && target.faction === 'Assassin') return { error: 'Cannot kill teammates' };
         if (targetId === playerId) return { error: 'Cannot target yourself' };
         if (existingAction.action === 'kill' && existingAction.targetId === targetId) {
@@ -1288,6 +1307,8 @@ class GameLogic {
         if (existingAction.blackmailUsedThisNight) return { error: 'You already used Blackmail tonight' };
       } else if (existingAction.action === 'kill' && existingAction.targetId === targetId) {
         return { error: 'You already chose that kill target tonight' };
+      } else if (this.hasSubmittedAssassinKill(room, playerId)) {
+        return { error: 'Another assassin has already chosen the kill tonight' };
       }
     } else if (activeRole === 'The Purge') {
       const existingAction = room.nightActions[playerId] || {};
@@ -1297,6 +1318,7 @@ class GameLogic {
       } else if (action === 'kill') {
         const target = room.players.get(targetId);
         if (!target || !target.alive) return { error: 'Invalid target' };
+        if (this.hasSubmittedAssassinKill(room, playerId)) return { error: 'Another assassin has already chosen the kill tonight' };
         if (player.faction === 'Assassin' && target.faction === 'Assassin') return { error: 'Cannot kill teammates' };
         if (targetId === playerId) return { error: 'Cannot target yourself' };
         if (existingAction.action === 'kill' && existingAction.targetId === targetId) {
@@ -3815,7 +3837,7 @@ class GameLogic {
     if (action === 'examine') return 'Investigator is examining someone.';
     if (action === 'track') return 'Tracker is following someone.';
     if (action === 'stalk') return 'Stalker is shadowing someone.';
-    if (action === 'trap') return 'Traplord is setting a trap.';
+    if (action === 'trap') return 'Traplord is setting traps.';
     if (action === 'teleport') return 'Teleporter is bending the room.';
     if (action === 'abracadabra') return 'Magician has made a player disappear.';
     if (action === 'guard') return 'Warden has locked down a player.';
@@ -3828,7 +3850,7 @@ class GameLogic {
     if (action === 'quietus') return 'Silencer has hushed someone.';
     if (action === 'bless') return 'Guardian Angel has blessed their target.';
     if (action === 'trance') return 'Hypnotic has cast a trance over someone.';
-    if (action === 'malware') return 'Overload has infected someone with malware.';
+    if (action === 'malware') return 'Someone has been hacked by the Overload.';
     if (action === 'flash') return 'Blackout has blinded the room.';
     if (action === 'fascism') return 'A crushing force has settled over the night.';
     if (action === 'blackmail') return 'Blackmailer has silenced someone.';

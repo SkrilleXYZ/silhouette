@@ -217,7 +217,7 @@ io.on('connection', (socket) => {
       return;
     }
     const room = game.getRoom(mapping.code);
-    const publicNightMessage = game.getNightActionSummaryLine(mapping.code, action);
+    const publicNightMessage = game.getNightActionSummaryLine(mapping.code, action, mapping.playerId);
     if (publicNightMessage) {
       const chatMessage = game.appendToPhaseSummary(mapping.code, publicNightMessage);
       if (chatMessage) io.to(mapping.code).emit('chat-message-updated', { message: chatMessage });
