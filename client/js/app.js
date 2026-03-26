@@ -3991,6 +3991,7 @@
     const player = state.playerData;
     if (!player) return;
     const activeRole = getActiveNightRole(player);
+    const shouldUseExpandedSelfNightChat = activeRole === 'Veteran' || activeRole === 'Survivalist';
 
     if (
       player.role === 'Villager'
