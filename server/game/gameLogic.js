@@ -1,7 +1,7 @@
 class GameLogic {
   constructor() {
     this.rooms = new Map();
-    this.avatarCount = 23;
+    this.avatarCount = 24;
     this.roleCatalog = {
       Crew: {
         Info: ['Villager', 'Investigator', 'Tracker', 'Stalker', 'Redflag', 'Traplord'],
@@ -18,7 +18,7 @@ class GameLogic {
       Neutral: {
         Evil: ['Jester', 'Executioner'],
         Benign: ['Amnesiac', 'Guardian Angel', 'Survivalist', 'Imitator'],
-        Killing: ['Overload', 'Arsonist'],
+        Killing: ['Overload', 'Arsonist', 'Wither'],
       },
     };
   }
@@ -175,6 +175,7 @@ class GameLogic {
       scientistSwapTargetIds: [],
       vesselAwakened: false,
       arsonistDousedTargetIds: [],
+      witherInfected: false,
       imitatorCopiedRole: null,
       imitatorCopiedSourceId: null,
       imitatorCycleTargetIds: [],
@@ -226,6 +227,7 @@ class GameLogic {
       scientistSwapTargetIds: [],
       vesselAwakened: false,
       arsonistDousedTargetIds: [],
+      witherInfected: false,
       alive: true,
       connected: true
     });
@@ -957,6 +959,7 @@ class GameLogic {
       player.scientistExperimentUsesRemaining = 1;
       player.scientistSwapTargetIds = [];
       player.vesselAwakened = false;
+      player.witherInfected = false;
       player.imitatorCopiedRole = null;
       player.imitatorCopiedSourceId = null;
       player.imitatorCycleTargetIds = [];
@@ -1289,26 +1292,33 @@ class GameLogic {
     } else if (activeRole === 'Arsonist') {
       const existingAction = room.nightActions[playerId] || {};
       const currentDousedTargetIds = Array.isArray(player.arsonistDousedTargetIds) ? player.arsonistDousedTargetIds : [];
-      const douseTargetCount = room.nightCount % 2 === 1 ? 1 : 2;
       if (action === 'douse') {
-        if (!Array.isArray(targetIds)) return { error: 'Invalid targets' };
-        const normalizedTargetIds = [...new Set(targetIds.map((id) => String(id || '').trim()).filter(Boolean))];
-        if (normalizedTargetIds.length !== douseTargetCount) {
-          return { error: `Choose exactly ${douseTargetCount} player${douseTargetCount === 1 ? '' : 's'}` };
-        }
-        for (const selectedTargetId of normalizedTargetIds) {
-          const target = room.players.get(selectedTargetId);
-          if (!target || !target.alive) return { error: 'Invalid target' };
-          if (selectedTargetId === playerId) return { error: 'Cannot target yourself' };
-          if (currentDousedTargetIds.includes(selectedTargetId)) {
-            return { error: 'Cannot douse an already doused player' };
-          }
+        const target = room.players.get(targetId);
+        if (!target || !target.alive) return { error: 'Invalid target' };
+        if (targetId === playerId) return { error: 'Cannot target yourself' };
+        if (currentDousedTargetIds.includes(targetId)) {
+          return { error: 'Cannot douse an already doused player' };
         }
       } else if (action === 'ignite') {
         if (existingAction.action === 'ignite') return { error: 'You already chose Ignite tonight' };
         if (currentDousedTargetIds.length === 0) return { error: 'You need at least 1 doused player to ignite' };
       } else {
         return { error: 'Invalid action for Arsonist' };
+      }
+    } else if (activeRole === 'Wither') {
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
+      if (action !== 'infect') return { error: 'Invalid action for Wither' };
+      if (targetId === playerId) return { error: 'Cannot target yourself' };
+      if (target.witherInfected) return { error: 'That player is already infected' };
+    } else if (activeRole === 'The Pestilence') {
+      const existingAction = room.nightActions[playerId] || {};
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
+      if (action !== 'kill') return { error: 'Invalid action for The Pestilence' };
+      if (targetId === playerId) return { error: 'Cannot target yourself' };
+      if (existingAction.action === 'kill' && existingAction.targetId === targetId) {
+        return { error: 'You already chose that kill target tonight' };
       }
     } else if (activeRole === 'Blackout') {
       const existingAction = room.nightActions[playerId] || {};
@@ -1406,10 +1416,23 @@ class GameLogic {
       const currentDousedTargetIds = Array.isArray(player.arsonistDousedTargetIds) ? [...player.arsonistDousedTargetIds] : [];
       room.nightActions[playerId] = {
         action,
-        targetId: null,
-        targetIds: action === 'douse' ? [...new Set(targetIds.map((id) => String(id || '').trim()).filter(Boolean))] : [],
+        targetId: action === 'douse' ? targetId : null,
+        targetIds: [],
         igniteTargetIds: action === 'ignite' ? currentDousedTargetIds : [],
         submittedAt,
+        queuedTargetId: null,
+      };
+    } else if (activeRole === 'Wither') {
+      room.nightActions[playerId] = {
+        action,
+        targetId,
+        queuedTargetId: null,
+      };
+    } else if (activeRole === 'The Pestilence') {
+      room.nightActions[playerId] = {
+        action,
+        targetId,
+        submittedAt: Date.now(),
         queuedTargetId: null,
       };
     } else if (activeRole === 'Silencer') {
@@ -2059,6 +2082,9 @@ class GameLogic {
       if (activeRole === 'Veteran' && action.action === 'instinct') continue;
 
       const interactionTargetIds = getInteractionTargetIds(action);
+      if (action.action === 'longshot' && action.queuedTargetId) {
+        interactionTargetIds.push(action.queuedTargetId);
+      }
       const guardianTargetId = this.getGuardianBlessTargetId(room, player);
       if (activeRole === 'Guardian Angel' && action.action === 'bless' && guardianTargetId && !action.blessBlockedByWarden && !action.blessBlockedBySpoof) {
         interactionTargetIds.push(remapTeleportedTargetId(guardianTargetId));
@@ -2115,6 +2141,90 @@ class GameLogic {
     }
 
     const disabledAbilityTargets = new Set([...disabledByAbilityTargets, ...veteranCounterKilledActors]);
+    const infectedAlivePlayerIds = new Set(
+      Array.from(room.players.entries())
+        .filter(([, player]) => player?.alive && player.witherInfected)
+        .map(([playerId]) => playerId)
+    );
+    const infectionGraph = new Map();
+    const addInfectionEdge = (firstPlayerId, secondPlayerId) => {
+      if (!firstPlayerId || !secondPlayerId || firstPlayerId === secondPlayerId) return;
+      const firstPlayer = room.players.get(firstPlayerId);
+      const secondPlayer = room.players.get(secondPlayerId);
+      if (!firstPlayer?.alive || !secondPlayer?.alive) return;
+      if (!infectionGraph.has(firstPlayerId)) infectionGraph.set(firstPlayerId, new Set());
+      if (!infectionGraph.has(secondPlayerId)) infectionGraph.set(secondPlayerId, new Set());
+      infectionGraph.get(firstPlayerId).add(secondPlayerId);
+      infectionGraph.get(secondPlayerId).add(firstPlayerId);
+    };
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      const activeRole = this.getEffectiveNightRole(player);
+      if (!player || !player.alive) continue;
+      if (isSuppressedByPurge(player)) continue;
+      if (disabledByAbilityTargets.has(playerId)) continue;
+
+      if ((activeRole === 'Wither' || activeRole === 'The Pestilence') && action.action === 'infect' && action.targetId) {
+        const infectedTarget = room.players.get(action.targetId);
+        if (infectedTarget?.alive) {
+          infectedAlivePlayerIds.add(action.targetId);
+        }
+      }
+
+      if (activeRole === 'Wither' || activeRole === 'The Pestilence') continue;
+
+      const interactionTargetIds = getInteractionTargetIds(action);
+      if (action.action === 'longshot' && action.queuedTargetId) {
+        interactionTargetIds.push(action.queuedTargetId);
+      }
+      const guardianTargetId = this.getGuardianBlessTargetId(room, player);
+      if (activeRole === 'Guardian Angel' && action.action === 'bless' && guardianTargetId && !action.blessBlockedByWarden && !action.blessBlockedBySpoof) {
+        interactionTargetIds.push(remapTeleportedTargetId(guardianTargetId));
+      }
+
+      for (const targetId of [...new Set(interactionTargetIds.filter(Boolean))]) {
+        const target = room.players.get(targetId);
+        const targetActiveRole = this.getEffectiveNightRole(target);
+        if (!target?.alive) continue;
+        if (targetActiveRole === 'Wither' || targetActiveRole === 'The Pestilence') continue;
+        addInfectionEdge(playerId, targetId);
+      }
+    }
+
+    const infectionQueue = [...infectedAlivePlayerIds];
+    while (infectionQueue.length) {
+      const playerId = infectionQueue.shift();
+      const linkedPlayerIds = infectionGraph.get(playerId);
+      if (!linkedPlayerIds) continue;
+      for (const linkedPlayerId of linkedPlayerIds) {
+        if (infectedAlivePlayerIds.has(linkedPlayerId)) continue;
+        infectedAlivePlayerIds.add(linkedPlayerId);
+        infectionQueue.push(linkedPlayerId);
+      }
+    }
+
+    for (const [playerId, player] of room.players) {
+      if (!player?.alive) continue;
+      if (!infectedAlivePlayerIds.has(playerId)) continue;
+      player.witherInfected = true;
+    }
+
+    for (const [, player] of room.players) {
+      if (!player?.alive || player.role !== 'Wither') continue;
+      const otherAlivePlayers = Array.from(room.players.values()).filter((candidate) => candidate.alive && candidate.id !== player.id);
+      if (!otherAlivePlayers.length) continue;
+      if (otherAlivePlayers.every((candidate) => candidate.witherInfected)) {
+        player.role = 'The Pestilence';
+        messages.push({
+          type: 'system',
+          text: 'The Pestilence became all powerful.',
+          source: 'The Pestilence',
+          public: true,
+        });
+      }
+    }
+
     const consumeLimitedNightUse = (player, activeRole, action) => {
       if (!player) return;
 
@@ -2246,8 +2356,8 @@ class GameLogic {
       if (disabledAbilityTargets.has(playerId)) continue;
 
       if (action.action === 'douse') {
-        const nextDousedTargetIds = Array.isArray(action.targetIds)
-          ? action.targetIds.filter((targetId) => room.players.get(targetId)?.alive)
+        const nextDousedTargetIds = action.targetId && room.players.get(action.targetId)?.alive
+          ? [action.targetId]
           : [];
         player.arsonistDousedTargetIds = [...new Set([...player.arsonistDousedTargetIds, ...nextDousedTargetIds])];
       } else if (action.action === 'ignite') {
@@ -2353,6 +2463,53 @@ class GameLogic {
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       const activeRole = this.getEffectiveNightRole(player);
+      if (!player || activeRole !== 'The Pestilence') continue;
+      if (isSuppressedByPurge(player)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
+
+      if (action.action === 'kill' && action.targetId) {
+        if (veteranAlertIds.has(action.targetId)) {
+          killed.add(playerId);
+        } else if (mirroredTargets.has(action.targetId)) {
+          killed.add(playerId);
+          if (!privateMessages[action.targetId]) {
+            privateMessages[action.targetId] = [];
+          }
+          privateMessages[action.targetId].push(
+            this.createPrivateSystemMessage(code, 'A mirrored shield reflected a killing blow away from you.', 'Mirror Caster')
+          );
+        } else if (!protected_.has(action.targetId) && !blessedTargets.has(action.targetId) && !lifeguardedTargets.has(action.targetId)) {
+          killed.add(action.targetId);
+          killersThisNight.add(playerId);
+          registerKillAttribution(action.targetId, playerId);
+        } else if (protected_.has(action.targetId)) {
+          if (!privateMessages[action.targetId]) {
+            privateMessages[action.targetId] = [];
+          }
+          privateMessages[action.targetId].push(
+            this.createPrivateSystemMessage(code, 'You were protected by the Vitalist during the night.', 'Vitalist')
+          );
+        } else if (lifeguardedTargets.has(action.targetId)) {
+          if (!privateMessages[action.targetId]) {
+            privateMessages[action.targetId] = [];
+          }
+          privateMessages[action.targetId].push(
+            this.createPrivateSystemMessage(code, 'You protected yourself from death during the night.', 'Survivalist')
+          );
+        } else {
+          if (!privateMessages[action.targetId]) {
+            privateMessages[action.targetId] = [];
+          }
+          privateMessages[action.targetId].push(
+            this.createPrivateSystemMessage(code, 'A Guardian Angel blessed you through the night.', 'Guardian Angel')
+          );
+        }
+      }
+    }
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      const activeRole = this.getEffectiveNightRole(player);
       if (!player) continue;
       if (isSuppressedByPurge(player)) continue;
       if (disabledAbilityTargets.has(playerId)) continue;
@@ -2406,8 +2563,10 @@ class GameLogic {
       if (action.action === 'shoot' && action.targetId) {
         const target = room.players.get(action.targetId);
         const isCrewTarget = target?.faction === 'Crew';
-        const isNeutralEvilTarget = target?.faction === 'Neutral' && target?.subfaction === 'Evil';
+        const isNeutralEvilTarget = target?.faction === 'Neutral' && (this.roleCatalog?.Neutral?.Evil || []).includes(target?.role);
+        const isNeutralBenignTarget = target?.faction === 'Neutral' && (this.roleCatalog?.Neutral?.Benign || []).includes(target?.role);
         const sheriffCanKillNeutralEvil = room.sheriffKillsNeutralEvil && isNeutralEvilTarget;
+        const sheriffTradeEnabled = !!room.sheriffKillsCrewTarget;
         if (veteranAlertIds.has(action.targetId)) {
           killed.add(playerId);
         } else if (mirroredTargets.has(action.targetId)) {
@@ -2418,7 +2577,7 @@ class GameLogic {
           privateMessages[action.targetId].push(
             this.createPrivateSystemMessage(code, 'A mirrored shield reflected a killing blow away from you.', 'Mirror Caster')
           );
-        } else if (isCrewTarget && room.sheriffKillsCrewTarget) {
+        } else if (sheriffCanKillNeutralEvil || ((isCrewTarget || isNeutralBenignTarget) && sheriffTradeEnabled)) {
           killed.add(playerId);
           if (!protected_.has(action.targetId) && !blessedTargets.has(action.targetId) && !lifeguardedTargets.has(action.targetId)) {
             killed.add(action.targetId);
@@ -2445,9 +2604,7 @@ class GameLogic {
               this.createPrivateSystemMessage(code, 'A Guardian Angel blessed you through the night.', 'Guardian Angel')
             );
           }
-        } else if (isCrewTarget) {
-          killed.add(playerId);
-        } else if (isNeutralEvilTarget && !sheriffCanKillNeutralEvil) {
+        } else if (isCrewTarget || isNeutralBenignTarget || isNeutralEvilTarget) {
           killed.add(playerId);
         } else if (!protected_.has(action.targetId) && !blessedTargets.has(action.targetId) && !lifeguardedTargets.has(action.targetId)) {
           killed.add(action.targetId);
@@ -3082,6 +3239,13 @@ class GameLogic {
       if (!linkedTarget || !linkedTarget.alive) continue;
       killed.add(action.interlinkedTargetId);
       tetheredVictims.add(action.interlinkedTargetId);
+    }
+
+    for (const deadId of Array.from(killed)) {
+      const deadPlayer = room.players.get(deadId);
+      if (!deadPlayer || deadPlayer.role !== 'The Pestilence') continue;
+      killed.delete(deadId);
+      killAttributions.delete(deadId);
     }
 
     let karmaTriggered = true;
@@ -3890,9 +4054,19 @@ class GameLogic {
       if (player.faction === 'Crew') aliveCrewCount++;
       else if (player.faction === 'Assassin') aliveAssassinCount++;
       else if (player.faction === 'Neutral' && this.roleCatalog?.Neutral?.Evil?.includes(player.role)) aliveNeutralEvilCount++;
-      else if (player.faction === 'Neutral' && this.roleCatalog?.Neutral?.Killing?.includes(player.role)) {
+      else if (player.faction === 'Neutral' && (this.roleCatalog?.Neutral?.Killing?.includes(player.role) || player.role === 'The Pestilence')) {
         aliveNeutralKillingCount++;
         aliveNeutralKillingRoles.push(player.role);
+      }
+    }
+
+    if (totalAliveCount === 1) {
+      const soleSurvivor = Array.from(room.players.values()).find((player) => player.alive);
+      if (soleSurvivor?.role === 'The Pestilence') {
+        return { winner: 'The Pestilence', reason: 'The Pestilence is the last one standing.' };
+      }
+      if (soleSurvivor?.role === 'Wither') {
+        return { winner: 'Nobody', reason: 'Wither outlived everyone, but never became The Pestilence.' };
       }
     }
 
@@ -3905,6 +4079,9 @@ class GameLogic {
     // Neutral killers still win even if a living Guardian Angel is tied to them.
     // That Guardian Angel is treated as a co-winner, not a blocker the killer has to eliminate.
     if (aliveNeutralKillingCount > 0 && aliveCrewCount === 0 && aliveAssassinCount === 0 && aliveNeutralEvilCount === 0) {
+      if (aliveNeutralKillingRoles.every((role) => role === 'Wither')) {
+        return { winner: 'Nobody', reason: 'Wither never became The Pestilence before everyone else fell.' };
+      }
       const neutralKillingWinner = aliveNeutralKillingRoles[0] || 'Overload';
       return this.withNarcissistCoWinners(room, this.withNeutralBenignCoWinners(room, this.withGuardianAngelCoWinners(room, { winner: neutralKillingWinner, reason: `${neutralKillingWinner} has outlived everyone else!` })));
     }
@@ -4059,6 +4236,7 @@ class GameLogic {
     if (action === 'mimic') return 'Imitator has shifted abilities.';
     if (action === 'inherit') return 'Amnesiac has claimed a forgotten role.';
     if (action === 'evil-eye') return 'Oracle has marked someone with the Evil Eye.';
+    if (action === 'infect') return 'A sickness has taken hold in the night.';
     if (action === 'douse' || action === 'ignite') return 'Arsonist is playing with fire.';
     if (action === 'protect') return 'Vitalist has protected someone.';
     if (action === 'quietus') return 'Silencer has hushed someone.';
@@ -4280,6 +4458,11 @@ class GameLogic {
     const imitatorAvailableTargetIds = player.role === 'Imitator' && !player.imitatorCopiedRole
       ? this.getImitatorAvailableTargetIds(room, playerId)
       : [];
+    const witherKnownInfectedIds = activeRole === 'Wither'
+      ? Array.from(room.players.values())
+        .filter((candidate) => candidate.alive && candidate.id !== playerId && candidate.witherInfected)
+        .map((candidate) => candidate.id)
+      : [];
 
     return {
       ...player,
@@ -4354,8 +4537,9 @@ class GameLogic {
       oracleEvilEyeUsesRemaining: activeRole === 'Oracle' ? (player.oracleEvilEyeUsesRemaining ?? 3) : null,
       oraclePurifyUsesRemaining: player.role === 'Oracle' ? (player.oraclePurifyUsesRemaining ?? 2) : null,
       survivalistUsesRemaining: activeRole === 'Survivalist' ? (player.survivalistUsesRemaining ?? 4) : null,
+      witherKnownInfectedIds,
       arsonistDousedTargetIds: activeRole === 'Arsonist' ? (Array.isArray(player.arsonistDousedTargetIds) ? [...player.arsonistDousedTargetIds] : []) : [],
-      arsonistDouseTargetCount: activeRole === 'Arsonist' ? (room.nightCount % 2 === 1 ? 1 : 2) : null,
+      arsonistDouseTargetCount: activeRole === 'Arsonist' ? 1 : null,
       blackoutFlashUsesRemaining: activeRole === 'Blackout' ? (player.blackoutFlashUsesRemaining ?? 3) : null,
       blackoutFlashUsedThisNight: activeRole === 'Blackout' ? !!room.nightActions[playerId]?.flashUsedThisNight : false,
       purgeFascismUsesRemaining: activeRole === 'The Purge' ? (player.purgeFascismUsesRemaining ?? 1) : null,

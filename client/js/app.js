@@ -58,7 +58,7 @@
   const PROFILE_STORAGE_KEY = 'silhouette.profile';
   const PLAYER_SESSION_STORAGE_KEY = 'silhouette.playerSessionId';
   const ROLE_REVEAL_ITEM_HEIGHT = 72;
-  const AVATAR_ASSET_VERSION = '20260324c';
+  const AVATAR_ASSET_VERSION = '20260327a';
   const ROLE_DEFINITIONS = {
     Sheriff: {
       faction: 'Crew',
@@ -552,18 +552,49 @@
     Arsonist: {
       faction: 'Neutral',
       subfaction: 'Killing',
-      description: 'Douse players in gasoline, then ignite everyone you have tagged at once. Douse targets 1 player on Night 1 and 2 players on Night 2. Sequence repeats.',
+      description: 'Douse 1 player in gasoline each night, then ignite everyone you have tagged at once.',
       revealText: 'Orange heat rolls into a blood-red blaze. Mark the room with gasoline, then burn every doused soul at the same time.',
       abilities: [
         {
           name: 'Douse',
           type: 'Night',
-          description: 'Douse players with gasoline. Target 1 player on the first night and 2 players on the second. Sequence repeats.',
+          description: 'Douse 1 player with gasoline each night. Already doused players cannot be targeted again.',
         },
         {
           name: 'Ignite',
           type: 'Night',
           description: 'Kill every currently doused player at the same time. Requires at least 1 player to be doused.',
+        },
+      ],
+    },
+    Wither: {
+      faction: 'Neutral',
+      subfaction: 'Killing',
+      description: 'Infect a player at night. The players they interact with also become infected. If all other living players become infected, you transform into The Pestilence.',
+      revealText: 'Dark crimson rot gathers around your hands. Start the infection quietly, then let every contact carry it further.',
+      abilities: [
+        {
+          name: 'Infect',
+          type: 'Night',
+          description: 'Infect a player. Infected players silently spread the infection through their interactions and cannot be infected again.',
+        },
+      ],
+    },
+    'The Pestilence': {
+      faction: 'Neutral',
+      subfaction: 'Killing',
+      description: 'You cannot be killed and can only lose by being voted or exiled out. Eliminate players until you are the last one standing.',
+      revealText: 'Dark violet ruin crowns you in silence. No blade can finish what the plague has already made eternal.',
+      abilities: [
+        {
+          name: 'Immortal',
+          type: 'Passive',
+          description: 'You cannot be killed. Only voting or Inquisitor exile can remove you.',
+        },
+        {
+          name: 'Kill',
+          type: 'Night',
+          description: 'Eliminate a player.',
         },
       ],
     },
@@ -674,6 +705,7 @@
     'Avatar 23.png',
     'Avatar 24.png',
     'Avatar 25.png',
+    'Avatar 26.png',
     'Avatar 3.png',
     'Avatar 5.png',
     'Avatar 6.png',
@@ -1398,6 +1430,8 @@
     if (normalizedRole === 'disruptor') return 'disruptor';
     if (normalizedRole === 'manipulator') return 'manipulator';
     if (normalizedRole === 'prophet') return 'prophet';
+    if (normalizedRole === 'wither') return 'wither';
+    if (normalizedRole === 'the pestilence') return 'pestilence';
     if (normalizedRole === 'alturist') return 'alturist';
     if (normalizedRole === 'the vessel') return 'vessel';
     if (normalizedRole === 'narcissist') return 'narcissist';
@@ -1534,6 +1568,8 @@
       disruptor: { glowBackground: 'var(--disruptor)', titleColor: 'var(--disruptor)', titleShadow: '0 0 30px rgba(214, 56, 64, 0.24)' },
       overload: { glowBackground: 'var(--overload)', titleColor: 'var(--overload)', titleShadow: '0 0 30px rgba(99, 255, 76, 0.24)' },
       arsonist: { glowBackground: 'var(--arsonist)', titleColor: 'var(--arsonist)', titleShadow: '0 0 30px rgba(255, 114, 52, 0.28)' },
+      wither: { glowBackground: 'var(--wither)', titleColor: 'var(--wither)', titleShadow: '0 0 30px rgba(162, 24, 38, 0.3)' },
+      pestilence: { glowBackground: 'var(--pestilence)', titleColor: 'var(--pestilence)', titleShadow: '0 0 30px rgba(122, 62, 214, 0.34)' },
       blackout: { glowBackground: 'var(--blackout)', titleColor: 'var(--blackout)', titleShadow: '0 0 28px rgba(112, 120, 136, 0.22)' },
       blackmailer: { glowBackground: 'var(--blackmailer)', titleColor: 'var(--blackmailer)', titleShadow: '0 0 30px rgba(226, 180, 76, 0.24)' },
       thepurge: { glowBackground: 'var(--thepurge)', titleColor: 'var(--thepurge)', titleShadow: '0 0 30px rgba(148, 24, 24, 0.24)' },
@@ -2086,6 +2122,7 @@
     if (/was exiled by the Inquisitor\./i.test(text)) return 'summary-inquisitor';
     if (/The Disruptor has veto'd the voting\./i.test(text)) return 'summary-disruptor';
     if (/The Manipulator has played with the results\./i.test(text)) return 'summary-manipulator';
+    if (/The Pestilence became all powerful\./i.test(text)) return 'summary-pestilence';
     if (/had their places swapped by the Swapper\./i.test(text)) return 'summary-swapper';
     if (/used their gun/i.test(text)) return 'summary-shoot';
     if (/Sheriff is investigating someone/i.test(text)) return 'summary-search';
@@ -2239,6 +2276,9 @@
     }
     if (/The Manipulator has played with the results\./i.test(text) && String(message.source || '').trim() === 'Manipulator') {
       return ' system-result-manipulator';
+    }
+    if (/The Pestilence became all powerful\./i.test(text) && String(message.source || '').trim() === 'The Pestilence') {
+      return ' system-result-pestilence';
     }
     if (/A mirrored shield reflected a killing blow away from you\.$/i.test(text) && String(message.source || '').trim() === 'Mirror Caster') {
       return ' system-result-mirror';
@@ -3818,6 +3858,11 @@
     state.chatOverlayDraft = value;
   }
 
+  function syncChatDraftForInput(input, isOverlayForm, channel) {
+    if (!input) return;
+    setChatDraftValue(isOverlayForm, channel, input.value);
+  }
+
   function bindChatComposer(form, canChat, channel = 'public') {
     if (!form || !canChat) return;
 
@@ -3825,13 +3870,20 @@
     const input = form.querySelector('.chat-input');
 
     if (input) {
-      input.addEventListener('input', () => {
-        setChatDraftValue(isOverlayForm, channel, input.value);
-      });
+      const syncDraft = () => syncChatDraftForInput(input, isOverlayForm, channel);
+      const deferredSyncDraft = () => window.requestAnimationFrame(syncDraft);
+
+      input.addEventListener('input', syncDraft);
+      input.addEventListener('change', syncDraft);
+      input.addEventListener('blur', syncDraft);
+      input.addEventListener('keyup', syncDraft);
+      input.addEventListener('compositionend', syncDraft);
+      input.addEventListener('beforeinput', deferredSyncDraft);
     }
 
     form.addEventListener('submit', (event) => {
       event.preventDefault();
+      syncChatDraftForInput(input, isOverlayForm, channel);
       const text = input ? input.value.trim() : '';
       if (!text) return;
 
@@ -4206,9 +4258,9 @@
     const arsonistDousedTargetIds = activeRole === 'Arsonist'
       ? (Array.isArray(player.arsonistDousedTargetIds) ? player.arsonistDousedTargetIds : [])
       : [];
-    const arsonistDouseTargetCount = activeRole === 'Arsonist'
-      ? Math.max(1, Number(player.arsonistDouseTargetCount) || 1)
-      : 1;
+    const witherKnownInfectedIds = activeRole === 'Wither'
+      ? (Array.isArray(player.witherKnownInfectedIds) ? player.witherKnownInfectedIds : [])
+      : [];
     const arsonistCanIgniteTonight = activeRole === 'Arsonist' && arsonistDousedTargetIds.length > 0;
     let multiSelectedTargets = [];
     const guardianAngelFixedTargetId = activeRole === 'Guardian Angel'
@@ -4300,27 +4352,21 @@
       }
     }
 
-    if (activeRole === 'Traplord' || activeRole === 'Teleporter' || (activeRole === 'Arsonist' && state.selectedAction === 'douse')) {
+    if (activeRole === 'Traplord' || activeRole === 'Teleporter') {
       state.selectedAction = 'trap';
       if (activeRole === 'Teleporter') {
         state.selectedAction = 'teleport';
-      } else if (activeRole === 'Arsonist') {
-        state.selectedAction = 'douse';
       }
       if (!Array.isArray(state.selectedTargets)) {
         state.selectedTargets = [];
       } else if (activeRole === 'Teleporter') {
         state.selectedTargets = [...new Set(state.selectedTargets)].slice(-2);
-      } else if (activeRole === 'Arsonist') {
-        state.selectedTargets = [...new Set(state.selectedTargets)]
-          .filter((targetId) => !arsonistDousedTargetIds.includes(targetId))
-          .slice(-arsonistDouseTargetCount);
       }
     } else if (Array.isArray(state.selectedTargets) && state.selectedTargets.length) {
       state.selectedTargets = [];
     }
 
-    multiSelectedTargets = (activeRole === 'Traplord' || activeRole === 'Teleporter' || (activeRole === 'Arsonist' && state.selectedAction === 'douse'))
+    multiSelectedTargets = (activeRole === 'Traplord' || activeRole === 'Teleporter')
       ? (Array.isArray(state.selectedTargets) ? state.selectedTargets : [])
       : [];
 
@@ -4410,6 +4456,12 @@
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Shutdown</button><button class="action-btn ${state.selectedAction === 'malware' ? 'selected' : ''}" data-action="malware" ${player.overloadMalwareUsedThisNight ? 'disabled' : ''}>Malware</button></div>`;
     } else if (activeRole === 'Arsonist') {
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'douse' ? 'selected' : ''}" data-action="douse">Douse</button><button class="action-btn ${state.selectedAction === 'ignite' ? 'selected' : ''}" data-action="ignite" ${arsonistCanIgniteTonight ? '' : 'disabled'}>Ignite</button></div>`;
+    } else if (activeRole === 'Wither') {
+      state.selectedAction = 'infect';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="infect">Infect</button></div>';
+    } else if (activeRole === 'The Pestilence') {
+      state.selectedAction = 'kill';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="kill">Kill</button></div>';
     } else if (activeRole === 'Blackmailer') {
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Kill</button><button class="action-btn ${state.selectedAction === 'blackmail' ? 'selected' : ''}" data-action="blackmail" ${player.blackmailerBlackmailUsedThisNight ? 'disabled' : ''}>Blackmail</button></div>`;
     } else if (activeRole === 'Blackout') {
@@ -4467,7 +4519,9 @@
       ? arsonistCanIgniteTonight
         ? `Ignite every doused player at once. ${arsonistDousedTargetIds.length} target${arsonistDousedTargetIds.length === 1 ? '' : 's'} will burn tonight.`
         : 'You need at least 1 doused player before Ignite becomes available.'
-      : `Douse ${arsonistDouseTargetCount} player${arsonistDouseTargetCount === 1 ? '' : 's'} with gasoline tonight. Already doused players cannot be targeted again.`;
+      : 'Douse 1 player with gasoline tonight. Already doused players cannot be targeted again.';
+    else if (activeRole === 'Wither') actionDesc = 'Infect 1 player tonight. Infected players silently spread infection through future interactions.';
+    else if (activeRole === 'The Pestilence') actionDesc = 'You are immortal to every kill. Choose a player to eliminate tonight.';
     else if (activeRole === 'Blackmailer') actionDesc = state.selectedAction === 'blackmail'
       ? player.blackmailerBlackmailUsedThisNight
         ? 'Blackmail is already active for tonight. You can still follow up with Kill.'
@@ -4511,13 +4565,13 @@
         : activeRole === 'Guardian Angel'
           ? guardianAngelTargets
           : targets;
-    const isMultiTargetRole = activeRole === 'Traplord' || activeRole === 'Teleporter' || (activeRole === 'Arsonist' && state.selectedAction === 'douse');
-    const requiredMultiTargetCount = activeRole === 'Teleporter' ? 2 : activeRole === 'Arsonist' && state.selectedAction === 'douse' ? arsonistDouseTargetCount : 3;
+    const isMultiTargetRole = activeRole === 'Traplord' || activeRole === 'Teleporter';
+    const requiredMultiTargetCount = activeRole === 'Teleporter' ? 2 : 3;
     const shouldShowTargetList = !isTargetlessRole || activeRole === 'Arsonist';
     const targetLabel = activeRole === 'Arsonist' && state.selectedAction === 'ignite'
       ? `DOUSED PLAYERS${displayedTargets.length ? ` (${displayedTargets.length})` : ''}`
       : isMultiTargetRole
-        ? `${activeRole === 'Teleporter' ? 'SELECT 2 TARGETS' : activeRole === 'Arsonist' ? `SELECT ${arsonistDouseTargetCount} TARGET${arsonistDouseTargetCount === 1 ? '' : 'S'}` : 'SELECT AT LEAST 3 TARGETS'}${multiSelectedTargets.length ? ` (${multiSelectedTargets.length} SELECTED)` : ''}`
+        ? `${activeRole === 'Teleporter' ? 'SELECT 2 TARGETS' : 'SELECT AT LEAST 3 TARGETS'}${multiSelectedTargets.length ? ` (${multiSelectedTargets.length} SELECTED)` : ''}`
         : 'SELECT TARGET';
     container.innerHTML = `
       <div class="action-panel">
@@ -4539,15 +4593,16 @@
               || (activeRole === 'Silencer' && t.id === silencerLockedTargetId)
               || (activeRole === 'Hypnotic' && t.id === hypnoticLockedTargetId)
               || (activeRole === 'Overload' && t.id === overloadLockedTargetId)
-              || (activeRole === 'Arsonist' && arsonistDousedTargetIds.includes(t.id));
+              || (activeRole === 'Arsonist' && arsonistDousedTargetIds.includes(t.id))
+              || (activeRole === 'Wither' && witherKnownInfectedIds.includes(t.id));
             const isSelected = isMultiTargetRole
               ? multiSelectedTargets.includes(t.id)
               : state.selectedTarget === t.id;
-            return `<div class="target-item ${isSelected ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''} ${activeRole === 'Arsonist' && arsonistDousedTargetIds.includes(t.id) ? 'target-doused' : ''} ${activeRole === 'Arsonist' && state.selectedAction === 'ignite' ? 'target-static' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span>${activeRole === 'Arsonist' && arsonistDousedTargetIds.includes(t.id) ? '<span class="target-status target-status-doused">Doused</span>' : ''}</div>`;
+            return `<div class="target-item ${isSelected ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''} ${activeRole === 'Arsonist' && arsonistDousedTargetIds.includes(t.id) ? 'target-doused' : ''} ${activeRole === 'Wither' && witherKnownInfectedIds.includes(t.id) ? 'target-infected' : ''} ${activeRole === 'Arsonist' && state.selectedAction === 'ignite' ? 'target-static' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span>${activeRole === 'Arsonist' && arsonistDousedTargetIds.includes(t.id) ? '<span class="target-status target-status-doused">Doused</span>' : ''}${activeRole === 'Wither' && witherKnownInfectedIds.includes(t.id) ? '<span class="target-status target-status-infected">Infected</span>' : ''}</div>`;
           }).join('')}
         </div>` : ''}
         <div class="chat-local-actions">
-          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) || (isMultiTargetRole && multiSelectedTargets.length < requiredMultiTargetCount) || (activeRole === 'Arsonist' && state.selectedAction === 'ignite' && !arsonistCanIgniteTonight) || (activeRole === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) || (activeRole === 'The Purge' && state.selectedAction === 'fascism' && !purgeCanUseFascismTonight) ? 'disabled' : ''}>${activeRole === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : activeRole === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : activeRole === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : activeRole === 'Oracle' ? `Confirm ${player.oracleEvilEyeUsesRemaining ?? 3}/3` : activeRole === 'Prophet' && state.selectedAction === 'gospel' ? `Confirm ${player.prophetGospelUsesRemaining ?? 2}/2` : activeRole === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 4}/4` : activeRole === 'Arsonist' && state.selectedAction === 'ignite' ? `Ignite ${arsonistDousedTargetIds.length}` : activeRole === 'Arsonist' ? `Confirm ${multiSelectedTargets.length}/${arsonistDouseTargetCount}` : activeRole === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : activeRole === 'The Purge' && state.selectedAction === 'fascism' ? `Confirm ${player.purgeFascismUsesRemaining ?? 1}/1` : activeRole === 'Teleporter' ? `Confirm ${multiSelectedTargets.length}/2` : isMultiTargetRole ? `Confirm ${multiSelectedTargets.length}/3+` : 'Confirm'}</button>
+          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) || (isMultiTargetRole && multiSelectedTargets.length < requiredMultiTargetCount) || (activeRole === 'Arsonist' && state.selectedAction === 'ignite' && !arsonistCanIgniteTonight) || (activeRole === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) || (activeRole === 'The Purge' && state.selectedAction === 'fascism' && !purgeCanUseFascismTonight) ? 'disabled' : ''}>${activeRole === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : activeRole === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : activeRole === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : activeRole === 'Oracle' ? `Confirm ${player.oracleEvilEyeUsesRemaining ?? 3}/3` : activeRole === 'Prophet' && state.selectedAction === 'gospel' ? `Confirm ${player.prophetGospelUsesRemaining ?? 2}/2` : activeRole === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 4}/4` : activeRole === 'Arsonist' && state.selectedAction === 'ignite' ? `Ignite ${arsonistDousedTargetIds.length}` : activeRole === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : activeRole === 'The Purge' && state.selectedAction === 'fascism' ? `Confirm ${player.purgeFascismUsesRemaining ?? 1}/1` : activeRole === 'Teleporter' ? `Confirm ${multiSelectedTargets.length}/2` : isMultiTargetRole ? `Confirm ${multiSelectedTargets.length}/3+` : 'Confirm'}</button>
           <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>
         </div>
       </div>
@@ -4590,6 +4645,8 @@
             showToast('You cannot target the same player twice in a row with Malware', 'error');
           } else if (activeRole === 'Arsonist') {
             showToast('That player is already doused', 'error');
+          } else if (activeRole === 'Wither') {
+            showToast('That player is already infected', 'error');
           } else if (activeRole === 'Mirror Caster') {
             showToast('You cannot target the same player twice in a row', 'error');
           } else if (activeRole === 'Warden') {
@@ -4605,8 +4662,6 @@
             state.selectedTargets = multiSelectedTargets.filter((selectedId) => selectedId !== targetId);
           } else if (activeRole === 'Teleporter') {
             state.selectedTargets = [...multiSelectedTargets.slice(-1), targetId];
-          } else if (activeRole === 'Arsonist' && state.selectedAction === 'douse') {
-            state.selectedTargets = [...multiSelectedTargets.slice(-(requiredMultiTargetCount - 1)), targetId];
           } else {
             state.selectedTargets = [...multiSelectedTargets, targetId];
           }

@@ -49,6 +49,12 @@
   --prophet: hsl(357, 72%, 54%);
   --prophet-dim: hsl(356, 46%, 14%);
   --prophet-glow: hsla(357, 72%, 54%, 0.32);
+  --wither: hsl(352, 78%, 58%);
+  --wither-dim: hsl(350, 48%, 14%);
+  --wither-glow: hsla(352, 78%, 58%, 0.34);
+  --pestilence: hsl(272, 84%, 66%);
+  --pestilence-dim: hsl(270, 42%, 12%);
+  --pestilence-glow: hsla(272, 84%, 66%, 0.38);
   --tracker: hsl(195, 100%, 72%);
   --tracker-dim: hsl(198, 58%, 18%);
   --tracker-glow: hsla(195, 100%, 72%, 0.36);
@@ -2665,6 +2671,10 @@ body {
 .role-card.role-theme-overload .role-card-inner { border-color: rgba(99, 255, 76, 0.42); box-shadow: inset 0 0 0 1px rgba(99, 255, 76, 0.08), 0 0 22px rgba(42, 124, 18, 0.18); }
 .role-card.role-theme-arsonist .role-card-glow { background: radial-gradient(circle, rgba(255, 149, 64, 0.94) 0%, rgba(255, 76, 43, 0.28) 48%, transparent 74%); }
 .role-card.role-theme-arsonist .role-card-inner { border-color: rgba(255, 114, 52, 0.46); box-shadow: inset 0 0 0 1px rgba(255, 164, 98, 0.1), 0 0 24px rgba(198, 66, 24, 0.2); }
+.role-card.role-theme-wither .role-card-glow { background: radial-gradient(circle, rgba(168, 22, 38, 0.9) 0%, rgba(88, 8, 16, 0.28) 52%, transparent 74%); }
+.role-card.role-theme-wither .role-card-inner { border-color: rgba(168, 22, 38, 0.44); box-shadow: inset 0 0 0 1px rgba(214, 88, 98, 0.08), 0 0 24px rgba(96, 10, 20, 0.2); }
+.role-card.role-theme-pestilence .role-card-glow { background: radial-gradient(circle, rgba(154, 88, 255, 0.94) 0%, rgba(78, 28, 132, 0.34) 52%, transparent 74%); }
+.role-card.role-theme-pestilence .role-card-inner { border-color: rgba(154, 88, 255, 0.46); box-shadow: inset 0 0 0 1px rgba(220, 198, 255, 0.08), 0 0 24px rgba(82, 30, 124, 0.22); }
 
 .role-card.role-theme-hypnotic .role-card-glow { background: radial-gradient(circle, var(--hypnotic) 0%, transparent 70%); }
 .role-card.role-theme-hypnotic .role-card-inner { border-color: rgba(196, 65, 148, 0.42); box-shadow: inset 0 0 0 1px rgba(196, 65, 148, 0.08), 0 0 22px rgba(149, 34, 108, 0.14); }
@@ -2740,6 +2750,8 @@ body {
 .role-card.role-theme-tetherhex .role-faction { color: var(--tetherhex); }
 .role-card.role-theme-overload .role-faction { color: var(--overload); }
 .role-card.role-theme-arsonist .role-faction { color: var(--arsonist); }
+.role-card.role-theme-wither .role-faction { color: var(--wither); }
+.role-card.role-theme-pestilence .role-faction { color: var(--pestilence); }
 .role-card.role-theme-hypnotic .role-faction { color: var(--hypnotic); }
 .role-card.role-theme-blackmailer .role-faction { color: var(--blackmailer); }
 .role-card.role-theme-thepurge .role-faction { color: var(--thepurge); }
@@ -2805,6 +2817,8 @@ body {
 .role-card.role-theme-tetherhex .role-divider { background: var(--tetherhex); }
 .role-card.role-theme-overload .role-divider { background: var(--overload); }
 .role-card.role-theme-arsonist .role-divider { background: linear-gradient(90deg, rgba(255, 178, 74, 0.98), rgba(255, 74, 52, 0.96)); }
+.role-card.role-theme-wither .role-divider { background: linear-gradient(90deg, rgba(255, 182, 188, 0.96), rgba(168, 22, 38, 0.96)); }
+.role-card.role-theme-pestilence .role-divider { background: linear-gradient(90deg, rgba(224, 196, 255, 0.96), rgba(122, 62, 214, 0.98)); }
 .role-card.role-theme-hypnotic .role-divider { background: var(--hypnotic); }
 .role-card.role-theme-blackmailer .role-divider { background: var(--blackmailer); }
 .role-card.role-theme-thepurge .role-divider { background: linear-gradient(90deg, rgba(18, 18, 18, 0.98) 0%, rgba(148, 24, 24, 0.92) 100%); }
@@ -3078,6 +3092,22 @@ body {
   background-clip: text;
   color: transparent;
   text-shadow: 0 0 18px rgba(255, 114, 52, 0.24);
+}
+
+.role-card.role-theme-wither .role-name {
+  background: linear-gradient(90deg, #ffd8de 0%, #c7192f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 18px rgba(168, 22, 38, 0.24);
+}
+
+.role-card.role-theme-pestilence .role-name {
+  background: linear-gradient(90deg, #f2ddff 0%, #8d4dff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 18px rgba(122, 62, 214, 0.3);
 }
 
 .role-card.role-theme-hypnotic .role-name {
@@ -3408,6 +3438,18 @@ body {
   background:
     radial-gradient(circle at top, rgba(255, 138, 72, 0.26), transparent 48%),
     linear-gradient(135deg, rgba(38, 16, 8, 0.98), rgba(72, 22, 8, 0.96) 56%, rgba(120, 28, 18, 0.92));
+}
+
+.role-reveal-panel.role-theme-wither {
+  background:
+    radial-gradient(circle at top, rgba(168, 22, 38, 0.24), transparent 48%),
+    linear-gradient(180deg, rgba(30, 8, 12, 0.98), rgba(12, 3, 5, 0.98));
+}
+
+.role-reveal-panel.role-theme-pestilence {
+  background:
+    radial-gradient(circle at top, rgba(154, 88, 255, 0.28), transparent 48%),
+    linear-gradient(180deg, rgba(24, 8, 36, 0.98), rgba(10, 2, 20, 0.99));
 }
 
 .role-reveal-panel.role-theme-hypnotic {
@@ -3873,6 +3915,18 @@ body {
   box-shadow: inset 0 0 0 1px rgba(255, 154, 98, 0.14), 0 0 14px rgba(220, 82, 32, 0.18);
 }
 
+.role-reveal-item.role-theme-wither.is-selected {
+  border-color: rgba(168, 22, 38, 0.58);
+  background: linear-gradient(180deg, rgba(168, 22, 38, 0.1), rgba(96, 10, 20, 0.03));
+  box-shadow: inset 0 0 0 1px rgba(214, 88, 98, 0.14), 0 0 14px rgba(122, 10, 20, 0.18);
+}
+
+.role-reveal-item.role-theme-pestilence.is-selected {
+  border-color: rgba(154, 88, 255, 0.6);
+  background: linear-gradient(180deg, rgba(154, 88, 255, 0.12), rgba(76, 22, 132, 0.04));
+  box-shadow: inset 0 0 0 1px rgba(220, 198, 255, 0.14), 0 0 14px rgba(96, 40, 164, 0.2);
+}
+
 .role-reveal-item.role-theme-hypnotic.is-selected {
   border-color: rgba(196, 65, 148, 0.55);
   background: linear-gradient(180deg, rgba(196, 65, 148, 0.08), rgba(196, 65, 148, 0.02));
@@ -4097,6 +4151,16 @@ body {
   color: var(--arsonist);
 }
 
+.role-reveal-item.role-theme-wither .role-reveal-name,
+.role-reveal-item.role-theme-wither .role-reveal-faction {
+  color: var(--wither);
+}
+
+.role-reveal-item.role-theme-pestilence .role-reveal-name,
+.role-reveal-item.role-theme-pestilence .role-reveal-faction {
+  color: var(--pestilence);
+}
+
 .role-reveal-item.role-theme-hypnotic .role-reveal-name,
 .role-reveal-item.role-theme-hypnotic .role-reveal-faction {
   color: var(--hypnotic);
@@ -4303,6 +4367,16 @@ body {
 .role-reveal-result.role-theme-arsonist strong {
   color: var(--arsonist);
   text-shadow: 0 0 18px rgba(255, 114, 52, 0.28);
+}
+
+.role-reveal-result.role-theme-wither strong {
+  color: var(--wither);
+  text-shadow: 0 0 18px rgba(168, 22, 38, 0.28);
+}
+
+.role-reveal-result.role-theme-pestilence strong {
+  color: var(--pestilence);
+  text-shadow: 0 0 18px rgba(122, 62, 214, 0.3);
 }
 
 .role-reveal-result.role-theme-hypnotic strong {
@@ -4588,6 +4662,11 @@ body {
   box-shadow: inset 0 0 0 1px rgba(255, 140, 76, 0.06);
 }
 
+.target-item.target-infected {
+  border-color: rgba(168, 22, 38, 0.4);
+  box-shadow: inset 0 0 0 1px rgba(214, 88, 98, 0.08), 0 0 18px rgba(122, 10, 20, 0.12);
+}
+
 .target-dot {
   width: 8px; height: 8px;
   border-radius: 50%;
@@ -4621,6 +4700,12 @@ body {
   color: hsl(24, 100%, 74%);
   background: linear-gradient(135deg, rgba(116, 30, 10, 0.82), rgba(146, 34, 16, 0.72));
   border-color: rgba(255, 114, 52, 0.34);
+}
+
+.target-status-infected {
+  color: hsl(352, 100%, 84%);
+  background: linear-gradient(135deg, rgba(72, 10, 18, 0.84), rgba(108, 16, 28, 0.74));
+  border-color: rgba(168, 22, 38, 0.34);
 }
 
 .target-item.target-static {
@@ -6374,6 +6459,29 @@ body {
   text-shadow: 0 1px 8px rgba(220, 170, 255, 0.1);
 }
 
+.chat-message.system.system-result-pestilence {
+  border-color: rgba(162, 92, 255, 0.48);
+  background:
+    radial-gradient(circle at 84% 18%, rgba(236, 214, 255, 0.16), transparent 16%),
+    radial-gradient(circle at 18% 110%, rgba(98, 34, 168, 0.24), transparent 42%),
+    linear-gradient(135deg, rgba(28, 8, 36, 0.98), rgba(54, 12, 76, 0.95) 42%, rgba(82, 18, 112, 0.94) 100%);
+  box-shadow: 0 0 18px rgba(112, 48, 180, 0.2);
+}
+
+.chat-message.system.system-result-pestilence::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(206, 160, 255, 0.08), rgba(118, 54, 196, 0.1) 46%, transparent 82%);
+  pointer-events: none;
+}
+
+.chat-message.system.system-result-pestilence .chat-message-meta,
+.chat-message.system.system-result-pestilence .chat-message-text {
+  color: hsl(282, 100%, 96%);
+  text-shadow: 0 1px 8px rgba(226, 196, 255, 0.12);
+}
+
 .chat-message.system.phase-morning .chat-message-meta,
 .chat-message.system.phase-voting .chat-message-meta {
   color: rgba(21, 29, 44, 0.88);
@@ -6743,6 +6851,15 @@ body {
   box-shadow: inset 0 1px 0 rgba(255, 196, 204, 0.08), 0 0 0 1px rgba(188, 78, 255, 0.08);
 }
 
+.chat-summary-line.summary-pestilence {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(236, 214, 255, 0.16), transparent 18%),
+    linear-gradient(135deg, rgba(28, 8, 36, 0.96), rgba(54, 12, 76, 0.94) 38%, rgba(82, 18, 112, 0.9));
+  border-color: rgba(162, 92, 255, 0.44);
+  color: hsl(282, 100%, 96%);
+  box-shadow: inset 0 1px 0 rgba(230, 206, 255, 0.08), 0 0 0 1px rgba(162, 92, 255, 0.08);
+}
+
 .chat-summary-line.summary-swapper {
   background:
     radial-gradient(circle at 88% 18%, rgba(255, 225, 128, 0.14), transparent 18%),
@@ -6898,6 +7015,8 @@ body {
 .search-target-role.role-theme-tetherhex { color: var(--tetherhex); text-shadow: 0 0 12px rgba(74, 255, 119, 0.18); }
 .search-target-role.role-theme-overload { color: var(--overload); text-shadow: 0 0 12px rgba(99, 255, 76, 0.2); }
 .search-target-role.role-theme-arsonist { color: var(--arsonist); text-shadow: 0 0 12px rgba(255, 114, 52, 0.22); }
+.search-target-role.role-theme-wither { color: var(--wither); text-shadow: 0 0 12px rgba(168, 22, 38, 0.22); }
+.search-target-role.role-theme-pestilence { color: var(--pestilence); text-shadow: 0 0 12px rgba(122, 62, 214, 0.24); }
 .search-target-role.role-theme-prophet { color: var(--prophet); text-shadow: 0 0 12px rgba(168, 42, 48, 0.2); }
 .search-target-role.role-theme-hypnotic { color: var(--hypnotic); text-shadow: 0 0 12px rgba(196, 65, 148, 0.18); }
 .search-target-role.role-theme-blackmailer { color: var(--blackmailer); text-shadow: 0 0 12px rgba(226, 180, 76, 0.18); }
@@ -7043,6 +7162,7 @@ body {
 .gameover-glow.crew-win { background: var(--crew); }
 .gameover-glow.assassin-win { background: var(--assassin); }
 .gameover-glow.jester-win { background: var(--jester); }
+.gameover-glow.pestilence-win { background: var(--pestilence); }
 .gameover-glow.nobody-win { background: rgba(190, 202, 220, 0.46); }
 
 .gameover-title {
@@ -7065,6 +7185,7 @@ body {
 .gameover-faction.crew-text { color: var(--crew); text-shadow: 0 0 30px var(--crew-glow); }
 .gameover-faction.assassin-text { color: var(--assassin); text-shadow: 0 0 30px var(--assassin-glow); }
 .gameover-faction.jester-text { color: var(--jester); text-shadow: 0 0 30px var(--jester-glow); }
+.gameover-faction.pestilence-text { color: var(--pestilence); text-shadow: 0 0 30px var(--pestilence-glow); }
 .gameover-faction.nobody-text { color: hsl(214, 24%, 84%); text-shadow: 0 0 28px rgba(190, 202, 220, 0.22); }
 
 .gameover-reason {
@@ -7176,6 +7297,8 @@ body {
 .gameover-player-role.role-theme-tetherhex { color: var(--tetherhex); }
 .gameover-player-role.role-theme-overload { color: var(--overload); }
 .gameover-player-role.role-theme-arsonist { color: var(--arsonist); }
+.gameover-player-role.role-theme-wither { color: var(--wither); }
+.gameover-player-role.role-theme-pestilence { color: var(--pestilence); }
 .gameover-player-role.role-theme-hypnotic { color: var(--hypnotic); }
 .gameover-player-role.role-theme-blackmailer { color: var(--blackmailer); }
 .gameover-player-role.role-theme-thepurge { color: var(--thepurge); }
@@ -7763,6 +7886,8 @@ body {
 .gpl-role.role-theme-tetherhex { background: rgba(14, 56, 24, 0.92); color: var(--tetherhex); box-shadow: 0 0 16px rgba(74, 255, 119, 0.16); }
 .gpl-role.role-theme-overload { background: rgba(18, 62, 12, 0.92); color: var(--overload); box-shadow: 0 0 16px rgba(99, 255, 76, 0.18); }
 .gpl-role.role-theme-arsonist { background: linear-gradient(135deg, rgba(62, 24, 10, 0.94), rgba(122, 34, 12, 0.92)); color: var(--arsonist); box-shadow: 0 0 16px rgba(255, 114, 52, 0.18); }
+.gpl-role.role-theme-wither { background: linear-gradient(135deg, rgba(58, 12, 20, 0.94), rgba(112, 18, 30, 0.92)); color: var(--wither); box-shadow: 0 0 16px rgba(168, 22, 38, 0.2); }
+.gpl-role.role-theme-pestilence { background: linear-gradient(135deg, rgba(26, 8, 42, 0.96), rgba(70, 18, 112, 0.94)); color: var(--pestilence); box-shadow: 0 0 16px rgba(122, 62, 214, 0.22); }
 .gpl-role.role-theme-hypnotic { background: rgba(74, 22, 56, 0.92); color: var(--hypnotic); box-shadow: 0 0 16px rgba(196, 65, 148, 0.14); }
 .gpl-role.role-theme-blackmailer { background: rgba(83, 60, 18, 0.92); color: var(--blackmailer); box-shadow: 0 0 16px rgba(226, 180, 76, 0.14); }
 .gpl-role.role-theme-thepurge { background: linear-gradient(135deg, rgba(18, 18, 18, 0.94), rgba(88, 14, 14, 0.92)); color: var(--thepurge); box-shadow: 0 0 16px rgba(148, 24, 24, 0.16); }
@@ -8564,6 +8689,12 @@ body {
   color: var(--arsonist);
 }
 
+#screen-roles .roles-guide-card.role-theme-wither,
+#screen-roles .roles-guide-card.role-theme-wither .roles-guide-card-icon {
+  border-color: rgba(168, 22, 38, 0.74);
+  color: var(--wither);
+}
+
 #screen-roles .roles-guide-card.role-theme-hypnotic,
 #screen-roles .roles-guide-card.role-theme-hypnotic .roles-guide-card-icon {
   border-color: rgba(157, 23, 77, 0.72);
@@ -8737,6 +8868,10 @@ body {
   box-shadow: 0 0 20px -10px rgba(255, 114, 52, 0.5);
 }
 
+#screen-roles .roles-guide-card.role-theme-wither:hover {
+  box-shadow: 0 0 20px -10px rgba(168, 22, 38, 0.46);
+}
+
 #screen-roles .roles-guide-card.role-theme-hypnotic:hover {
   box-shadow: 0 0 20px -10px rgba(196, 65, 148, 0.42);
 }
@@ -8891,6 +9026,10 @@ body {
 
 #screen-roles .roles-guide-card.role-theme-arsonist .roles-guide-ability-highlight {
   color: var(--arsonist);
+}
+
+#screen-roles .roles-guide-card.role-theme-wither .roles-guide-ability-highlight {
+  color: var(--wither);
 }
 
 #screen-roles .roles-guide-card.role-theme-hypnotic .roles-guide-ability-highlight {
