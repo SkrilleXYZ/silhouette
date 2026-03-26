@@ -4243,6 +4243,12 @@
       }
       if (!Array.isArray(state.selectedTargets)) {
         state.selectedTargets = [];
+      } else if (activeRole === 'Teleporter') {
+        state.selectedTargets = [...new Set(state.selectedTargets)].slice(-2);
+      } else if (activeRole === 'Arsonist') {
+        state.selectedTargets = [...new Set(state.selectedTargets)]
+          .filter((targetId) => !arsonistDousedTargetIds.includes(targetId))
+          .slice(-arsonistDouseTargetCount);
       }
     } else if (Array.isArray(state.selectedTargets) && state.selectedTargets.length) {
       state.selectedTargets = [];
