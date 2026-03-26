@@ -97,6 +97,9 @@
   --mirrorcaster: hsl(206, 54%, 84%);
   --mirrorcaster-dim: hsl(205, 32%, 22%);
   --mirrorcaster-glow: hsla(206, 74%, 82%, 0.34);
+  --mayor: hsl(278, 86%, 72%);
+  --mayor-dim: hsl(266, 42%, 18%);
+  --mayor-glow: hsla(278, 86%, 72%, 0.34);
   --assassin: hsl(0, 86%, 58%);
   --assassin-dim: hsl(0, 62%, 18%);
   --assassin-glow: hsla(0, 86%, 58%, 0.34);
@@ -2892,6 +2895,18 @@ body {
   text-shadow: 0 0 18px rgba(188, 78, 255, 0.22);
 }
 
+.role-card.role-theme-mayor .role-card-glow { background: radial-gradient(circle, rgba(98, 42, 174, 0.86) 0%, rgba(164, 94, 255, 0.42) 40%, transparent 76%); }
+.role-card.role-theme-mayor .role-card-inner { border-color: rgba(146, 92, 255, 0.42); box-shadow: inset 0 0 0 1px rgba(214, 188, 255, 0.08), 0 0 24px rgba(92, 30, 146, 0.2); }
+.role-card.role-theme-mayor .role-faction { color: var(--mayor); }
+.role-card.role-theme-mayor .role-divider { background: linear-gradient(90deg, rgba(234, 214, 255, 0.94), rgba(126, 74, 214, 0.92) 42%, rgba(188, 118, 255, 0.94) 100%); }
+.role-card.role-theme-mayor .role-name {
+  background: linear-gradient(90deg, #f0e2ff 0%, #ca9eff 48%, #905cf2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 18px rgba(126, 74, 214, 0.24);
+}
+
 .role-card.role-theme-prophet .role-card-glow { background: radial-gradient(circle, rgba(168, 42, 48, 0.84) 0%, transparent 70%); }
 .role-card.role-theme-prophet .role-card-inner { border-color: rgba(132, 28, 34, 0.42); box-shadow: inset 0 0 0 1px rgba(168, 42, 48, 0.08), 0 0 24px rgba(94, 12, 18, 0.18); }
 .role-card.role-theme-prophet .role-faction { color: var(--prophet); }
@@ -2965,16 +2980,16 @@ body {
   text-shadow: 0 0 18px rgba(124, 112, 255, 0.24);
 }
 
-.role-card.role-theme-scientist .role-card-glow { background: radial-gradient(circle, rgba(84, 232, 214, 0.84) 0%, rgba(154, 116, 255, 0.18) 48%, transparent 74%); }
-.role-card.role-theme-scientist .role-card-inner { border-color: rgba(84, 232, 214, 0.38); box-shadow: inset 0 0 0 1px rgba(84, 232, 214, 0.08), 0 0 24px rgba(132, 102, 255, 0.16); }
-.role-card.role-theme-scientist .role-faction { color: var(--scientist); }
-.role-card.role-theme-scientist .role-divider { background: linear-gradient(90deg, rgba(78, 228, 204, 0.96), rgba(168, 116, 255, 0.92)); }
+.role-card.role-theme-scientist .role-card-glow { background: radial-gradient(circle, rgba(48, 86, 188, 0.84) 0%, rgba(84, 232, 214, 0.22) 34%, rgba(154, 116, 255, 0.24) 56%, transparent 76%); }
+.role-card.role-theme-scientist .role-card-inner { border-color: rgba(58, 102, 214, 0.42); box-shadow: inset 0 0 0 1px rgba(82, 138, 255, 0.08), 0 0 24px rgba(82, 30, 124, 0.18); }
+.role-card.role-theme-scientist .role-faction { color: hsl(220, 84%, 66%); }
+.role-card.role-theme-scientist .role-divider { background: linear-gradient(90deg, rgba(120, 168, 255, 0.96), rgba(84, 232, 214, 0.92) 46%, rgba(168, 116, 255, 0.92) 100%); }
 .role-card.role-theme-scientist .role-name {
-  background: linear-gradient(90deg, #dcfff8 0%, #69eecf 46%, #b684ff 100%);
+  background: linear-gradient(90deg, #dbe8ff 0%, #78a1ff 26%, #74ead8 58%, #ba8cff 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: 0 0 18px rgba(132, 102, 255, 0.22);
+  text-shadow: 0 0 18px rgba(82, 102, 214, 0.24);
 }
 
 .role-card.role-theme-tracker .role-name {
@@ -3287,6 +3302,12 @@ body {
     radial-gradient(circle at top, rgba(214, 56, 64, 0.18), transparent 34%),
     radial-gradient(circle at 72% 16%, rgba(188, 78, 255, 0.24), transparent 32%),
     linear-gradient(135deg, rgba(30, 8, 18, 0.98), rgba(74, 16, 42, 0.96) 42%, rgba(58, 14, 92, 0.94) 100%);
+}
+
+.role-reveal-panel.role-theme-mayor {
+  background:
+    radial-gradient(circle at top, rgba(126, 74, 214, 0.24), transparent 44%),
+    linear-gradient(180deg, rgba(22, 8, 36, 0.98), rgba(10, 4, 20, 0.98));
 }
 
 .role-reveal-panel.role-theme-prophet {
@@ -3765,6 +3786,12 @@ body {
   box-shadow: inset 0 0 0 1px rgba(188, 78, 255, 0.12), 0 0 14px rgba(188, 78, 255, 0.18);
 }
 
+.role-reveal-item.role-theme-mayor.is-selected {
+  border-color: rgba(146, 92, 255, 0.55);
+  background: linear-gradient(180deg, rgba(146, 92, 255, 0.1), rgba(146, 92, 255, 0.03));
+  box-shadow: inset 0 0 0 1px rgba(214, 188, 255, 0.12), 0 0 14px rgba(126, 74, 214, 0.18);
+}
+
 .role-reveal-item.role-theme-prophet.is-selected {
   border-color: rgba(168, 42, 48, 0.58);
   background: linear-gradient(180deg, rgba(168, 42, 48, 0.1), rgba(168, 42, 48, 0.03));
@@ -4026,6 +4053,11 @@ body {
   color: var(--scientist);
 }
 
+.role-reveal-item.role-theme-mayor .role-reveal-name,
+.role-reveal-item.role-theme-mayor .role-reveal-faction {
+  color: var(--mayor);
+}
+
 .role-reveal-item.role-theme-narcissist .role-reveal-name,
 .role-reveal-item.role-theme-narcissist .role-reveal-faction {
   color: hsl(270, 90%, 78%);
@@ -4227,6 +4259,11 @@ body {
 .role-reveal-result.role-theme-scientist strong {
   color: var(--scientist);
   text-shadow: 0 0 18px rgba(84, 232, 214, 0.28);
+}
+
+.role-reveal-result.role-theme-mayor strong {
+  color: var(--mayor);
+  text-shadow: 0 0 18px rgba(126, 74, 214, 0.28);
 }
 
 .role-reveal-result.role-theme-swapper strong {
@@ -5802,15 +5839,15 @@ body {
 }
 
 .chat-message.system.system-result-guardian-angel {
-  border-color: rgba(255, 228, 176, 0.4);
+  border-color: rgba(246, 226, 177, 0.46);
   background:
-    radial-gradient(circle at 82% 18%, rgba(255, 246, 214, 0.2), transparent 16%),
-    radial-gradient(circle at 18% 112%, rgba(126, 94, 34, 0.28), transparent 42%),
-    linear-gradient(135deg, rgba(54, 44, 18, 0.98), rgba(20, 14, 6, 0.98));
+    radial-gradient(circle at 82% 18%, rgba(255, 246, 214, 0.26), transparent 16%),
+    radial-gradient(circle at 18% 112%, rgba(214, 178, 88, 0.18), transparent 42%),
+    linear-gradient(135deg, rgba(72, 58, 20, 0.98), rgba(34, 24, 10, 0.98));
   box-shadow:
-    inset 0 1px 0 rgba(255, 248, 228, 0.07),
-    0 0 0 1px rgba(255, 228, 176, 0.05),
-    0 16px 28px -24px rgba(255, 228, 176, 0.24);
+    inset 0 1px 0 rgba(255, 248, 228, 0.09),
+    0 0 0 1px rgba(246, 226, 177, 0.07),
+    0 16px 28px -24px rgba(246, 226, 177, 0.28);
   overflow: hidden;
 }
 
@@ -6290,8 +6327,8 @@ body {
 
 .chat-message.system.system-result-guardian-angel .chat-message-meta,
 .chat-message.system.system-result-guardian-angel .chat-message-text {
-  color: hsl(46, 100%, 95%);
-  text-shadow: 0 1px 8px rgba(255, 246, 214, 0.08);
+  color: var(--guardianangel);
+  text-shadow: 0 1px 8px rgba(255, 246, 214, 0.12);
 }
 
 .chat-message.system.system-result-executioner-shift .chat-message-meta,
@@ -7024,6 +7061,7 @@ body {
 .search-target-role.role-theme-blackout { color: var(--blackout); text-shadow: 0 0 12px rgba(112, 120, 136, 0.14); }
 .search-target-role.role-theme-sheriff { color: var(--sheriff); text-shadow: 0 0 12px rgba(255, 208, 80, 0.16); }
 .search-target-role.role-theme-veteran { color: var(--veteran); text-shadow: 0 0 12px rgba(188, 192, 139, 0.18); }
+.search-target-role.role-theme-mayor { color: var(--mayor); text-shadow: 0 0 12px rgba(126, 74, 214, 0.2); }
 .search-target-role.role-theme-karma { color: hsl(338, 62%, 72%); text-shadow: 0 0 12px rgba(132, 56, 128, 0.2); }
 .search-target-role.role-theme-mirrorcaster { color: var(--mirrorcaster); text-shadow: 0 0 12px rgba(162, 202, 232, 0.18); }
 .search-target-role.role-theme-assassin { color: var(--assassin); text-shadow: 0 0 12px rgba(255, 72, 84, 0.18); }
@@ -7303,6 +7341,7 @@ body {
 .gameover-player-role.role-theme-blackmailer { color: var(--blackmailer); }
 .gameover-player-role.role-theme-thepurge { color: var(--thepurge); }
 .gameover-player-role.role-theme-blackout { color: var(--blackout); }
+.gameover-player-role.role-theme-mayor { color: var(--mayor); }
 .gameover-player-role.role-theme-assassin { color: var(--assassin); }
 
 .gameover-player-status {
@@ -7860,6 +7899,7 @@ body {
 .gpl-role.role-theme-inquisitor { background: linear-gradient(135deg, rgba(10, 52, 48, 0.94), rgba(12, 86, 74, 0.92)); color: hsl(176, 94%, 74%); box-shadow: 0 0 16px rgba(84, 255, 236, 0.16); }
 .gpl-role.role-theme-disruptor { background: linear-gradient(135deg, rgba(30, 10, 14, 0.96), rgba(88, 18, 24, 0.92)); color: var(--disruptor); box-shadow: 0 0 16px rgba(214, 56, 64, 0.16); }
 .gpl-role.role-theme-manipulator { background: linear-gradient(135deg, rgba(34, 10, 18, 0.96), rgba(92, 20, 46, 0.92) 44%, rgba(70, 16, 104, 0.9)); color: var(--manipulator); box-shadow: 0 0 16px rgba(188, 78, 255, 0.18); }
+.gpl-role.role-theme-mayor { background: linear-gradient(135deg, rgba(24, 8, 40, 0.96), rgba(62, 18, 98, 0.92)); color: var(--mayor); box-shadow: 0 0 16px rgba(146, 92, 255, 0.18); }
 .gpl-role.role-theme-prophet { background: linear-gradient(135deg, rgba(26, 8, 10, 0.96), rgba(76, 14, 22, 0.92)); color: var(--prophet); box-shadow: 0 0 16px rgba(168, 42, 48, 0.16); }
 .gpl-role.role-theme-alturist { background: linear-gradient(135deg, rgba(62, 18, 18, 0.96), rgba(108, 54, 20, 0.92)); color: var(--alturist); box-shadow: 0 0 16px rgba(255, 196, 92, 0.14); }
 .gpl-role.role-theme-vessel { background: linear-gradient(135deg, rgba(30, 16, 62, 0.96), rgba(94, 40, 122, 0.92)); color: var(--vessel); box-shadow: 0 0 16px rgba(185, 137, 255, 0.14); }
@@ -8527,6 +8567,12 @@ body {
   color: var(--manipulator);
 }
 
+#screen-roles .roles-guide-card.role-theme-mayor,
+#screen-roles .roles-guide-card.role-theme-mayor .roles-guide-card-icon {
+  border-color: rgba(98, 132, 212, 0.74);
+  color: hsl(220, 84%, 66%);
+}
+
 #screen-roles .roles-guide-card.role-theme-prophet,
 #screen-roles .roles-guide-card.role-theme-prophet .roles-guide-card-icon {
   border-color: rgba(168, 42, 48, 0.72);
@@ -8765,6 +8811,10 @@ body {
   box-shadow: 0 0 20px -10px rgba(188, 78, 255, 0.44);
 }
 
+#screen-roles .roles-guide-card.role-theme-mayor:hover {
+  box-shadow: 0 0 20px -10px rgba(52, 96, 196, 0.48);
+}
+
 #screen-roles .roles-guide-card.role-theme-prophet:hover {
   box-shadow: 0 0 20px -10px rgba(168, 42, 48, 0.44);
 }
@@ -8928,6 +8978,10 @@ body {
 
 #screen-roles .roles-guide-card.role-theme-manipulator .roles-guide-ability-highlight {
   color: var(--manipulator);
+}
+
+#screen-roles .roles-guide-card.role-theme-mayor .roles-guide-ability-highlight {
+  color: hsl(220, 84%, 66%);
 }
 
 #screen-roles .roles-guide-card.role-theme-prophet .roles-guide-ability-highlight {

@@ -8,7 +8,7 @@ class GameLogic {
         Protection: ['Vitalist', 'Mirror Caster', 'Warden', 'Oracle'],
         Killing: ['Sheriff', 'Veteran'],
         Chaos: ['Teleporter', 'Swapper', 'Magician', 'Scientist', 'Silencer'],
-        Unbound: ['Narcissist', 'Inquisitor', 'Alturist', 'The Vessel', 'Karma'],
+        Unbound: ['Narcissist', 'Inquisitor', 'Alturist', 'The Vessel', 'Karma', 'Mayor'],
       },
       Assassin: {
         Power: ['Assassin', 'Sniper', 'Tetherhex'],
@@ -170,6 +170,7 @@ class GameLogic {
       disruptorVetoUsed: false,
       manipulatorSurpriseUsesRemaining: 2,
       manipulatorSurpriseUsed: false,
+      mayorStoredVotes: 0,
       alturistReviveTargetId: null,
       scientistExperimentUsesRemaining: 1,
       scientistSwapTargetIds: [],
@@ -222,6 +223,7 @@ class GameLogic {
       disruptorVetoUsed: false,
       manipulatorSurpriseUsesRemaining: 2,
       manipulatorSurpriseUsed: false,
+      mayorStoredVotes: 0,
       alturistReviveTargetId: null,
       scientistExperimentUsesRemaining: 1,
       scientistSwapTargetIds: [],
@@ -955,6 +957,7 @@ class GameLogic {
       player.disruptorVetoUsed = false;
       player.manipulatorSurpriseUsesRemaining = 2;
       player.manipulatorSurpriseUsed = false;
+      player.mayorStoredVotes = 0;
       player.alturistReviveTargetId = null;
       player.scientistExperimentUsesRemaining = 1;
       player.scientistSwapTargetIds = [];
@@ -3445,13 +3448,46 @@ class GameLogic {
     if (!voter || !voter.alive) return { error: 'Invalid voter' };
     if (room.blackmailedPlayers?.[voterId]) return { error: 'You have been blackmailed and cannot vote today' };
 
+    const getVoteState = (value) => {
+      if (value && typeof value === 'object') {
+        return {
+          targets: Array.isArray(value.targets) ? [...value.targets] : [],
+          finalized: !!value.finalized,
+        };
+      }
+      if (typeof value === 'string' && value) {
+        return {
+          targets: value === 'skip' ? [] : [value],
+          finalized: true,
+        };
+      }
+      return { targets: [], finalized: false };
+    };
+    const availableVoteCount = voter.role === 'Mayor'
+      ? 1 + Math.max(0, voter.mayorStoredVotes ?? 0)
+      : 1;
+    const existingVoteState = getVoteState(room.votes[voterId]);
+
+    if (existingVoteState.finalized) {
+      return { error: 'You already finished voting' };
+    }
+
     if (targetId !== 'skip') {
       const target = room.players.get(targetId);
       if (!target || !target.alive) return { error: 'Invalid target' };
       if (targetId === voterId) return { error: 'Cannot vote for yourself' };
+      if (existingVoteState.targets.length >= availableVoteCount) return { error: 'You have no votes remaining' };
+      const nextTargets = [...existingVoteState.targets, targetId];
+      room.votes[voterId] = {
+        targets: nextTargets,
+        finalized: nextTargets.length >= availableVoteCount,
+      };
+    } else {
+      room.votes[voterId] = {
+        targets: [...existingVoteState.targets],
+        finalized: true,
+      };
     }
-
-    room.votes[voterId] = targetId;
 
     return { success: true, room };
   }
@@ -3577,9 +3613,17 @@ class GameLogic {
     for (const [id, player] of room.players) {
       if (!player.alive) continue;
       if (room.blackmailedPlayers?.[id]) continue;
-      if (!room.votes[id]) return false;
+      const voteState = room.votes[id];
+      const finalized = voteState && typeof voteState === 'object' ? !!voteState.finalized : !!voteState;
+      if (!finalized) return false;
     }
     return true;
+  }
+
+  getSubmittedVoteCount(code) {
+    const room = this.rooms.get(code);
+    if (!room) return 0;
+    return Object.values(room.votes).filter((voteState) => voteState && typeof voteState === 'object' ? voteState.finalized : !!voteState).length;
   }
 
   resolveVotes(code) {
@@ -3829,13 +3873,28 @@ class GameLogic {
       )
       : null;
 
-    for (const [voterId, targetId] of Object.entries(room.votes)) {
+    for (const [voterId, rawVoteState] of Object.entries(room.votes)) {
+      const voter = room.players.get(voterId);
       const voteWeight = boostedAssassinVoterIds?.has(voterId) ? 2 : 1;
-      if (targetId === 'skip') {
-        skipVotes += voteWeight;
-      } else {
+      const castTargets = rawVoteState && typeof rawVoteState === 'object'
+        ? (Array.isArray(rawVoteState.targets) ? rawVoteState.targets.filter(Boolean) : [])
+        : (typeof rawVoteState === 'string' && rawVoteState !== 'skip' ? [rawVoteState] : []);
+      const availableVoteCount = voter?.role === 'Mayor'
+        ? 1 + Math.max(0, voter.mayorStoredVotes ?? 0)
+        : 1;
+
+      for (const targetId of castTargets) {
         const remappedTargetId = remapVoteTargetId(targetId);
         voteCounts[remappedTargetId] = (voteCounts[remappedTargetId] || 0) + voteWeight;
+      }
+
+      const skippedVoteCount = Math.max(0, availableVoteCount - castTargets.length);
+      if (skippedVoteCount > 0) {
+        skipVotes += skippedVoteCount * voteWeight;
+      }
+
+      if (voter?.role === 'Mayor') {
+        voter.mayorStoredVotes = skippedVoteCount;
       }
     }
 
@@ -4231,8 +4290,8 @@ class GameLogic {
     if (action === 'trap') return 'Traplord is setting traps.';
     if (action === 'teleport') return 'Teleporter is bending the room.';
     if (action === 'abracadabra') return 'Magician has made a player disappear.';
-    if (action === 'guard') return 'Warden has locked down a player.';
-    if (action === 'sacrifice') return 'Alturist is preparing a sacrifice.';
+    if (action === 'guard') return 'Warden has guarded someone.';
+    if (action === 'sacrifice') return 'The Alturist has sacrificed themselves.';
     if (action === 'mimic') return 'Imitator has shifted abilities.';
     if (action === 'inherit') return 'Amnesiac has claimed a forgotten role.';
     if (action === 'evil-eye') return 'Oracle has marked someone with the Evil Eye.';
@@ -4478,7 +4537,12 @@ class GameLogic {
         : activeRole === 'Blackout'
           ? !!(room.nightActions[playerId] && (room.nightActions[playerId].action === 'kill' || room.nightActions[playerId].action === 'skip' || room.nightActions[playerId].skippedAfterFlash === true))
           : !!room.nightActions[playerId],
-      hasVoted: !!room.votes[playerId],
+      hasVoted: !!(room.votes[playerId] && typeof room.votes[playerId] === 'object' ? room.votes[playerId].finalized : room.votes[playerId]),
+      mayorStoredVotes: player.role === 'Mayor' ? Math.max(0, player.mayorStoredVotes ?? 0) : 0,
+      mayorVotesAvailable: player.role === 'Mayor' ? 1 + Math.max(0, player.mayorStoredVotes ?? 0) : 1,
+      mayorVotesCastThisPhase: player.role === 'Mayor' && room.votes[playerId] && typeof room.votes[playerId] === 'object'
+        ? ((Array.isArray(room.votes[playerId].targets) ? room.votes[playerId].targets.length : 0))
+        : (player.role === 'Mayor' && typeof room.votes[playerId] === 'string' && room.votes[playerId] !== 'skip' ? 1 : 0),
       isBlackmailed: !!room.blackmailedPlayers?.[playerId],
       isSilenced: !!room.silencedPlayers?.[playerId],
       executionerTargetId: player.role === 'Executioner' ? (player.executionerTargetId || null) : null,

@@ -169,6 +169,19 @@
         },
       ],
     },
+    Mayor: {
+      faction: 'Crew',
+      subfaction: 'Unbound',
+      description: 'Skipped votes during voting are stored to be used later.',
+      revealText: 'Deep purple influence settles over the chamber. Pass on a vote now and return later with more weight in your hand.',
+      abilities: [
+        {
+          name: 'Corruption',
+          type: 'Voting',
+          description: 'Skipped votes during voting are stored to be used later.',
+        },
+      ],
+    },
     'The Vessel': {
       faction: 'Crew',
       subfaction: 'Unbound',
@@ -1430,6 +1443,7 @@
     if (normalizedRole === 'inquisitor') return 'inquisitor';
     if (normalizedRole === 'disruptor') return 'disruptor';
     if (normalizedRole === 'manipulator') return 'manipulator';
+    if (normalizedRole === 'mayor') return 'mayor';
     if (normalizedRole === 'prophet') return 'prophet';
     if (normalizedRole === 'wither') return 'wither';
     if (normalizedRole === 'pestilence' || normalizedRole === 'the pestilence') return 'pestilence';
@@ -1544,6 +1558,7 @@
       inquisitor: { glowBackground: 'hsl(176, 94%, 58%)', titleColor: 'hsl(176, 94%, 74%)', titleShadow: '0 0 30px rgba(84, 255, 236, 0.24)' },
       disruptor: { glowBackground: 'hsl(357, 86%, 58%)', titleColor: 'hsl(357, 92%, 70%)', titleShadow: '0 0 30px rgba(222, 58, 66, 0.24)' },
       manipulator: { glowBackground: 'var(--manipulator)', titleColor: 'hsl(286, 100%, 84%)', titleShadow: '0 0 30px rgba(180, 74, 255, 0.26)' },
+      mayor: { glowBackground: 'var(--mayor)', titleColor: 'hsl(278, 100%, 86%)', titleShadow: '0 0 30px rgba(126, 74, 214, 0.26)' },
       prophet: { glowBackground: 'var(--prophet)', titleColor: 'var(--prophet)', titleShadow: '0 0 30px rgba(168, 42, 48, 0.28)' },
       narcissist: { glowBackground: 'hsl(270, 82%, 58%)', titleColor: 'hsl(270, 90%, 78%)', titleShadow: '0 0 30px rgba(124, 58, 237, 0.24)' },
       teleporter: { glowBackground: 'var(--teleporter)', titleColor: 'var(--teleporter)', titleShadow: '0 0 30px rgba(126, 184, 255, 0.24)' },
@@ -1681,8 +1696,8 @@
         '<span class="roles-guide-ability-highlight">Can be used once.</span>'
       )
       .replace(
-        'Cannot be used twice in a row. Can be used 3 times.',
-        '<span class="roles-guide-ability-highlight">Cannot be used twice in a row. Can be used 3 times.</span>'
+        'Cannot be used twice in a row.',
+        '<span class="roles-guide-ability-highlight">Cannot be used twice in a row.</span>'
       )
       .replace(
         'but you die instead.',
@@ -2170,8 +2185,8 @@
     if (/Traplord is setting traps\./i.test(text)) return 'summary-traplord';
     if (/Teleporter is bending the room\./i.test(text)) return 'summary-teleporter';
     if (/Magician has made a player disappear\./i.test(text)) return 'summary-magician';
-    if (/Warden has locked down a player\./i.test(text)) return 'summary-warden';
-    if (/Alturist is preparing a sacrifice\./i.test(text)) return 'summary-alturist';
+    if (/Warden has guarded someone\./i.test(text)) return 'summary-warden';
+    if (/The Alturist has sacrificed themselves\./i.test(text)) return 'summary-alturist';
     if (/Imitator has shifted abilities\./i.test(text)) return 'summary-imitator';
     if (/Amnesiac has claimed a forgotten role\./i.test(text)) return 'summary-amnesiac';
     if (/Oracle has marked someone with the Evil Eye\./i.test(text)) return 'summary-oracle';
@@ -4202,6 +4217,7 @@
       || player.role === 'Inquisitor'
       || player.role === 'Scientist'
       || player.role === 'Swapper'
+      || player.role === 'Mayor'
       || player.role === 'Alturist'
       || (player.role === 'The Vessel' && !player.vesselAwakened)
       || player.role === 'Narcissist'
@@ -4222,8 +4238,10 @@
           ? 'No dead players can be remembered yet. Wait for dawn...'
         : player.role === 'Scientist'
           ? 'Your experiment can only be used during voting. Wait for dawn...'
-          : player.role === 'Swapper'
+        : player.role === 'Swapper'
             ? 'Your swap can only be used during voting. Wait for dawn...'
+          : player.role === 'Mayor'
+            ? 'Your corruption is saved for voting. Wait for dawn...'
           : player.role === 'Alturist'
             ? 'No dead players can be revived yet. Wait for dawn...'
             : player.role === 'The Vessel'
@@ -4810,6 +4828,10 @@
     const canExperiment = player?.role === 'Scientist' && (player.scientistExperimentUsesRemaining ?? 1) > 0;
     const canSwapVote = player?.role === 'Swapper';
     const hasVotingAbility = canPurify || canExile || canVeto || canSurprise || canExperiment || canSwapVote;
+    const mayorVotesAvailable = player?.role === 'Mayor' ? Math.max(1, Number(player.mayorVotesAvailable) || 1) : 1;
+    const mayorVotesCastThisPhase = player?.role === 'Mayor' ? Math.max(0, Number(player.mayorVotesCastThisPhase) || 0) : 0;
+    const mayorVotesRemaining = player?.role === 'Mayor' ? Math.max(0, mayorVotesAvailable - mayorVotesCastThisPhase) : 0;
+    const mayorStoredVotes = player?.role === 'Mayor' ? Math.max(0, Number(player.mayorStoredVotes) || 0) : 0;
     if (hasVotingAbility) {
       if (state.oracleVotingTab !== 'ability' && state.oracleVotingTab !== 'vote') {
         state.oracleVotingTab = 'ability';
@@ -4848,7 +4870,7 @@
       ${votingAbilityPanel}
       <div class="voting-panel${showAbilityTab ? ' hidden' : ''}">
         <div class="action-title">CAST YOUR VOTE</div>
-        <div class="action-subtitle">${state.votesCast} / ${aliveCount} votes cast</div>
+        <div class="action-subtitle">${player?.role === 'Mayor' ? `${state.votesCast} / ${aliveCount} votes cast • ${mayorVotesRemaining} vote${mayorVotesRemaining === 1 ? '' : 's'} left • ${mayorStoredVotes} stored` : `${state.votesCast} / ${aliveCount} votes cast`}</div>
         <div class="target-label">SELECT PLAYER</div>
         <div class="target-list chat-target-list" id="vote-target-list">
           ${targets.map(t => `<div class="target-item ${state.selectedTarget === t.id ? 'selected' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`).join('')}
@@ -4927,15 +4949,15 @@
     if (confirmBtn) {
       confirmBtn.addEventListener('click', () => {
         if (!state.selectedTarget) return;
-        state.votesCast = (state.votesCast || 0) + 1;
-        renderVotingPhase(container);
         state.socket.emit('vote', { targetId: state.selectedTarget }, (response) => {
           if (response.success) {
-            state.hasVoted = true;
+            state.playerData = response.player || state.playerData;
+            state.roomData = response.room || state.roomData;
+            state.hasVoted = !!response.player?.hasVoted;
+            state.selectedTarget = null;
             renderVotingPhase(container);
-            showToast('Vote cast', 'success');
+            showToast(response.player?.hasVoted ? 'Vote submitted' : 'Vote cast', 'success');
           } else {
-            state.votesCast = Math.max(0, (state.votesCast || 1) - 1);
             renderVotingPhase(container);
             showToast(response.error || 'Vote failed', 'error');
           }

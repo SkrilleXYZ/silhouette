@@ -284,10 +284,10 @@ io.on('connection', (socket) => {
     io.to(mapping.code).emit('vote-update', {
       voterId: mapping.playerId,
       voterName: game.getRoom(mapping.code).players.get(mapping.playerId).name,
-      votesCast: Object.keys(game.getRoom(mapping.code).votes).length,
+      votesCast: game.getSubmittedVoteCount(mapping.code),
       totalAlive: game.getEligibleVoterCount(mapping.code)
     });
-    callback({ success: true });
+    callback({ success: true, player: playerData, room: game.getRoomPublicData(mapping.code) });
     if (game.checkAllVotesSubmitted(mapping.code)) {
       resolveVotingPhase(mapping.code);
     }
@@ -458,7 +458,9 @@ function startVotingTimer(code) {
     if (!room || room.state !== 'voting') return;
     for (const [id, player] of room.players) {
       if (!player.alive) continue;
-      if (!room.votes[id]) {
+      const voteState = room.votes[id];
+      const finalized = voteState && typeof voteState === 'object' ? !!voteState.finalized : !!voteState;
+      if (!finalized) {
         game.submitVote(code, id, 'skip');
       }
     }
