@@ -1128,6 +1128,8 @@
       state.selectedAction = null;
       state.selectedTarget = null;
       state.selectedTargets = [];
+      state.selectedVotingAbilityTargets = [];
+      state.oracleVotingTab = phase === 'voting' ? 'ability' : 'vote';
       if (state.playerData?.faction !== 'Assassin' || state.playerData?.alive === false) {
         state.currentChatChannel = 'public';
       }
@@ -2608,6 +2610,7 @@
     const player = state.playerData;
     if (!player) return;
     const activeRole = getActiveNightRole(player);
+    const shouldUseExpandedSelfNightChat = activeRole === 'Veteran' || activeRole === 'Survivalist';
 
     if (
       player.role === 'Villager'
@@ -4040,6 +4043,10 @@
       return;
     }
 
+    if (shouldUseExpandedSelfNightChat) {
+      state.forceExpandedNightChat = true;
+    }
+
     if (state.hasActed) {
       container.innerHTML = '<div class="action-confirmed"><div class="confirmed-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><p class="confirmed-text">ACTION SUBMITTED</p><p class="confirmed-detail">Waiting for others...</p></div><div id="phase-chat-panel"></div>';
       renderChatBox();
@@ -4356,16 +4363,13 @@
     const isMultiTargetRole = activeRole === 'Traplord' || activeRole === 'Teleporter' || (activeRole === 'Arsonist' && state.selectedAction === 'douse');
     const requiredMultiTargetCount = activeRole === 'Teleporter' ? 2 : activeRole === 'Arsonist' && state.selectedAction === 'douse' ? arsonistDouseTargetCount : 3;
     const shouldShowTargetList = !isTargetlessRole || activeRole === 'Arsonist';
-    const actionPanelClass = isTargetlessRole && activeRole !== 'Arsonist'
-      ? 'action-panel action-panel-spacious'
-      : 'action-panel';
     const targetLabel = activeRole === 'Arsonist' && state.selectedAction === 'ignite'
       ? `DOUSED PLAYERS${displayedTargets.length ? ` (${displayedTargets.length})` : ''}`
       : isMultiTargetRole
         ? `${activeRole === 'Teleporter' ? 'SELECT 2 TARGETS' : activeRole === 'Arsonist' ? `SELECT ${arsonistDouseTargetCount} TARGET${arsonistDouseTargetCount === 1 ? '' : 'S'}` : 'SELECT AT LEAST 3 TARGETS'}${multiSelectedTargets.length ? ` (${multiSelectedTargets.length} SELECTED)` : ''}`
         : 'SELECT TARGET';
     container.innerHTML = `
-      <div class="${actionPanelClass}">
+      <div class="action-panel">
         <div class="action-title">YOUR NIGHT ACTION</div>
         <div class="action-subtitle">${actionDesc}</div>
         ${actionsHTML}
@@ -4553,7 +4557,9 @@
   function renderVotingPhase(container) {
     const player = state.playerData;
     const canPurify = player?.role === 'Oracle' && (player.oraclePurifyUsesRemaining ?? 2) > 0 && !player.oraclePurifiedTargetId;
-    const canExile = player?.role === 'Inquisitor' && !player.inquisitorExiledTargetId;
+    const canExile = player?.role === 'Inquisitor'
+      && !player.inquisitorExileUsed
+      && !player.inquisitorExiledTargetId;
     const canVeto = player?.role === 'Disruptor' && (player.disruptorVetoUsesRemaining ?? 1) > 0 && !player.disruptorVetoUsed;
     const canExperiment = player?.role === 'Scientist' && (player.scientistExperimentUsesRemaining ?? 1) > 0;
     const hasVotingAbility = canPurify || canExile || canVeto || canExperiment;
@@ -4576,11 +4582,6 @@
     const selectedVotingAbilityTargets = Array.isArray(state.selectedVotingAbilityTargets) ? state.selectedVotingAbilityTargets : [];
     const isScientistAbility = player?.role === 'Scientist';
     const isTargetlessVotingAbility = player?.role === 'Disruptor';
-    const votingTabs = hasVotingAbility ? `
-      <div class="oracle-voting-tabs">
-        <button class="oracle-voting-tab ${showAbilityTab ? 'active' : ''}" id="btn-oracle-tab-ability" type="button">Ability</button>
-        <button class="oracle-voting-tab ${showAbilityTab ? '' : 'active'}" id="btn-oracle-tab-vote" type="button">Vote</button>
-      </div>` : '';
     const votingAbilityPanel = hasVotingAbility ? `
       <div class="action-panel oracle-vote-panel${showAbilityTab ? '' : ' hidden'}">
         <div class="action-title">${player.role === 'Inquisitor' ? 'INQUISITOR ABILITY' : player.role === 'Scientist' ? 'SCIENTIST ABILITY' : player.role === 'Disruptor' ? 'VETO' : 'ORACLE ABILITY'}</div>
@@ -4596,7 +4597,6 @@
       </div>` : '';
 
     container.innerHTML = `
-      ${votingTabs}
       ${votingAbilityPanel}
       <div class="voting-panel${showAbilityTab ? ' hidden' : ''}">
         <div class="action-title">CAST YOUR VOTE</div>
@@ -4611,22 +4611,6 @@
         </div>
       </div>
       <div id="phase-chat-panel"></div>`;
-
-    const oracleTabAbilityBtn = document.getElementById('btn-oracle-tab-ability');
-    if (oracleTabAbilityBtn) {
-      oracleTabAbilityBtn.addEventListener('click', () => {
-        state.oracleVotingTab = 'ability';
-        renderVotingPhase(container);
-      });
-    }
-
-    const oracleTabVoteBtn = document.getElementById('btn-oracle-tab-vote');
-    if (oracleTabVoteBtn) {
-      oracleTabVoteBtn.addEventListener('click', () => {
-        state.oracleVotingTab = 'vote';
-        renderVotingPhase(container);
-      });
-    }
 
     container.querySelectorAll('#voting-ability-target-list .target-item').forEach((item) => {
       item.addEventListener('click', () => {

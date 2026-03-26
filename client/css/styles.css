@@ -4243,25 +4243,6 @@ body {
   margin-bottom: 16px;
 }
 
-.action-panel-spacious {
-  padding-top: 24px;
-  padding-bottom: 24px;
-  min-height: 296px;
-}
-
-.action-panel-spacious .action-subtitle {
-  margin-bottom: 24px;
-}
-
-.action-panel-spacious .action-buttons {
-  margin-bottom: 24px;
-}
-
-.action-panel-spacious .chat-local-actions {
-  margin-top: auto;
-  padding-top: 24px;
-}
-
 .action-buttons {
   display: flex;
   gap: 8px;

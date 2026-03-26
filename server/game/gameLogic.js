@@ -164,6 +164,7 @@ class GameLogic {
       oracleMarkedTargetId: null,
       oraclePurifiedTargetId: null,
       inquisitorExiledTargetId: null,
+      inquisitorExileUsed: false,
       disruptorVetoUsesRemaining: 1,
       disruptorVetoUsed: false,
       alturistReviveTargetId: null,
@@ -211,6 +212,7 @@ class GameLogic {
       oracleMarkedTargetId: null,
       oraclePurifiedTargetId: null,
       inquisitorExiledTargetId: null,
+      inquisitorExileUsed: false,
       disruptorVetoUsesRemaining: 1,
       disruptorVetoUsed: false,
       alturistReviveTargetId: null,
@@ -513,6 +515,7 @@ class GameLogic {
     player.survivalistUsesRemaining = target.role === 'Survivalist' ? (target.survivalistUsesRemaining ?? 5) : 5;
     player.blackoutFlashUsesRemaining = target.role === 'Blackout' ? (target.blackoutFlashUsesRemaining ?? 3) : 3;
     player.purgeFascismUsesRemaining = target.role === 'The Purge' ? (target.purgeFascismUsesRemaining ?? 1) : 1;
+    player.inquisitorExileUsed = target.role === 'Inquisitor' ? !!target.inquisitorExileUsed : false;
     player.arsonistDousedTargetIds = target.role === 'Arsonist' ? (Array.isArray(target.arsonistDousedTargetIds) ? [...target.arsonistDousedTargetIds] : []) : [];
 
     return { success: true, player };
@@ -537,6 +540,7 @@ class GameLogic {
       oracleMarkedTargetId: player.oracleMarkedTargetId || null,
       oraclePurifiedTargetId: player.oraclePurifiedTargetId || null,
       inquisitorExiledTargetId: player.inquisitorExiledTargetId || null,
+      inquisitorExileUsed: !!player.inquisitorExileUsed,
       disruptorVetoUsesRemaining: player.disruptorVetoUsesRemaining ?? 1,
       disruptorVetoUsed: !!player.disruptorVetoUsed,
       alturistReviveTargetId: player.alturistReviveTargetId || null,
@@ -569,6 +573,7 @@ class GameLogic {
       oracleMarkedTargetId: roleState.oracleMarkedTargetId,
       oraclePurifiedTargetId: roleState.oraclePurifiedTargetId,
       inquisitorExiledTargetId: roleState.inquisitorExiledTargetId,
+      inquisitorExileUsed: !!roleState.inquisitorExileUsed,
       disruptorVetoUsesRemaining: roleState.disruptorVetoUsesRemaining,
       disruptorVetoUsed: !!roleState.disruptorVetoUsed,
       alturistReviveTargetId: roleState.alturistReviveTargetId,
@@ -660,6 +665,7 @@ class GameLogic {
       player.executionerTargetId = null;
       player.guardianAngelTargetId = null;
       player.wardenGuardedTargetId = null;
+      player.inquisitorExileUsed = false;
       player.alturistReviveTargetId = null;
       player.vesselAwakened = false;
     }
@@ -793,7 +799,16 @@ class GameLogic {
           ]
         );
       } else {
-        this.assignRoleFromSlot(room, shuffled[index], 'Assassin', 'Support');
+        this.assignRoleFromPool(
+          room,
+          shuffled[index],
+          'Assassin',
+          [
+            ...this.getRolePoolForRoom(room, 'Assassin', 'Power'),
+            ...this.getRolePoolForRoom(room, 'Assassin', 'Concealing'),
+            ...this.getRolePoolForRoom(room, 'Assassin', 'Support'),
+          ]
+        );
       }
       index++;
     }
@@ -899,6 +914,7 @@ class GameLogic {
       player.oracleMarkedTargetId = null;
       player.oraclePurifiedTargetId = null;
       player.inquisitorExiledTargetId = null;
+      player.inquisitorExileUsed = false;
       player.disruptorVetoUsesRemaining = 1;
       player.disruptorVetoUsed = false;
       player.alturistReviveTargetId = null;
@@ -3186,7 +3202,9 @@ class GameLogic {
       if (!target || !target.alive) return { error: 'Invalid target' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
       if (action !== 'exile') return { error: 'Invalid action for Inquisitor' };
+      if (player.inquisitorExileUsed) return { error: 'You have already used Exile' };
       player.inquisitorExiledTargetId = targetId;
+      player.inquisitorExileUsed = true;
       return { success: true, room, resolveNow: true };
     }
 
@@ -3375,6 +3393,11 @@ class GameLogic {
         room.winner = winCheck;
       } else {
         room.state = 'night';
+        room.nightCount++;
+        room.nightActions = {};
+        room.blackmailedPlayers = {};
+        room.silencedPlayers = {};
+        this.beginPhaseSummary(code, `Night ${room.nightCount} begins. Chat is locked until morning.`);
       }
 
       return {
@@ -4055,6 +4078,7 @@ class GameLogic {
         ? (room.players.get(player.oraclePurifiedTargetId)?.name || null)
         : null,
       inquisitorExiledTargetId: player.role === 'Inquisitor' ? (player.inquisitorExiledTargetId || null) : null,
+      inquisitorExileUsed: player.role === 'Inquisitor' ? !!player.inquisitorExileUsed : false,
       inquisitorExiledTargetName: player.role === 'Inquisitor' && player.inquisitorExiledTargetId
         ? (room.players.get(player.inquisitorExiledTargetId)?.name || null)
         : null,
