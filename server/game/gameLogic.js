@@ -1311,11 +1311,11 @@ class GameLogic {
       if (action !== 'infect') return { error: 'Invalid action for Wither' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
       if (target.witherInfected) return { error: 'That player is already infected' };
-    } else if (activeRole === 'The Pestilence') {
+    } else if (activeRole === 'Pestilence') {
       const existingAction = room.nightActions[playerId] || {};
       const target = room.players.get(targetId);
       if (!target || !target.alive) return { error: 'Invalid target' };
-      if (action !== 'kill') return { error: 'Invalid action for The Pestilence' };
+      if (action !== 'kill') return { error: 'Invalid action for Pestilence' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
       if (existingAction.action === 'kill' && existingAction.targetId === targetId) {
         return { error: 'You already chose that kill target tonight' };
@@ -1428,7 +1428,7 @@ class GameLogic {
         targetId,
         queuedTargetId: null,
       };
-    } else if (activeRole === 'The Pestilence') {
+    } else if (activeRole === 'Pestilence') {
       room.nightActions[playerId] = {
         action,
         targetId,
@@ -2165,14 +2165,14 @@ class GameLogic {
       if (isSuppressedByPurge(player)) continue;
       if (disabledByAbilityTargets.has(playerId)) continue;
 
-      if ((activeRole === 'Wither' || activeRole === 'The Pestilence') && action.action === 'infect' && action.targetId) {
+      if ((activeRole === 'Wither' || activeRole === 'Pestilence') && action.action === 'infect' && action.targetId) {
         const infectedTarget = room.players.get(action.targetId);
         if (infectedTarget?.alive) {
           infectedAlivePlayerIds.add(action.targetId);
         }
       }
 
-      if (activeRole === 'Wither' || activeRole === 'The Pestilence') continue;
+      if (activeRole === 'Wither' || activeRole === 'Pestilence') continue;
 
       const interactionTargetIds = getInteractionTargetIds(action);
       if (action.action === 'longshot' && action.queuedTargetId) {
@@ -2187,7 +2187,7 @@ class GameLogic {
         const target = room.players.get(targetId);
         const targetActiveRole = this.getEffectiveNightRole(target);
         if (!target?.alive) continue;
-        if (targetActiveRole === 'Wither' || targetActiveRole === 'The Pestilence') continue;
+        if (targetActiveRole === 'Wither' || targetActiveRole === 'Pestilence') continue;
         addInfectionEdge(playerId, targetId);
       }
     }
@@ -2215,11 +2215,11 @@ class GameLogic {
       const otherAlivePlayers = Array.from(room.players.values()).filter((candidate) => candidate.alive && candidate.id !== player.id);
       if (!otherAlivePlayers.length) continue;
       if (otherAlivePlayers.every((candidate) => candidate.witherInfected)) {
-        player.role = 'The Pestilence';
+        player.role = 'Pestilence';
         messages.push({
           type: 'system',
-          text: 'The Pestilence became all powerful.',
-          source: 'The Pestilence',
+          text: 'Pestilence became all powerful.',
+          source: 'Pestilence',
           public: true,
         });
       }
@@ -2463,7 +2463,7 @@ class GameLogic {
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       const activeRole = this.getEffectiveNightRole(player);
-      if (!player || activeRole !== 'The Pestilence') continue;
+      if (!player || activeRole !== 'Pestilence') continue;
       if (isSuppressedByPurge(player)) continue;
       if (disabledAbilityTargets.has(playerId)) continue;
 
@@ -3243,7 +3243,7 @@ class GameLogic {
 
     for (const deadId of Array.from(killed)) {
       const deadPlayer = room.players.get(deadId);
-      if (!deadPlayer || deadPlayer.role !== 'The Pestilence') continue;
+      if (!deadPlayer || deadPlayer.role !== 'Pestilence') continue;
       killed.delete(deadId);
       killAttributions.delete(deadId);
     }
@@ -4054,7 +4054,7 @@ class GameLogic {
       if (player.faction === 'Crew') aliveCrewCount++;
       else if (player.faction === 'Assassin') aliveAssassinCount++;
       else if (player.faction === 'Neutral' && this.roleCatalog?.Neutral?.Evil?.includes(player.role)) aliveNeutralEvilCount++;
-      else if (player.faction === 'Neutral' && (this.roleCatalog?.Neutral?.Killing?.includes(player.role) || player.role === 'The Pestilence')) {
+      else if (player.faction === 'Neutral' && (this.roleCatalog?.Neutral?.Killing?.includes(player.role) || player.role === 'Pestilence')) {
         aliveNeutralKillingCount++;
         aliveNeutralKillingRoles.push(player.role);
       }
@@ -4062,11 +4062,11 @@ class GameLogic {
 
     if (totalAliveCount === 1) {
       const soleSurvivor = Array.from(room.players.values()).find((player) => player.alive);
-      if (soleSurvivor?.role === 'The Pestilence') {
-        return { winner: 'The Pestilence', reason: 'The Pestilence is the last one standing.' };
+      if (soleSurvivor?.role === 'Pestilence') {
+        return { winner: 'Pestilence', reason: 'Pestilence is the last one standing.' };
       }
       if (soleSurvivor?.role === 'Wither') {
-        return { winner: 'Nobody', reason: 'Wither outlived everyone, but never became The Pestilence.' };
+        return { winner: 'Nobody', reason: 'Wither outlived everyone, but never became Pestilence.' };
       }
     }
 
@@ -4080,7 +4080,7 @@ class GameLogic {
     // That Guardian Angel is treated as a co-winner, not a blocker the killer has to eliminate.
     if (aliveNeutralKillingCount > 0 && aliveCrewCount === 0 && aliveAssassinCount === 0 && aliveNeutralEvilCount === 0) {
       if (aliveNeutralKillingRoles.every((role) => role === 'Wither')) {
-        return { winner: 'Nobody', reason: 'Wither never became The Pestilence before everyone else fell.' };
+        return { winner: 'Nobody', reason: 'Wither never became Pestilence before everyone else fell.' };
       }
       const neutralKillingWinner = aliveNeutralKillingRoles[0] || 'Overload';
       return this.withNarcissistCoWinners(room, this.withNeutralBenignCoWinners(room, this.withGuardianAngelCoWinners(room, { winner: neutralKillingWinner, reason: `${neutralKillingWinner} has outlived everyone else!` })));

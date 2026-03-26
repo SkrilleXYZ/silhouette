@@ -570,7 +570,7 @@
     Wither: {
       faction: 'Neutral',
       subfaction: 'Killing',
-      description: 'Infect a player at night. The players they interact with also become infected. If all other living players become infected, you transform into The Pestilence.',
+      description: 'Infect a player at night. The players they interact with also become infected. If all other living players become infected, you transform into Pestilence.',
       revealText: 'Dark crimson rot gathers around your hands. Start the infection quietly, then let every contact carry it further.',
       abilities: [
         {
@@ -580,7 +580,7 @@
         },
       ],
     },
-    'The Pestilence': {
+    Pestilence: {
       faction: 'Neutral',
       subfaction: 'Killing',
       hiddenFromReveal: true,
@@ -1432,7 +1432,7 @@
     if (normalizedRole === 'manipulator') return 'manipulator';
     if (normalizedRole === 'prophet') return 'prophet';
     if (normalizedRole === 'wither') return 'wither';
-    if (normalizedRole === 'the pestilence') return 'pestilence';
+    if (normalizedRole === 'pestilence' || normalizedRole === 'the pestilence') return 'pestilence';
     if (normalizedRole === 'alturist') return 'alturist';
     if (normalizedRole === 'the vessel') return 'vessel';
     if (normalizedRole === 'narcissist') return 'narcissist';
@@ -2123,7 +2123,7 @@
     if (/was exiled by the Inquisitor\./i.test(text)) return 'summary-inquisitor';
     if (/The Disruptor has veto'd the voting\./i.test(text)) return 'summary-disruptor';
     if (/The Manipulator has played with the results\./i.test(text)) return 'summary-manipulator';
-    if (/The Pestilence became all powerful\./i.test(text)) return 'summary-pestilence';
+    if (/Pestilence became all powerful\./i.test(text)) return 'summary-pestilence';
     if (/had their places swapped by the Swapper\./i.test(text)) return 'summary-swapper';
     if (/used their gun/i.test(text)) return 'summary-shoot';
     if (/Sheriff is investigating someone/i.test(text)) return 'summary-search';
@@ -2278,7 +2278,7 @@
     if (/The Manipulator has played with the results\./i.test(text) && String(message.source || '').trim() === 'Manipulator') {
       return ' system-result-manipulator';
     }
-    if (/The Pestilence became all powerful\./i.test(text) && String(message.source || '').trim() === 'The Pestilence') {
+    if (/Pestilence became all powerful\./i.test(text) && String(message.source || '').trim() === 'Pestilence') {
       return ' system-result-pestilence';
     }
     if (/A mirrored shield reflected a killing blow away from you\.$/i.test(text) && String(message.source || '').trim() === 'Mirror Caster') {
@@ -4460,7 +4460,7 @@
     } else if (activeRole === 'Wither') {
       state.selectedAction = 'infect';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="infect">Infect</button></div>';
-    } else if (activeRole === 'The Pestilence') {
+    } else if (activeRole === 'Pestilence') {
       state.selectedAction = 'kill';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="kill">Kill</button></div>';
     } else if (activeRole === 'Blackmailer') {
@@ -4522,7 +4522,7 @@
         : 'You need at least 1 doused player before Ignite becomes available.'
       : 'Douse 1 player with gasoline tonight. Already doused players cannot be targeted again.';
     else if (activeRole === 'Wither') actionDesc = 'Infect 1 player tonight. Infected players silently spread infection through future interactions.';
-    else if (activeRole === 'The Pestilence') actionDesc = 'You are immortal to every kill. Choose a player to eliminate tonight.';
+    else if (activeRole === 'Pestilence') actionDesc = 'You are immortal to every kill. Choose a player to eliminate tonight.';
     else if (activeRole === 'Blackmailer') actionDesc = state.selectedAction === 'blackmail'
       ? player.blackmailerBlackmailUsedThisNight
         ? 'Blackmail is already active for tonight. You can still follow up with Kill.'

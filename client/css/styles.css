@@ -8695,6 +8695,12 @@ body {
   color: var(--wither);
 }
 
+#screen-roles .roles-guide-card.role-theme-pestilence,
+#screen-roles .roles-guide-card.role-theme-pestilence .roles-guide-card-icon {
+  border-color: rgba(154, 88, 255, 0.74);
+  color: var(--pestilence);
+}
+
 #screen-roles .roles-guide-card.role-theme-hypnotic,
 #screen-roles .roles-guide-card.role-theme-hypnotic .roles-guide-card-icon {
   border-color: rgba(157, 23, 77, 0.72);
@@ -8872,6 +8878,10 @@ body {
   box-shadow: 0 0 20px -10px rgba(168, 22, 38, 0.46);
 }
 
+#screen-roles .roles-guide-card.role-theme-pestilence:hover {
+  box-shadow: 0 0 20px -10px rgba(154, 88, 255, 0.48);
+}
+
 #screen-roles .roles-guide-card.role-theme-hypnotic:hover {
   box-shadow: 0 0 20px -10px rgba(196, 65, 148, 0.42);
 }
@@ -9026,6 +9036,10 @@ body {
 
 #screen-roles .roles-guide-card.role-theme-arsonist .roles-guide-ability-highlight {
   color: var(--arsonist);
+}
+
+#screen-roles .roles-guide-card.role-theme-pestilence .roles-guide-ability-highlight {
+  color: var(--pestilence);
 }
 
 #screen-roles .roles-guide-card.role-theme-wither .roles-guide-ability-highlight {
