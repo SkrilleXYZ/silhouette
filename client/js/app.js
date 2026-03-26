@@ -1000,8 +1000,20 @@
     };
   }
 
-  function getPlayerChatStyle(message) {
+  function getPlayerChatStyle(message, options = {}) {
     if (!message || message.type === 'system') return '';
+    const { useSenderPalette = false } = options;
+    const source = String(message.senderId || message.senderName || 'player');
+    let hash = 5381;
+    for (let index = 0; index < source.length; index++) {
+      hash = ((hash << 5) + hash) ^ source.charCodeAt(index);
+    }
+    const normalizedHash = Math.abs(hash >>> 0);
+
+    if (useSenderPalette) {
+      return buildPlayerColorStyle(PLAYER_NAME_PALETTE[normalizedHash % PLAYER_NAME_PALETTE.length].value);
+    }
+
     const explicitColor = message.colorHex ?? message.senderColorHex;
     if (explicitColor) {
       return buildPlayerColorStyle(explicitColor);
@@ -1010,12 +1022,6 @@
     if (playerFromRoom?.colorHex) {
       return buildPlayerColorStyle(playerFromRoom.colorHex);
     }
-    const source = String(message.senderId || message.senderName || 'player');
-    let hash = 5381;
-    for (let index = 0; index < source.length; index++) {
-      hash = ((hash << 5) + hash) ^ source.charCodeAt(index);
-    }
-    const normalizedHash = Math.abs(hash >>> 0);
     return buildPlayerColorStyle(PLAYER_NAME_PALETTE[normalizedHash % PLAYER_NAME_PALETTE.length].value);
   }
 
@@ -3632,7 +3638,9 @@
         const variantClass = getSystemMessageVariantClass(message);
         const classes = `chat-message ${message.type === 'system' ? 'system' : 'player'}${phaseClass}${summaryClass}${message.private ? ' private' : ''}${variantClass}${isSelf ? ' self' : ''}${senderIsDead ? ' sender-dead' : ''}`;
         const senderLabel = message.type === 'system' ? (message.senderName || 'SYSTEM') : message.senderName;
-        const style = getPlayerChatStyle(message);
+        const style = getPlayerChatStyle(message, {
+          useSenderPalette: getChatMode() === 'lobby' && message.type === 'player',
+        });
         return `
           <div class="${classes}"${style ? ` style="${style}"` : ''}>
             <div class="chat-message-meta">${senderLabel}</div>

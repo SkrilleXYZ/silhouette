@@ -1259,28 +1259,37 @@ class GameLogic {
       };
     } else if (activeRole === 'Hypnotic') {
       const existingAction = room.nightActions[playerId] || {};
+      const submittedAt = Date.now();
       room.nightActions[playerId] = {
         ...existingAction,
         tranceUsedThisNight: action === 'trance' ? true : !!existingAction.tranceUsedThisNight,
         tranceTargetId: action === 'trance' ? targetId : (existingAction.tranceTargetId || null),
+        tranceSubmittedAt: action === 'trance' ? submittedAt : (existingAction.tranceSubmittedAt || null),
         action: action === 'kill' ? 'kill' : (existingAction.action || null),
         targetId: action === 'kill' ? targetId : (existingAction.targetId || null),
+        submittedAt: action === 'kill' ? submittedAt : (existingAction.submittedAt || null),
         queuedTargetId: null,
       };
     } else if (activeRole === 'Overload') {
       const existingAction = room.nightActions[playerId] || {};
+      const submittedAt = Date.now();
       room.nightActions[playerId] = {
         ...existingAction,
         malwareUsedThisNight: action === 'malware' ? true : !!existingAction.malwareUsedThisNight,
         malwareTargetId: action === 'malware' ? targetId : (existingAction.malwareTargetId || null),
+        malwareSubmittedAt: action === 'malware' ? submittedAt : (existingAction.malwareSubmittedAt || null),
         action: action === 'kill' ? 'kill' : (existingAction.action || null),
         targetId: action === 'kill' ? targetId : (existingAction.targetId || null),
+        submittedAt: action === 'kill' ? submittedAt : (existingAction.submittedAt || null),
         queuedTargetId: null,
       };
     } else if (activeRole === 'Silencer') {
+      const submittedAt = Date.now();
       room.nightActions[playerId] = {
         action,
         targetId,
+        submittedAt,
+        quietusSubmittedAt: action === 'quietus' ? submittedAt : null,
         queuedTargetId: null,
       };
     } else if (activeRole === 'Alturist') {
@@ -1309,12 +1318,14 @@ class GameLogic {
       };
     } else if (activeRole === 'Blackmailer') {
       const existingAction = room.nightActions[playerId] || {};
+      const submittedAt = Date.now();
       room.nightActions[playerId] = {
         ...existingAction,
         blackmailUsedThisNight: action === 'blackmail' ? true : !!existingAction.blackmailUsedThisNight,
         blackmailTargetId: action === 'blackmail' ? targetId : (existingAction.blackmailTargetId || null),
         action: action === 'kill' ? 'kill' : (existingAction.action || null),
         targetId: action === 'kill' ? targetId : (existingAction.targetId || null),
+        submittedAt: action === 'kill' ? submittedAt : (existingAction.submittedAt || null),
         queuedTargetId: null,
       };
     } else if (activeRole === 'Blackout') {
@@ -1350,15 +1361,20 @@ class GameLogic {
         queuedTargetId: null,
       };
     } else if (activeRole === 'Magician') {
+      const submittedAt = Date.now();
       room.nightActions[playerId] = {
         action,
         targetId,
+        submittedAt,
+        abracadabraSubmittedAt: action === 'abracadabra' ? submittedAt : null,
         queuedTargetId: null,
       };
     } else {
+      const submittedAt = Date.now();
       room.nightActions[playerId] = {
         action,
         targetId: action === 'instinct' || action === 'bless' || action === 'lifeguard' || action === 'longshot' ? null : targetId,
+        submittedAt,
         queuedTargetId: action === 'longshot' ? targetId : null,
       };
     }
@@ -1566,6 +1582,55 @@ class GameLogic {
         this.createPrivateSystemMessage(code, 'This player was guarded by the Warden.', 'Warden')
       );
     };
+    const getDisableActionEntries = () => Object.entries(room.nightActions)
+      .flatMap(([playerId, action]) => {
+        const player = room.players.get(playerId);
+        const activeRole = this.getEffectiveNightRole(player);
+        if (!player || isSuppressedByPurge(player)) return [];
+
+        const entries = [];
+        if (activeRole === 'Magician' && action.action === 'abracadabra' && action.targetId && action.abracadabraSubmittedAt) {
+          entries.push({
+            playerId,
+            role: activeRole,
+            kind: 'spoof',
+            targetId: action.targetId,
+            submittedAt: action.abracadabraSubmittedAt,
+          });
+        }
+        if (activeRole === 'Hypnotic' && action.tranceUsedThisNight && action.tranceTargetId && action.tranceSubmittedAt) {
+          entries.push({
+            playerId,
+            role: activeRole,
+            kind: 'hypnotize',
+            targetId: action.tranceTargetId,
+            submittedAt: action.tranceSubmittedAt,
+          });
+        }
+        if (activeRole === 'Overload' && action.malwareUsedThisNight && action.malwareTargetId && action.malwareSubmittedAt) {
+          entries.push({
+            playerId,
+            role: activeRole,
+            kind: 'overload',
+            targetId: action.malwareTargetId,
+            submittedAt: action.malwareSubmittedAt,
+          });
+        }
+        if (activeRole === 'Silencer' && action.action === 'quietus' && action.targetId && action.quietusSubmittedAt) {
+          entries.push({
+            playerId,
+            role: activeRole,
+            kind: 'silence',
+            targetId: action.targetId,
+            submittedAt: action.quietusSubmittedAt,
+          });
+        }
+        return entries;
+      })
+      .sort((left, right) => {
+        if (left.submittedAt !== right.submittedAt) return left.submittedAt - right.submittedAt;
+        return left.playerId.localeCompare(right.playerId);
+      });
     const getInteractionTargetIds = (nightAction) => {
       if (!nightAction) return [];
       const targetIds = [];
@@ -1680,23 +1745,6 @@ class GameLogic {
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       const activeRole = this.getEffectiveNightRole(player);
-      if (!player || activeRole !== 'Magician') continue;
-      if (isSuppressedByPurge(player)) continue;
-      if (action.action === 'abracadabra' && action.targetId) {
-        spoofedTargets.add(action.targetId);
-        nextMagicianTargets[playerId] = action.targetId;
-        if (!privateMessages[action.targetId]) privateMessages[action.targetId] = [];
-        privateMessages[action.targetId].push(
-          this.createPrivateSystemMessage(code, 'You have been spoofed by the Magician.', 'Magician')
-        );
-      } else {
-        nextMagicianTargets[playerId] = null;
-      }
-    }
-
-    for (const [playerId, action] of Object.entries(room.nightActions)) {
-      const player = room.players.get(playerId);
-      const activeRole = this.getEffectiveNightRole(player);
       if (!player) continue;
       if (isSuppressedByPurge(player)) continue;
       if (activeRole === 'Warden' && action.action === 'guard') continue;
@@ -1746,44 +1794,94 @@ class GameLogic {
       }
     }
 
-    for (const [playerId, action] of Object.entries(room.nightActions)) {
-      const player = room.players.get(playerId);
-      const activeRole = this.getEffectiveNightRole(player);
-      if (!player) continue;
-      if (isSuppressedByPurge(player)) continue;
-      if (activeRole === 'Magician' && action.action === 'abracadabra') continue;
+    const applySpoofBlocks = () => {
+      for (const [playerId, action] of Object.entries(room.nightActions)) {
+        const player = room.players.get(playerId);
+        const activeRole = this.getEffectiveNightRole(player);
+        if (!player) continue;
+        if (isSuppressedByPurge(player)) continue;
+        if (activeRole === 'Magician' && action.action === 'abracadabra') continue;
 
-      if (action.targetId && spoofedTargets.has(action.targetId)) {
-        action.targetId = null;
-        if (action.action === 'trap') {
-          action.targetIds = [];
+        if (action.targetId && spoofedTargets.has(action.targetId)) {
+          action.targetId = null;
+          if (action.action === 'trap') {
+            action.targetIds = [];
+          }
+        }
+        if (action.queuedTargetId && spoofedTargets.has(action.queuedTargetId)) {
+          action.queuedTargetId = null;
+        }
+        if (action.tranceTargetId && spoofedTargets.has(action.tranceTargetId)) {
+          action.tranceTargetId = null;
+          action.tranceUsedThisNight = false;
+        }
+        if (action.malwareTargetId && spoofedTargets.has(action.malwareTargetId)) {
+          action.malwareTargetId = null;
+          action.malwareUsedThisNight = false;
+        }
+        if (action.blackmailTargetId && spoofedTargets.has(action.blackmailTargetId)) {
+          action.blackmailTargetId = null;
+          action.blackmailUsedThisNight = false;
+        }
+        if (action.interlinkedTargetId && spoofedTargets.has(action.interlinkedTargetId)) {
+          action.interlinkedTargetId = null;
+          action.interlinkedUsedThisNight = false;
+        }
+        if (Array.isArray(action.targetIds) && action.targetIds.length) {
+          action.targetIds = action.targetIds.filter((targetId) => !spoofedTargets.has(targetId));
+        }
+        const guardianTargetId = this.getGuardianBlessTargetId(room, player);
+        if (activeRole === 'Guardian Angel' && action.action === 'bless' && guardianTargetId && spoofedTargets.has(guardianTargetId)) {
+          action.blessBlockedBySpoof = true;
         }
       }
-      if (action.queuedTargetId && spoofedTargets.has(action.queuedTargetId)) {
-        action.queuedTargetId = null;
+    };
+
+    for (const disableAction of getDisableActionEntries()) {
+      if (spoofedTargets.has(disableAction.playerId) || hypnotizedTargets.has(disableAction.playerId) || overloadedTargets.has(disableAction.playerId) || silencedTargets.has(disableAction.playerId) || veteranCounterKilledActors.has(disableAction.playerId)) {
+        continue;
       }
-      if (action.tranceTargetId && spoofedTargets.has(action.tranceTargetId)) {
-        action.tranceTargetId = null;
-        action.tranceUsedThisNight = false;
+      if (spoofedTargets.has(disableAction.targetId)) continue;
+
+      if (disableAction.kind === 'spoof') {
+        spoofedTargets.add(disableAction.targetId);
+        nextMagicianTargets[disableAction.playerId] = disableAction.targetId;
+        if (!privateMessages[disableAction.targetId]) privateMessages[disableAction.targetId] = [];
+        privateMessages[disableAction.targetId].push(
+          this.createPrivateSystemMessage(code, 'You have been spoofed by the Magician.', 'Magician')
+        );
+        applySpoofBlocks();
+        continue;
       }
-      if (action.malwareTargetId && spoofedTargets.has(action.malwareTargetId)) {
-        action.malwareTargetId = null;
-        action.malwareUsedThisNight = false;
+
+      if (disableAction.kind === 'hypnotize') {
+        hypnotizedTargets.add(disableAction.targetId);
+        nextHypnoticTargets[disableAction.playerId] = disableAction.targetId;
+        if (!privateMessages[disableAction.targetId]) privateMessages[disableAction.targetId] = [];
+        privateMessages[disableAction.targetId].push(
+          this.createPrivateSystemMessage(code, 'You have been hypnotised by the Hypnotic.', 'Hypnotic')
+        );
+        continue;
       }
-      if (action.blackmailTargetId && spoofedTargets.has(action.blackmailTargetId)) {
-        action.blackmailTargetId = null;
-        action.blackmailUsedThisNight = false;
+
+      if (disableAction.kind === 'overload') {
+        overloadedTargets.add(disableAction.targetId);
+        nextOverloadTargets[disableAction.playerId] = disableAction.targetId;
+        if (!privateMessages[disableAction.targetId]) privateMessages[disableAction.targetId] = [];
+        privateMessages[disableAction.targetId].push(
+          this.createPrivateSystemMessage(code, 'You have been hacked by the Overload.', 'Overload')
+        );
+        continue;
       }
-      if (action.interlinkedTargetId && spoofedTargets.has(action.interlinkedTargetId)) {
-        action.interlinkedTargetId = null;
-        action.interlinkedUsedThisNight = false;
-      }
-      if (Array.isArray(action.targetIds) && action.targetIds.length) {
-        action.targetIds = action.targetIds.filter((targetId) => !spoofedTargets.has(targetId));
-      }
-      const guardianTargetId = this.getGuardianBlessTargetId(room, player);
-      if (activeRole === 'Guardian Angel' && action.action === 'bless' && guardianTargetId && spoofedTargets.has(guardianTargetId)) {
-        action.blessBlockedBySpoof = true;
+
+      if (disableAction.kind === 'silence') {
+        silencedTargets.add(disableAction.targetId);
+        room.silencedPlayers[disableAction.targetId] = true;
+        nextSilencerTargets[disableAction.playerId] = disableAction.targetId;
+        if (!privateMessages[disableAction.targetId]) privateMessages[disableAction.targetId] = [];
+        privateMessages[disableAction.targetId].push(
+          this.createPrivateSystemMessage(code, 'You have been silenced by the Silencer.', 'Silencer')
+        );
       }
     }
 
@@ -1833,41 +1931,6 @@ class GameLogic {
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       const activeRole = this.getEffectiveNightRole(player);
-      if (!player || activeRole !== 'Hypnotic') continue;
-      if (spoofedTargets.has(playerId) || veteranCounterKilledActors.has(playerId)) continue;
-      if (action.tranceUsedThisNight && action.tranceTargetId) {
-        hypnotizedTargets.add(action.tranceTargetId);
-        nextHypnoticTargets[playerId] = action.tranceTargetId;
-        if (!privateMessages[action.tranceTargetId]) privateMessages[action.tranceTargetId] = [];
-        privateMessages[action.tranceTargetId].push(
-          this.createPrivateSystemMessage(code, 'You have been hypnotised by the Hypnotic.', 'Hypnotic')
-        );
-      } else {
-        nextHypnoticTargets[playerId] = null;
-      }
-    }
-
-    for (const [playerId, action] of Object.entries(room.nightActions)) {
-      const player = room.players.get(playerId);
-      const activeRole = this.getEffectiveNightRole(player);
-      if (!player || activeRole !== 'Overload') continue;
-      if (isSuppressedByPurge(player)) continue;
-      if (spoofedTargets.has(playerId) || veteranCounterKilledActors.has(playerId)) continue;
-      if (action.malwareUsedThisNight && action.malwareTargetId) {
-        overloadedTargets.add(action.malwareTargetId);
-        nextOverloadTargets[playerId] = action.malwareTargetId;
-        if (!privateMessages[action.malwareTargetId]) privateMessages[action.malwareTargetId] = [];
-        privateMessages[action.malwareTargetId].push(
-          this.createPrivateSystemMessage(code, 'You have been hacked by the Overload.', 'Overload')
-        );
-      } else {
-        nextOverloadTargets[playerId] = null;
-      }
-    }
-
-    for (const [playerId, action] of Object.entries(room.nightActions)) {
-      const player = room.players.get(playerId);
-      const activeRole = this.getEffectiveNightRole(player);
       if (!player || activeRole !== 'Blackmailer') continue;
       if (spoofedTargets.has(playerId) || veteranCounterKilledActors.has(playerId)) continue;
       if (action.blackmailUsedThisNight && action.blackmailTargetId) {
@@ -1877,25 +1940,6 @@ class GameLogic {
         privateMessages[action.blackmailTargetId].push(
           this.createPrivateSystemMessage(code, 'You have been blackmailed.', 'Blackmailer')
         );
-      }
-    }
-
-    for (const [playerId, action] of Object.entries(room.nightActions)) {
-      const player = room.players.get(playerId);
-      const activeRole = this.getEffectiveNightRole(player);
-      if (!player || activeRole !== 'Silencer') continue;
-      if (isSuppressedByPurge(player)) continue;
-      if (spoofedTargets.has(playerId) || veteranCounterKilledActors.has(playerId)) continue;
-      if (action.action === 'quietus' && action.targetId) {
-        silencedTargets.add(action.targetId);
-        room.silencedPlayers[action.targetId] = true;
-        nextSilencerTargets[playerId] = action.targetId;
-        if (!privateMessages[action.targetId]) privateMessages[action.targetId] = [];
-        privateMessages[action.targetId].push(
-          this.createPrivateSystemMessage(code, 'You have been silenced by the Silencer.', 'Silencer')
-        );
-      } else {
-        nextSilencerTargets[playerId] = null;
       }
     }
 
@@ -3596,6 +3640,9 @@ class GameLogic {
     if (action === 'abracadabra') return 'Magician has made a player disappear.';
     if (action === 'guard') return 'Warden has locked down a player.';
     if (action === 'sacrifice') return 'Alturist is preparing a sacrifice.';
+    if (action === 'mimic') return 'Imitator has copied a player.';
+    if (action === 'inherit') return 'Amnesiac has claimed a forgotten role.';
+    if (action === 'evil-eye') return 'Oracle has marked someone with the Evil Eye.';
     if (action === 'protect') return 'Vitalist has protected someone.';
     if (action === 'quietus') return 'Silencer has hushed someone.';
     if (action === 'bless') return 'Guardian Angel has blessed their target.';

@@ -3222,6 +3222,12 @@ body {
     linear-gradient(135deg, rgba(10, 22, 38, 0.98), rgba(20, 16, 48, 0.96) 54%, rgba(64, 28, 96, 0.9));
 }
 
+.role-reveal-panel.role-theme-narcissist {
+  background:
+    radial-gradient(circle at top, rgba(166, 118, 255, 0.26), transparent 44%),
+    linear-gradient(135deg, rgba(24, 12, 44, 0.98), rgba(48, 18, 86, 0.96) 54%, rgba(90, 36, 128, 0.9));
+}
+
 .role-reveal-panel.role-theme-thepurge {
   background:
     radial-gradient(circle at top, rgba(148, 24, 24, 0.22), transparent 44%),
@@ -3631,6 +3637,12 @@ body {
   box-shadow: inset 0 0 0 1px rgba(84, 232, 214, 0.12), 0 0 14px rgba(84, 232, 214, 0.16);
 }
 
+.role-reveal-item.role-theme-narcissist.is-selected {
+  border-color: rgba(168, 116, 255, 0.58);
+  background: linear-gradient(180deg, rgba(168, 116, 255, 0.1), rgba(214, 124, 255, 0.03));
+  box-shadow: inset 0 0 0 1px rgba(168, 116, 255, 0.14), 0 0 14px rgba(124, 58, 237, 0.18);
+}
+
 .role-reveal-item.role-theme-teleporter.is-selected {
   border-color: rgba(126, 184, 255, 0.55);
   background: linear-gradient(180deg, rgba(126, 184, 255, 0.08), rgba(182, 198, 255, 0.03));
@@ -3838,6 +3850,11 @@ body {
   color: var(--scientist);
 }
 
+.role-reveal-item.role-theme-narcissist .role-reveal-name,
+.role-reveal-item.role-theme-narcissist .role-reveal-faction {
+  color: hsl(270, 90%, 78%);
+}
+
 .role-reveal-item.role-theme-inquisitor .role-reveal-name,
 .role-reveal-item.role-theme-inquisitor .role-reveal-faction {
   color: hsl(176, 94%, 74%);
@@ -4004,6 +4021,11 @@ body {
 .role-reveal-result.role-theme-scientist strong {
   color: var(--scientist);
   text-shadow: 0 0 18px rgba(84, 232, 214, 0.28);
+}
+
+.role-reveal-result.role-theme-narcissist strong {
+  color: hsl(270, 90%, 78%);
+  text-shadow: 0 0 18px rgba(124, 58, 237, 0.28);
 }
 
 .role-reveal-result.role-theme-disruptor strong {
@@ -5691,15 +5713,15 @@ body {
 }
 
 .chat-message.system.private.system-result-killed {
-  border-color: rgba(255, 92, 92, 0.44);
+  border-color: rgba(255, 74, 74, 0.62);
   background:
-    radial-gradient(circle at 84% 18%, rgba(255, 204, 204, 0.18), transparent 16%),
-    radial-gradient(circle at 18% 112%, rgba(104, 16, 20, 0.3), transparent 42%),
-    linear-gradient(135deg, rgba(54, 10, 12, 0.98), rgba(22, 6, 8, 0.98));
+    radial-gradient(circle at 84% 18%, rgba(255, 216, 216, 0.22), transparent 18%),
+    radial-gradient(circle at 12% 118%, rgba(148, 14, 20, 0.42), transparent 46%),
+    linear-gradient(135deg, rgba(86, 12, 18, 0.99), rgba(30, 6, 10, 0.99));
   box-shadow:
-    inset 0 1px 0 rgba(255, 228, 228, 0.06),
-    0 0 0 1px rgba(255, 92, 92, 0.05),
-    0 16px 28px -24px rgba(255, 92, 92, 0.26);
+    inset 0 1px 0 rgba(255, 236, 236, 0.08),
+    0 0 0 1px rgba(255, 74, 74, 0.08),
+    0 18px 32px -22px rgba(255, 74, 74, 0.34);
   overflow: hidden;
 }
 
@@ -5708,8 +5730,8 @@ body {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(112deg, transparent 0%, rgba(255, 214, 214, 0.08) 42%, transparent 66%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(28, 6, 8, 0.18) 100%);
+    linear-gradient(112deg, transparent 0%, rgba(255, 222, 222, 0.1) 42%, transparent 66%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(44, 6, 10, 0.24) 100%);
   opacity: 0.92;
   pointer-events: none;
 }
