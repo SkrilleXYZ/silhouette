@@ -18,7 +18,7 @@ class GameLogic {
       Neutral: {
         Evil: ['Jester', 'Executioner'],
         Benign: ['Amnesiac', 'Guardian Angel', 'Survivalist', 'Imitator'],
-        Killing: ['Overload'],
+        Killing: ['Overload', 'Arsonist'],
       },
     };
   }
@@ -170,6 +170,7 @@ class GameLogic {
       scientistExperimentUsesRemaining: 1,
       scientistSwapTargetIds: [],
       vesselAwakened: false,
+      arsonistDousedTargetIds: [],
       imitatorCopiedRole: null,
       imitatorCopiedSourceId: null,
       imitatorCycleTargetIds: [],
@@ -216,6 +217,7 @@ class GameLogic {
       scientistExperimentUsesRemaining: 1,
       scientistSwapTargetIds: [],
       vesselAwakened: false,
+      arsonistDousedTargetIds: [],
       alive: true,
       connected: true
     });
@@ -494,6 +496,7 @@ class GameLogic {
     player.survivalistUsesRemaining = target.role === 'Survivalist' ? (target.survivalistUsesRemaining ?? 5) : 5;
     player.blackoutFlashUsesRemaining = target.role === 'Blackout' ? (target.blackoutFlashUsesRemaining ?? 3) : 3;
     player.purgeFascismUsesRemaining = target.role === 'The Purge' ? (target.purgeFascismUsesRemaining ?? 1) : 1;
+    player.arsonistDousedTargetIds = target.role === 'Arsonist' ? (Array.isArray(target.arsonistDousedTargetIds) ? [...target.arsonistDousedTargetIds] : []) : [];
 
     return { success: true, player };
   }
@@ -523,6 +526,7 @@ class GameLogic {
       scientistExperimentUsesRemaining: player.scientistExperimentUsesRemaining ?? 1,
       scientistSwapTargetIds: Array.isArray(player.scientistSwapTargetIds) ? [...player.scientistSwapTargetIds] : [],
       vesselAwakened: !!player.vesselAwakened,
+      arsonistDousedTargetIds: Array.isArray(player.arsonistDousedTargetIds) ? [...player.arsonistDousedTargetIds] : [],
       imitatorCopiedRole: player.imitatorCopiedRole || null,
       imitatorCopiedSourceId: player.imitatorCopiedSourceId || null,
       imitatorCycleTargetIds: Array.isArray(player.imitatorCycleTargetIds) ? [...player.imitatorCycleTargetIds] : [],
@@ -554,6 +558,7 @@ class GameLogic {
       scientistExperimentUsesRemaining: roleState.scientistExperimentUsesRemaining,
       scientistSwapTargetIds: Array.isArray(roleState.scientistSwapTargetIds) ? [...roleState.scientistSwapTargetIds] : [],
       vesselAwakened: !!roleState.vesselAwakened,
+      arsonistDousedTargetIds: Array.isArray(roleState.arsonistDousedTargetIds) ? [...roleState.arsonistDousedTargetIds] : [],
       imitatorCopiedRole: roleState.imitatorCopiedRole,
       imitatorCopiedSourceId: roleState.imitatorCopiedSourceId,
       imitatorCycleTargetIds: Array.isArray(roleState.imitatorCycleTargetIds) ? [...roleState.imitatorCycleTargetIds] : [],
@@ -1196,6 +1201,30 @@ class GameLogic {
       } else if (existingAction.action === 'kill' && existingAction.targetId === targetId) {
         return { error: 'You already chose that kill target tonight' };
       }
+    } else if (activeRole === 'Arsonist') {
+      const existingAction = room.nightActions[playerId] || {};
+      const currentDousedTargetIds = Array.isArray(player.arsonistDousedTargetIds) ? player.arsonistDousedTargetIds : [];
+      const douseTargetCount = room.nightCount % 2 === 1 ? 1 : 2;
+      if (action === 'douse') {
+        if (!Array.isArray(targetIds)) return { error: 'Invalid targets' };
+        const normalizedTargetIds = [...new Set(targetIds.map((id) => String(id || '').trim()).filter(Boolean))];
+        if (normalizedTargetIds.length !== douseTargetCount) {
+          return { error: `Choose exactly ${douseTargetCount} player${douseTargetCount === 1 ? '' : 's'}` };
+        }
+        for (const selectedTargetId of normalizedTargetIds) {
+          const target = room.players.get(selectedTargetId);
+          if (!target || !target.alive) return { error: 'Invalid target' };
+          if (selectedTargetId === playerId) return { error: 'Cannot target yourself' };
+          if (currentDousedTargetIds.includes(selectedTargetId)) {
+            return { error: 'Cannot douse an already doused player' };
+          }
+        }
+      } else if (action === 'ignite') {
+        if (existingAction.action === 'ignite') return { error: 'You already chose Ignite tonight' };
+        if (currentDousedTargetIds.length === 0) return { error: 'You need at least 1 doused player to ignite' };
+      } else {
+        return { error: 'Invalid action for Arsonist' };
+      }
     } else if (activeRole === 'Blackout') {
       const existingAction = room.nightActions[playerId] || {};
       if (action === 'flash') {
@@ -1281,6 +1310,17 @@ class GameLogic {
         action: action === 'kill' ? 'kill' : (existingAction.action || null),
         targetId: action === 'kill' ? targetId : (existingAction.targetId || null),
         submittedAt: action === 'kill' ? submittedAt : (existingAction.submittedAt || null),
+        queuedTargetId: null,
+      };
+    } else if (activeRole === 'Arsonist') {
+      const submittedAt = Date.now();
+      const currentDousedTargetIds = Array.isArray(player.arsonistDousedTargetIds) ? [...player.arsonistDousedTargetIds] : [];
+      room.nightActions[playerId] = {
+        action,
+        targetId: null,
+        targetIds: action === 'douse' ? [...new Set(targetIds.map((id) => String(id || '').trim()).filter(Boolean))] : [],
+        igniteTargetIds: action === 'ignite' ? currentDousedTargetIds : [],
+        submittedAt,
         queuedTargetId: null,
       };
     } else if (activeRole === 'Silencer') {
@@ -1641,6 +1681,7 @@ class GameLogic {
       if (nightAction.malwareUsedThisNight && nightAction.malwareTargetId) targetIds.push(nightAction.malwareTargetId);
       if (nightAction.blackmailUsedThisNight && nightAction.blackmailTargetId) targetIds.push(nightAction.blackmailTargetId);
       if (nightAction.interlinkedUsedThisNight && nightAction.interlinkedTargetId) targetIds.push(nightAction.interlinkedTargetId);
+      if (Array.isArray(nightAction.igniteTargetIds)) targetIds.push(...nightAction.igniteTargetIds);
       return [...new Set(targetIds)];
     };
     const teleportSwaps = [];
@@ -1713,6 +1754,9 @@ class GameLogic {
       if (action.interlinkedTargetId) action.interlinkedTargetId = remapTeleportedTargetId(action.interlinkedTargetId);
       if (Array.isArray(action.targetIds)) {
         action.targetIds = action.targetIds.map((targetId) => remapTeleportedTargetId(targetId));
+      }
+      if (Array.isArray(action.igniteTargetIds)) {
+        action.igniteTargetIds = action.igniteTargetIds.map((targetId) => remapTeleportedTargetId(targetId));
       }
     }
 
@@ -1787,6 +1831,13 @@ class GameLogic {
           action.targetIds = filteredTargetIds;
         }
       }
+      if (Array.isArray(action.igniteTargetIds) && action.igniteTargetIds.length) {
+        const filteredIgniteTargetIds = action.igniteTargetIds.filter((targetId) => !guardedTargets.has(targetId));
+        if (filteredIgniteTargetIds.length !== action.igniteTargetIds.length) {
+          pushWardenBlockedMessage(playerId);
+          action.igniteTargetIds = filteredIgniteTargetIds;
+        }
+      }
       const guardianTargetId = this.getGuardianBlessTargetId(room, player);
       if (activeRole === 'Guardian Angel' && action.action === 'bless' && guardianTargetId && guardedTargets.has(guardianTargetId)) {
         pushWardenBlockedMessage(playerId);
@@ -1829,6 +1880,9 @@ class GameLogic {
         }
         if (Array.isArray(action.targetIds) && action.targetIds.length) {
           action.targetIds = action.targetIds.filter((targetId) => !spoofedTargets.has(targetId));
+        }
+        if (Array.isArray(action.igniteTargetIds) && action.igniteTargetIds.length) {
+          action.igniteTargetIds = action.igniteTargetIds.filter((targetId) => !spoofedTargets.has(targetId));
         }
         const guardianTargetId = this.getGuardianBlessTargetId(room, player);
         if (activeRole === 'Guardian Angel' && action.action === 'bless' && guardianTargetId && spoofedTargets.has(guardianTargetId)) {
@@ -2033,6 +2087,32 @@ class GameLogic {
     room.lastOracleTargets = nextOracleTargets;
     room.pendingLongshots = nextPendingLongshots;
 
+    for (const [playerId, player] of room.players) {
+      if (!Array.isArray(player.arsonistDousedTargetIds)) {
+        player.arsonistDousedTargetIds = [];
+      }
+      player.arsonistDousedTargetIds = player.arsonistDousedTargetIds.filter((targetId) => room.players.get(targetId)?.alive);
+
+      const action = room.nightActions[playerId];
+      const activeRole = this.getEffectiveNightRole(player);
+      if (!action || activeRole !== 'Arsonist') continue;
+      if (isSuppressedByPurge(player)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
+
+      if (action.action === 'douse') {
+        const nextDousedTargetIds = Array.isArray(action.targetIds)
+          ? action.targetIds.filter((targetId) => room.players.get(targetId)?.alive)
+          : [];
+        player.arsonistDousedTargetIds = [...new Set([...player.arsonistDousedTargetIds, ...nextDousedTargetIds])];
+      } else if (action.action === 'ignite') {
+        const igniteTargetIds = Array.isArray(action.igniteTargetIds)
+          ? action.igniteTargetIds.filter((targetId) => room.players.get(targetId)?.alive)
+          : [];
+        action.igniteTargetIds = igniteTargetIds;
+        player.arsonistDousedTargetIds = player.arsonistDousedTargetIds.filter((targetId) => !igniteTargetIds.includes(targetId));
+      }
+    }
+
     const nightSummaryLines = this.getNightActionSummaryLines(code);
     nightSummaryLines.forEach((line) => this.appendToPhaseSummary(code, line));
 
@@ -2074,6 +2154,53 @@ class GameLogic {
         privateMessages[shot.targetId].push(
           this.createPrivateSystemMessage(code, 'A Guardian Angel blessed you through the night.', 'Guardian Angel')
         );
+      }
+    }
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      const activeRole = this.getEffectiveNightRole(player);
+      if (!player || activeRole !== 'Arsonist') continue;
+      if (isSuppressedByPurge(player)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
+      if (action.action !== 'ignite') continue;
+
+      const igniteTargetIds = Array.isArray(action.igniteTargetIds) ? action.igniteTargetIds.filter(Boolean) : [];
+      for (const igniteTargetId of igniteTargetIds) {
+        if (mirroredTargets.has(igniteTargetId)) {
+          killed.add(playerId);
+          if (!privateMessages[igniteTargetId]) {
+            privateMessages[igniteTargetId] = [];
+          }
+          privateMessages[igniteTargetId].push(
+            this.createPrivateSystemMessage(code, 'A mirrored shield reflected a killing blow away from you.', 'Mirror Caster')
+          );
+        } else if (!protected_.has(igniteTargetId) && !blessedTargets.has(igniteTargetId) && !lifeguardedTargets.has(igniteTargetId)) {
+          killed.add(igniteTargetId);
+          killersThisNight.add(playerId);
+          registerKillAttribution(igniteTargetId, playerId);
+        } else if (protected_.has(igniteTargetId)) {
+          if (!privateMessages[igniteTargetId]) {
+            privateMessages[igniteTargetId] = [];
+          }
+          privateMessages[igniteTargetId].push(
+            this.createPrivateSystemMessage(code, 'You were protected by the Vitalist during the night.', 'Vitalist')
+          );
+        } else if (lifeguardedTargets.has(igniteTargetId)) {
+          if (!privateMessages[igniteTargetId]) {
+            privateMessages[igniteTargetId] = [];
+          }
+          privateMessages[igniteTargetId].push(
+            this.createPrivateSystemMessage(code, 'You protected yourself from death during the night.', 'Survivalist')
+          );
+        } else {
+          if (!privateMessages[igniteTargetId]) {
+            privateMessages[igniteTargetId] = [];
+          }
+          privateMessages[igniteTargetId].push(
+            this.createPrivateSystemMessage(code, 'A Guardian Angel blessed you through the night.', 'Guardian Angel')
+          );
+        }
       }
     }
 
@@ -2846,7 +2973,13 @@ class GameLogic {
         if (killer) {
           if (!privateMessages[deadId]) privateMessages[deadId] = [];
           privateMessages[deadId].push(
-            this.createPrivateSystemMessage(code, `You have been killed by ${killer.name}.`, 'Death')
+            this.createPrivateSystemMessage(
+              code,
+              this.getEffectiveNightRole(killer) === 'Arsonist'
+                ? 'You have been burnt to crisp by the Arsonist.'
+                : `You have been killed by ${killer.name}.`,
+              'Death'
+            )
           );
         }
         deadPlayer.alive = false;
@@ -2961,6 +3094,11 @@ class GameLogic {
         text: 'The night passed peacefully. No one was harmed.',
         public: true
       });
+    }
+
+    for (const [, player] of room.players) {
+      if (!Array.isArray(player.arsonistDousedTargetIds)) continue;
+      player.arsonistDousedTargetIds = player.arsonistDousedTargetIds.filter((targetId) => room.players.get(targetId)?.alive);
     }
 
     for (const [, player] of room.players) {
@@ -3643,6 +3781,7 @@ class GameLogic {
     if (action === 'mimic') return 'Imitator has copied a player.';
     if (action === 'inherit') return 'Amnesiac has claimed a forgotten role.';
     if (action === 'evil-eye') return 'Oracle has marked someone with the Evil Eye.';
+    if (action === 'douse' || action === 'ignite') return 'Arsonist is playing with fire.';
     if (action === 'protect') return 'Vitalist has protected someone.';
     if (action === 'quietus') return 'Silencer has hushed someone.';
     if (action === 'bless') return 'Guardian Angel has blessed their target.';
@@ -3928,6 +4067,8 @@ class GameLogic {
       oracleEvilEyeUsesRemaining: activeRole === 'Oracle' ? (player.oracleEvilEyeUsesRemaining ?? 3) : null,
       oraclePurifyUsesRemaining: player.role === 'Oracle' ? (player.oraclePurifyUsesRemaining ?? 2) : null,
       survivalistUsesRemaining: activeRole === 'Survivalist' ? (player.survivalistUsesRemaining ?? 5) : null,
+      arsonistDousedTargetIds: activeRole === 'Arsonist' ? (Array.isArray(player.arsonistDousedTargetIds) ? [...player.arsonistDousedTargetIds] : []) : [],
+      arsonistDouseTargetCount: activeRole === 'Arsonist' ? (room.nightCount % 2 === 1 ? 1 : 2) : null,
       blackoutFlashUsesRemaining: activeRole === 'Blackout' ? (player.blackoutFlashUsesRemaining ?? 3) : null,
       blackoutFlashUsedThisNight: activeRole === 'Blackout' ? !!room.nightActions[playerId]?.flashUsedThisNight : false,
       purgeFascismUsesRemaining: activeRole === 'The Purge' ? (player.purgeFascismUsesRemaining ?? 1) : null,

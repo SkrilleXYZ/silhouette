@@ -94,6 +94,9 @@
   --overload: hsl(114, 100%, 64%);
   --overload-dim: hsl(122, 52%, 16%);
   --overload-glow: hsla(114, 100%, 64%, 0.36);
+  --arsonist: hsl(22, 100%, 62%);
+  --arsonist-dim: hsl(12, 58%, 18%);
+  --arsonist-glow: hsla(14, 100%, 58%, 0.34);
   --hypnotic: hsl(322, 78%, 64%);
   --hypnotic-dim: hsl(320, 46%, 18%);
   --hypnotic-glow: hsla(322, 78%, 64%, 0.3);
@@ -2649,6 +2652,8 @@ body {
 
 .role-card.role-theme-overload .role-card-glow { background: radial-gradient(circle, var(--overload) 0%, transparent 70%); }
 .role-card.role-theme-overload .role-card-inner { border-color: rgba(99, 255, 76, 0.42); box-shadow: inset 0 0 0 1px rgba(99, 255, 76, 0.08), 0 0 22px rgba(42, 124, 18, 0.18); }
+.role-card.role-theme-arsonist .role-card-glow { background: radial-gradient(circle, rgba(255, 149, 64, 0.94) 0%, rgba(255, 76, 43, 0.28) 48%, transparent 74%); }
+.role-card.role-theme-arsonist .role-card-inner { border-color: rgba(255, 114, 52, 0.46); box-shadow: inset 0 0 0 1px rgba(255, 164, 98, 0.1), 0 0 24px rgba(198, 66, 24, 0.2); }
 
 .role-card.role-theme-hypnotic .role-card-glow { background: radial-gradient(circle, var(--hypnotic) 0%, transparent 70%); }
 .role-card.role-theme-hypnotic .role-card-inner { border-color: rgba(196, 65, 148, 0.42); box-shadow: inset 0 0 0 1px rgba(196, 65, 148, 0.08), 0 0 22px rgba(149, 34, 108, 0.14); }
@@ -2722,6 +2727,7 @@ body {
 .role-card.role-theme-sniper .role-faction { color: var(--sniper); }
 .role-card.role-theme-tetherhex .role-faction { color: var(--tetherhex); }
 .role-card.role-theme-overload .role-faction { color: var(--overload); }
+.role-card.role-theme-arsonist .role-faction { color: var(--arsonist); }
 .role-card.role-theme-hypnotic .role-faction { color: var(--hypnotic); }
 .role-card.role-theme-blackmailer .role-faction { color: var(--blackmailer); }
 .role-card.role-theme-thepurge .role-faction { color: var(--thepurge); }
@@ -2786,6 +2792,7 @@ body {
 .role-card.role-theme-sniper .role-divider { background: var(--sniper); }
 .role-card.role-theme-tetherhex .role-divider { background: var(--tetherhex); }
 .role-card.role-theme-overload .role-divider { background: var(--overload); }
+.role-card.role-theme-arsonist .role-divider { background: linear-gradient(90deg, rgba(255, 178, 74, 0.98), rgba(255, 74, 52, 0.96)); }
 .role-card.role-theme-hypnotic .role-divider { background: var(--hypnotic); }
 .role-card.role-theme-blackmailer .role-divider { background: var(--blackmailer); }
 .role-card.role-theme-thepurge .role-divider { background: linear-gradient(90deg, rgba(18, 18, 18, 0.98) 0%, rgba(148, 24, 24, 0.92) 100%); }
@@ -3018,6 +3025,14 @@ body {
 .role-card.role-theme-overload .role-name {
   color: hsl(112, 100%, 90%);
   text-shadow: 0 0 18px rgba(99, 255, 76, 0.26);
+}
+
+.role-card.role-theme-arsonist .role-name {
+  background: linear-gradient(90deg, #ffd089 0%, #ff9347 48%, #ff5847 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 18px rgba(255, 114, 52, 0.24);
 }
 
 .role-card.role-theme-hypnotic .role-name {
@@ -3322,6 +3337,12 @@ body {
   background:
     radial-gradient(circle at top, rgba(99, 255, 76, 0.22), transparent 48%),
     linear-gradient(180deg, rgba(10, 24, 8, 0.98), rgba(4, 10, 4, 0.98));
+}
+
+.role-reveal-panel.role-theme-arsonist {
+  background:
+    radial-gradient(circle at top, rgba(255, 138, 72, 0.26), transparent 48%),
+    linear-gradient(135deg, rgba(38, 16, 8, 0.98), rgba(72, 22, 8, 0.96) 56%, rgba(120, 28, 18, 0.92));
 }
 
 .role-reveal-panel.role-theme-hypnotic {
@@ -3751,6 +3772,12 @@ body {
   box-shadow: inset 0 0 0 1px rgba(99, 255, 76, 0.12), 0 0 14px rgba(99, 255, 76, 0.16);
 }
 
+.role-reveal-item.role-theme-arsonist.is-selected {
+  border-color: rgba(255, 114, 52, 0.58);
+  background: linear-gradient(180deg, rgba(255, 140, 76, 0.1), rgba(255, 78, 54, 0.03));
+  box-shadow: inset 0 0 0 1px rgba(255, 154, 98, 0.14), 0 0 14px rgba(220, 82, 32, 0.18);
+}
+
 .role-reveal-item.role-theme-hypnotic.is-selected {
   border-color: rgba(196, 65, 148, 0.55);
   background: linear-gradient(180deg, rgba(196, 65, 148, 0.08), rgba(196, 65, 148, 0.02));
@@ -3955,6 +3982,11 @@ body {
   color: var(--overload);
 }
 
+.role-reveal-item.role-theme-arsonist .role-reveal-name,
+.role-reveal-item.role-theme-arsonist .role-reveal-faction {
+  color: var(--arsonist);
+}
+
 .role-reveal-item.role-theme-hypnotic .role-reveal-name,
 .role-reveal-item.role-theme-hypnotic .role-reveal-faction {
   color: var(--hypnotic);
@@ -4141,6 +4173,11 @@ body {
 .role-reveal-result.role-theme-overload strong {
   color: var(--overload);
   text-shadow: 0 0 18px rgba(99, 255, 76, 0.28);
+}
+
+.role-reveal-result.role-theme-arsonist strong {
+  color: var(--arsonist);
+  text-shadow: 0 0 18px rgba(255, 114, 52, 0.28);
 }
 
 .role-reveal-result.role-theme-hypnotic strong {
@@ -4409,6 +4446,11 @@ body {
   background: var(--assassin-dim);
 }
 
+.target-item.target-doused {
+  border-color: rgba(255, 114, 52, 0.38);
+  box-shadow: inset 0 0 0 1px rgba(255, 140, 76, 0.06);
+}
+
 .target-dot {
   width: 8px; height: 8px;
   border-radius: 50%;
@@ -4427,6 +4469,26 @@ body {
 }
 
 .target-name { font-size: 0.85rem; font-weight: 500; }
+
+.target-status {
+  margin-left: auto;
+  font-size: 0.62rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 4px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border-light);
+}
+
+.target-status-doused {
+  color: hsl(24, 100%, 74%);
+  background: linear-gradient(135deg, rgba(116, 30, 10, 0.82), rgba(146, 34, 16, 0.72));
+  border-color: rgba(255, 114, 52, 0.34);
+}
+
+.target-item.target-static {
+  cursor: default;
+}
 
 .confirm-action { margin-top: 12px; width: 100%; }
 
@@ -6442,6 +6504,7 @@ body {
 .search-target-role.role-theme-sniper { color: var(--sniper); text-shadow: 0 0 12px rgba(141, 46, 46, 0.16); }
 .search-target-role.role-theme-tetherhex { color: var(--tetherhex); text-shadow: 0 0 12px rgba(74, 255, 119, 0.18); }
 .search-target-role.role-theme-overload { color: var(--overload); text-shadow: 0 0 12px rgba(99, 255, 76, 0.2); }
+.search-target-role.role-theme-arsonist { color: var(--arsonist); text-shadow: 0 0 12px rgba(255, 114, 52, 0.22); }
 .search-target-role.role-theme-hypnotic { color: var(--hypnotic); text-shadow: 0 0 12px rgba(196, 65, 148, 0.18); }
 .search-target-role.role-theme-blackmailer { color: var(--blackmailer); text-shadow: 0 0 12px rgba(226, 180, 76, 0.18); }
 .search-target-role.role-theme-thepurge { color: var(--thepurge); text-shadow: 0 0 12px rgba(148, 24, 24, 0.18); }
@@ -6715,6 +6778,7 @@ body {
 .gameover-player-role.role-theme-sniper { color: var(--sniper); }
 .gameover-player-role.role-theme-tetherhex { color: var(--tetherhex); }
 .gameover-player-role.role-theme-overload { color: var(--overload); }
+.gameover-player-role.role-theme-arsonist { color: var(--arsonist); }
 .gameover-player-role.role-theme-hypnotic { color: var(--hypnotic); }
 .gameover-player-role.role-theme-blackmailer { color: var(--blackmailer); }
 .gameover-player-role.role-theme-thepurge { color: var(--thepurge); }
@@ -7298,6 +7362,7 @@ body {
 .gpl-role.role-theme-sniper { background: rgba(62, 18, 18, 0.92); color: var(--sniper); box-shadow: 0 0 16px rgba(141, 46, 46, 0.14); }
 .gpl-role.role-theme-tetherhex { background: rgba(14, 56, 24, 0.92); color: var(--tetherhex); box-shadow: 0 0 16px rgba(74, 255, 119, 0.16); }
 .gpl-role.role-theme-overload { background: rgba(18, 62, 12, 0.92); color: var(--overload); box-shadow: 0 0 16px rgba(99, 255, 76, 0.18); }
+.gpl-role.role-theme-arsonist { background: linear-gradient(135deg, rgba(62, 24, 10, 0.94), rgba(122, 34, 12, 0.92)); color: var(--arsonist); box-shadow: 0 0 16px rgba(255, 114, 52, 0.18); }
 .gpl-role.role-theme-hypnotic { background: rgba(74, 22, 56, 0.92); color: var(--hypnotic); box-shadow: 0 0 16px rgba(196, 65, 148, 0.14); }
 .gpl-role.role-theme-blackmailer { background: rgba(83, 60, 18, 0.92); color: var(--blackmailer); box-shadow: 0 0 16px rgba(226, 180, 76, 0.14); }
 .gpl-role.role-theme-thepurge { background: linear-gradient(135deg, rgba(18, 18, 18, 0.94), rgba(88, 14, 14, 0.92)); color: var(--thepurge); box-shadow: 0 0 16px rgba(148, 24, 24, 0.16); }
@@ -8075,6 +8140,12 @@ body {
   color: var(--overload);
 }
 
+#screen-roles .roles-guide-card.role-theme-arsonist,
+#screen-roles .roles-guide-card.role-theme-arsonist .roles-guide-card-icon {
+  border-color: rgba(255, 114, 52, 0.74);
+  color: var(--arsonist);
+}
+
 #screen-roles .roles-guide-card.role-theme-hypnotic,
 #screen-roles .roles-guide-card.role-theme-hypnotic .roles-guide-card-icon {
   border-color: rgba(157, 23, 77, 0.72);
@@ -8232,6 +8303,10 @@ body {
   box-shadow: 0 0 20px -10px rgba(99, 255, 76, 0.48);
 }
 
+#screen-roles .roles-guide-card.role-theme-arsonist:hover {
+  box-shadow: 0 0 20px -10px rgba(255, 114, 52, 0.5);
+}
+
 #screen-roles .roles-guide-card.role-theme-hypnotic:hover {
   box-shadow: 0 0 20px -10px rgba(196, 65, 148, 0.42);
 }
@@ -8370,6 +8445,10 @@ body {
 
 #screen-roles .roles-guide-card.role-theme-overload .roles-guide-ability-highlight {
   color: var(--overload);
+}
+
+#screen-roles .roles-guide-card.role-theme-arsonist .roles-guide-ability-highlight {
+  color: var(--arsonist);
 }
 
 #screen-roles .roles-guide-card.role-theme-hypnotic .roles-guide-ability-highlight {
