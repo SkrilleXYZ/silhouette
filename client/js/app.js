@@ -644,6 +644,8 @@
     'Avatar 7.png',
     'Avatar 8.png',
     'Avatar 9.png',
+    'Avatar 10.png',
+    'Avatar 26.png',
   ];
   const LOBBY_AVATAR_IMAGES = LOBBY_AVATAR_FILES.map((fileName) => `./assets/avatars/${encodeURIComponent(fileName)}?v=${AVATAR_ASSET_VERSION}`);
   const PLAYER_NAME_PALETTE = [

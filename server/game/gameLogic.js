@@ -1,7 +1,7 @@
 class GameLogic {
   constructor() {
     this.rooms = new Map();
-    this.avatarCount = 29;
+    this.avatarCount = 24;
     this.roleCatalog = {
       Crew: {
         Info: ['Villager', 'Investigator', 'Tracker', 'Stalker', 'Redflag', 'Traplord'],
@@ -1558,7 +1558,11 @@ class GameLogic {
     for (const [id, player] of room.players) {
       if (!player.alive) continue;
       const activeRole = this.getEffectiveNightRole(player);
-      if (player.role === 'Imitator' && !player.imitatorCopiedRole) return false;
+      if (player.role === 'Imitator' && !player.imitatorCopiedRole) {
+        const availableTargetIds = this.getImitatorAvailableTargetIds(room, id);
+        if (availableTargetIds.length === 0) continue;
+        return false;
+      }
       if (activeRole === 'Villager') continue;
       if (activeRole === 'Jester') continue;
       if (activeRole === 'Executioner') continue;
@@ -2081,14 +2085,12 @@ class GameLogic {
     }
 
     const disabledAbilityTargets = new Set([...disabledByAbilityTargets, ...veteranCounterKilledActors]);
+    const consumeLimitedNightUse = (player, activeRole, action) => {
+      if (!player) return;
 
-    for (const [playerId, action] of Object.entries(room.nightActions)) {
-      const player = room.players.get(playerId);
-      const activeRole = this.getEffectiveNightRole(player);
-      if (!player) continue;
-      if (isSuppressedByPurge(player)) continue;
-      if (!disabledByAbilityTargets.has(playerId)) continue;
-
+      if (activeRole === 'Veteran' && action.action === 'instinct') {
+        player.veteranUsesRemaining = Math.max(0, (player.veteranUsesRemaining ?? 4) - 1);
+      }
       if (activeRole === 'Oracle' && action.action === 'evil-eye' && action.targetId) {
         player.oracleMarkedTargetId = null;
         player.oracleEvilEyeUsesRemaining = Math.max(0, (player.oracleEvilEyeUsesRemaining ?? 3) - 1);
@@ -2107,6 +2109,23 @@ class GameLogic {
         player.blackoutFlashUsesRemaining = Math.max(0, (player.blackoutFlashUsesRemaining ?? 3) - 1);
         room.lastBlackoutFlashNight[playerId] = room.nightCount;
       }
+    };
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      const activeRole = this.getEffectiveNightRole(player);
+      if (!player) continue;
+      if (!isSuppressedByPurge(player)) continue;
+      consumeLimitedNightUse(player, activeRole, action);
+    }
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      const activeRole = this.getEffectiveNightRole(player);
+      if (!player) continue;
+      if (isSuppressedByPurge(player)) continue;
+      if (!disabledByAbilityTargets.has(playerId)) continue;
+      consumeLimitedNightUse(player, activeRole, action);
     }
 
     for (const [playerId, action] of Object.entries(room.nightActions)) {
