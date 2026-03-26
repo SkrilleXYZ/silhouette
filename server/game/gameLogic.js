@@ -1161,7 +1161,7 @@ class GameLogic {
       if (!target || !target.alive) return { error: 'Invalid target' };
       if (action !== 'guard') return { error: 'Invalid action for Warden' };
       if (room.lastWardenTargets[playerId] === targetId) {
-        return { error: 'You cannot target the same player in a row' };
+        return { error: 'You cannot target the same player twice in a row' };
       }
     } else if (activeRole === 'Oracle') {
       const target = room.players.get(targetId);
@@ -1736,7 +1736,7 @@ class GameLogic {
       wardenBlockedActors.add(actorId);
       if (!privateMessages[actorId]) privateMessages[actorId] = [];
       privateMessages[actorId].push(
-        this.createPrivateSystemMessage(code, 'This player was guarded by the Warden.', 'Warden')
+        this.createPrivateSystemMessage(code, 'Warden has protected you from all interactions.', 'Warden')
       );
     };
     const getDisableActionEntries = () => Object.entries(room.nightActions)
@@ -2019,7 +2019,7 @@ class GameLogic {
         nextMagicianTargets[disableAction.playerId] = disableAction.targetId;
         if (!privateMessages[disableAction.targetId]) privateMessages[disableAction.targetId] = [];
         privateMessages[disableAction.targetId].push(
-          this.createPrivateSystemMessage(code, 'You have been spoofed by the Magician.', 'Magician')
+          this.createPrivateSystemMessage(code, 'The Magician made you disappear.', 'Magician')
         );
         applySpoofBlocks();
         continue;

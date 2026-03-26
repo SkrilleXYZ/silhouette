@@ -133,26 +133,26 @@
     Warden: {
       faction: 'Crew',
       subfaction: 'Protection',
-      description: 'Protect a player from being interacted with at night. Cannot target the same player in a row.',
+      description: 'Protect a player from being interacted with at night. Cannot target the same player twice in a row.',
       revealText: 'Blue, teal, and gold barriers lock into place around your target. Keep every hand away from them until dawn.',
       abilities: [
         {
           name: 'Guard',
           type: 'Night',
-          description: 'Protect a player from being interacted with at night. Cannot target the same player in a row.',
+          description: 'Protect a player from being interacted with at night. Cannot target the same player twice in a row.',
         },
       ],
     },
     Inquisitor: {
       faction: 'Crew',
       subfaction: 'Unbound',
-      description: 'Exile a player before a voting phase ends, making the other players\' votes completely useless.',
+      description: 'Exile a player before a voting phase ends, making other player\'s votes completely useless.',
       revealText: 'Teal judgement coils in the air. End the vote on your terms and drag one player out before the crowd decides.',
       abilities: [
         {
           name: 'Exile',
           type: 'Voting',
-          description: 'Exile a player before a voting phase ends, making the other players\' votes completely useless.',
+          description: 'Exile a player before a voting phase ends, making other player\'s votes completely useless.',
         },
       ],
     },
@@ -574,7 +574,7 @@
       revealText: 'Dark crimson rot gathers around your hands. Start the infection quietly, then let every contact carry it further.',
       abilities: [
         {
-          name: 'Infect',
+          name: 'Plague',
           type: 'Night',
           description: 'Infect a player. Infected players silently spread the infection through their interactions and cannot be infected again.',
         },
@@ -590,7 +590,7 @@
         {
           name: 'Immortal',
           type: 'Passive',
-          description: 'You cannot be killed. Only voting or Inquisitor exile can remove you.',
+          description: 'You cannot be killed only voted out.',
         },
         {
           name: 'Kill',
@@ -634,7 +634,7 @@
         {
           name: 'Blessing',
           type: 'Night',
-          description: 'Protect your target from getting killed that round. Can be used 4 times.',
+          description: 'Protect your target from getting killed that round. If your target dies, you become an Amnesiac. Can be used 4 times.',
         },
       ],
     },
@@ -1659,6 +1659,42 @@
       .replace(
         'Can be used 2 times.',
         '<span class="roles-guide-ability-highlight">Can be used 2 times.</span>'
+      )
+      .replace(
+        'cannot be targeted again.',
+        '<span class="roles-guide-ability-highlight">cannot be targeted again.</span>'
+      )
+      .replace(
+        'Requires at least 1 player to be doused.',
+        '<span class="roles-guide-ability-highlight">Requires at least 1 player to be doused.</span>'
+      )
+      .replace(
+        'cannot be infected again.',
+        '<span class="roles-guide-ability-highlight">cannot be infected again.</span>'
+      )
+      .replace(
+        'If your target dies, you become an Amnesiac.',
+        '<span class="roles-guide-ability-highlight">If your target dies, you become an Amnesiac.</span>'
+      )
+      .replace(
+        'Can be used once.',
+        '<span class="roles-guide-ability-highlight">Can be used once.</span>'
+      )
+      .replace(
+        'Cannot be used twice in a row. Can be used 3 times.',
+        '<span class="roles-guide-ability-highlight">Cannot be used twice in a row. Can be used 3 times.</span>'
+      )
+      .replace(
+        'but you die instead.',
+        '<span class="roles-guide-ability-highlight">but you die instead.</span>'
+      )
+      .replace(
+        'Can only be used once. Cannot target yourself.',
+        '<span class="roles-guide-ability-highlight">Can only be used once. Cannot target yourself.</span>'
+      )
+      .replace(
+        'If your target dies, you become an Amnesiac. Can be used 4 times.',
+        '<span class="roles-guide-ability-highlight">If your target dies, you become an Amnesiac. Can be used 4 times.</span>'
       );
   }
 
@@ -2242,7 +2278,7 @@
     if (/Your gospel revealed that .* is the .*?\.$/i.test(text) && String(message.source || '').trim() === 'Prophet') {
       return ' system-result-prophet';
     }
-    if (/You have been spoofed by the Magician\.$/i.test(text) && String(message.source || '').trim() === 'Magician') {
+    if (/The Magician made you disappear\.$/i.test(text) && String(message.source || '').trim() === 'Magician') {
       return ' system-result-magician';
     }
     if ((/You have been killed by .*\.$/i.test(text) || /You have been burnt to crisp by the Arsonist\.$/i.test(text)) && String(message.source || '').trim() === 'Death') {
@@ -2257,7 +2293,7 @@
     if (/You protected the chosen player\.$/i.test(text) && String(message.source || '').trim() === 'Warden') {
       return ' system-result-warden-confirm';
     }
-    if (/This player was guarded by the Warden\.$/i.test(text) && String(message.source || '').trim() === 'Warden') {
+    if (/Warden has protected you from all interactions\.$/i.test(text) && String(message.source || '').trim() === 'Warden') {
       return ' system-result-warden';
     }
     if (/.* confesses to murdering .*\.$/i.test(text) && String(message.source || '').trim() === 'Redflag') {
@@ -3130,7 +3166,7 @@
     const activeRole = getActiveNightRole(state.playerData);
     return state.roomData.players.filter(p => {
       if (!p.alive) return false;
-      if (p.id === state.playerId) return activeRole === 'Vitalist' || activeRole === 'Mirror Caster' || activeRole === 'Teleporter';
+      if (p.id === state.playerId) return activeRole === 'Vitalist' || activeRole === 'Mirror Caster' || activeRole === 'Teleporter' || activeRole === 'Warden';
       if (state.playerData.faction === 'Assassin' && (activeRole === 'Assassin' || activeRole === 'Disruptor' || activeRole === 'Manipulator')) {
         const isTeammate = state.playerData.teammates?.some(t => t.id === p.id);
         if (isTeammate) return false;
@@ -4459,7 +4495,7 @@
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'douse' ? 'selected' : ''}" data-action="douse">Douse</button><button class="action-btn ${state.selectedAction === 'ignite' ? 'selected' : ''}" data-action="ignite" ${arsonistCanIgniteTonight ? '' : 'disabled'}>Ignite</button></div>`;
     } else if (activeRole === 'Wither') {
       state.selectedAction = 'infect';
-      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="infect">Infect</button></div>';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="infect">Plague</button></div>';
     } else if (activeRole === 'Pestilence') {
       state.selectedAction = 'kill';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="kill">Kill</button></div>';
@@ -4651,7 +4687,7 @@
           } else if (activeRole === 'Mirror Caster') {
             showToast('You cannot target the same player twice in a row', 'error');
           } else if (activeRole === 'Warden') {
-            showToast('You cannot target the same player in a row', 'error');
+            showToast('You cannot target the same player twice in a row', 'error');
           } else {
             showToast('You cannot protect the same player two nights in a row', 'error');
           }

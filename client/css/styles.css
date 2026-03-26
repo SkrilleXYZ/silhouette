@@ -8547,8 +8547,8 @@ body {
 
 #screen-roles .roles-guide-card.role-theme-scientist,
 #screen-roles .roles-guide-card.role-theme-scientist .roles-guide-card-icon {
-  border-color: rgba(84, 232, 214, 0.72);
-  color: var(--scientist);
+  border-color: rgba(52, 96, 196, 0.74);
+  color: hsl(220, 84%, 66%);
 }
 
 #screen-roles .roles-guide-card.role-theme-narcissist,
@@ -8943,7 +8943,7 @@ body {
 }
 
 #screen-roles .roles-guide-card.role-theme-scientist .roles-guide-ability-highlight {
-  color: var(--scientist);
+  color: hsl(220, 84%, 66%);
 }
 
 #screen-roles .roles-guide-card.role-theme-narcissist .roles-guide-ability-highlight {
@@ -9101,3 +9101,6 @@ body {
   }
 }
 
+#screen-roles .roles-guide-card.role-theme-scientist:hover {
+  box-shadow: 0 0 20px -10px rgba(52, 96, 196, 0.48);
+}
