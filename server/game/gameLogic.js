@@ -8,7 +8,7 @@ class GameLogic {
         Protection: ['Vitalist', 'Mirror Caster', 'Warden', 'Oracle', 'Lawyer'],
         Killing: ['Sheriff', 'Veteran', 'Officer'],
         Chaos: ['Teleporter', 'Swapper', 'Magician', 'Scientist', 'Silencer'],
-        Unbound: ['Narcissist', 'Inquisitor', 'Alturist', 'The Vessel', 'Karma', 'Mayor'],
+        Unbound: ['Narcissist', 'Inquisitor', 'Alturist', 'The Vessel', 'Karma', 'Mayor', 'Medium'],
       },
       Assassin: {
         Power: ['Assassin', 'Ace of Blades', 'Sniper', 'Tetherhex'],
@@ -112,6 +112,8 @@ class GameLogic {
       chatMessages: [],
       assassinChatMessages: [],
       jailChatMessages: [],
+      abyssChatMessages: [],
+      abyssActiveMediumId: null,
       currentPhaseSummaryId: null,
       anonymousVotes: false,
       anonymousEjects: false,
@@ -186,6 +188,7 @@ class GameLogic {
       aceOfBladesKillsAvailable: 0,
       aceOfBladesRollNightNumber: 0,
       mayorStoredVotes: 0,
+      mediumMediateUsesRemaining: 3,
       alturistReviveTargetId: null,
       scientistExperimentUsesRemaining: 1,
       scientistSwapTargetIds: [],
@@ -247,6 +250,7 @@ class GameLogic {
       aceOfBladesKillsAvailable: 0,
       aceOfBladesRollNightNumber: 0,
       mayorStoredVotes: 0,
+      mediumMediateUsesRemaining: 3,
       alturistReviveTargetId: null,
       scientistExperimentUsesRemaining: 1,
       scientistSwapTargetIds: [],
@@ -337,18 +341,30 @@ class GameLogic {
     );
   }
 
+  isRoleAvailableForPlayerCount(room, role) {
+    const playerCount = room?.players?.size || 0;
+    if (role === 'Ace of Blades') return playerCount >= 8;
+    return true;
+  }
+
   getRolePoolForRoom(room, faction, subfaction) {
     const basePool = this.roleCatalog?.[faction]?.[subfaction] || [];
     if (!Array.isArray(basePool)) return [];
     const assignedRoles = this.getAssignedRoleNames(room);
     if (room?.disableVillagerRole && faction === 'Crew' && subfaction === 'Info') {
-      return basePool.filter((role) => role !== 'Villager' && !assignedRoles.has(role));
+      return basePool.filter((role) => role !== 'Villager' && !assignedRoles.has(role) && this.isRoleAvailableForPlayerCount(room, role));
     }
-    return basePool.filter((role) => !assignedRoles.has(role));
+    return basePool.filter((role) => !assignedRoles.has(role) && this.isRoleAvailableForPlayerCount(room, role));
   }
 
   pickRoleForSlot(room, faction, subfaction) {
     const pool = this.getRolePoolForRoom(room, faction, subfaction);
+    if (faction === 'Crew' && subfaction === 'Info') {
+      const nonVillagerPool = pool.filter((role) => role !== 'Villager');
+      if (nonVillagerPool.length > 0) {
+        return this.pickRandomRole(nonVillagerPool);
+      }
+    }
     return this.pickRandomRole(pool);
   }
 
@@ -370,7 +386,7 @@ class GameLogic {
 
     const assignedRoles = this.getAssignedRoleNames(room);
     const availableRoles = Array.isArray(roles)
-      ? roles.filter((role) => role && !assignedRoles.has(role))
+      ? roles.filter((role) => role && !assignedRoles.has(role) && this.isRoleAvailableForPlayerCount(room, role))
       : [];
     const role = this.pickRandomRole(availableRoles);
     if (!role) return false;
@@ -383,6 +399,7 @@ class GameLogic {
   assignSpecificRole(room, playerId, roleName) {
     const player = room.players.get(playerId);
     if (!player) return false;
+    if (!this.isRoleAvailableForPlayerCount(room, roleName)) return false;
 
     for (const [faction, subfactions] of Object.entries(this.roleCatalog || {})) {
       for (const roles of Object.values(subfactions || {})) {
@@ -405,13 +422,165 @@ class GameLogic {
       ...this.getRolePoolForRoom(room, 'Crew', 'Chaos'),
       ...this.getRolePoolForRoom(room, 'Crew', 'Unbound'),
     ];
-    const role = this.pickRandomRole(fallbackPool);
+    const preferredFallbackPool = fallbackPool.filter((role) => role !== 'Villager');
+    const role = this.pickRandomRole(preferredFallbackPool.length > 0 ? preferredFallbackPool : fallbackPool);
     if (!role) return false;
     const player = room.players.get(playerId);
     if (!player) return false;
     player.role = role;
     player.faction = 'Crew';
     return true;
+  }
+
+  assignFlexibleCrewRole(room, playerId) {
+    const flexibleCrewPool = [
+      ...this.getRolePoolForRoom(room, 'Crew', 'Unbound'),
+      ...this.getRolePoolForRoom(room, 'Crew', 'Chaos'),
+      ...this.getRolePoolForRoom(room, 'Crew', 'Protection'),
+      ...this.getRolePoolForRoom(room, 'Crew', 'Killing'),
+      ...this.getRolePoolForRoom(room, 'Crew', 'Info').filter((role) => role !== 'Villager'),
+      ...this.getRolePoolForRoom(room, 'Crew', 'Info').filter((role) => role === 'Villager'),
+    ];
+    return this.assignRoleFromPool(room, playerId, 'Crew', flexibleCrewPool);
+  }
+
+  getBalancePlanForPlayerCount(count) {
+    const plans = {
+      5: [
+        { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'neutral', categories: ['Evil'] },
+      ],
+      6: [
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+      ],
+      7: [
+        { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'pool', faction: 'Assassin', pools: [['Concealing', 'Support']] },
+        { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
+      ],
+      8: [
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'pool', faction: 'Assassin', pools: [['Concealing', 'Support']] },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Unbound' },
+      ],
+      9: [
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'pool', faction: 'Assassin', pools: [['Concealing', 'Support']] },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Unbound' },
+        { type: 'crew-flex' },
+      ],
+      10: [
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'pool', faction: 'Assassin', pools: [['Concealing', 'Support']] },
+        { type: 'pool', faction: 'Assassin', pools: [['Power', 'Concealing', 'Support']] },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Unbound' },
+      ],
+      11: [
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'pool', faction: 'Assassin', pools: [['Concealing', 'Support']] },
+        { type: 'pool', faction: 'Assassin', pools: [['Power', 'Concealing', 'Support']] },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Unbound' },
+        { type: 'crew-flex' },
+      ],
+      12: [
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'pool', faction: 'Assassin', pools: [['Concealing', 'Support']] },
+        { type: 'pool', faction: 'Assassin', pools: [['Power', 'Concealing', 'Support']] },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Unbound' },
+        { type: 'crew-flex' },
+        { type: 'crew-flex' },
+      ],
+      13: [
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'pool', faction: 'Assassin', pools: [['Concealing', 'Support']] },
+        { type: 'pool', faction: 'Assassin', pools: [['Power', 'Concealing', 'Support']] },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Unbound' },
+        { type: 'crew-flex' },
+        { type: 'crew-flex' },
+        { type: 'crew-flex' },
+      ],
+      14: [
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'pool', faction: 'Assassin', pools: [['Concealing', 'Support']] },
+        { type: 'pool', faction: 'Assassin', pools: [['Power', 'Concealing', 'Support']] },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Unbound' },
+        { type: 'crew-flex' },
+        { type: 'crew-flex' },
+        { type: 'crew-flex' },
+        { type: 'crew-flex' },
+      ],
+      15: [
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'pool', faction: 'Assassin', pools: [['Concealing', 'Support']] },
+        { type: 'pool', faction: 'Assassin', pools: [['Power', 'Concealing', 'Support']] },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Unbound' },
+        { type: 'crew-flex' },
+        { type: 'crew-flex' },
+        { type: 'crew-flex' },
+        { type: 'crew-flex' },
+        { type: 'crew-flex' },
+      ],
+    };
+
+    return plans[count] || plans[15];
   }
 
   assignExecutionerTargets(room) {
@@ -496,6 +665,14 @@ class GameLogic {
     return playerId === room.jailedPlayerId || playerId === room.jailedOfficerId;
   }
 
+  canUseAbyssChat(room, playerId) {
+    if (!room || !playerId || room.state !== 'night' || !room.abyssActiveMediumId) return false;
+    const player = room.players.get(playerId);
+    if (!player) return false;
+    if (playerId === room.abyssActiveMediumId) return player.alive;
+    return !player.alive;
+  }
+
   clearOfficerJail(room) {
     if (!room) return;
     const officer = room.jailedOfficerId ? room.players.get(room.jailedOfficerId) : null;
@@ -506,6 +683,12 @@ class GameLogic {
     room.jailedPlayerId = null;
     room.jailedOfficerId = null;
     room.jailChatMessages = [];
+  }
+
+  clearAbyssChat(room) {
+    if (!room) return;
+    room.abyssActiveMediumId = null;
+    room.abyssChatMessages = [];
   }
 
   convertOfficerToAmnesiac(room, playerId) {
@@ -785,12 +968,6 @@ class GameLogic {
     const playerIds = Array.from(room.players.keys());
     const count = playerIds.length;
 
-    let assassinCount;
-    if (count <= 6) assassinCount = 1;
-    else if (count <= 9) assassinCount = 2;
-    else if (count <= 15) assassinCount = 3;
-    else assassinCount = 4;
-
     const shuffled = [...playerIds];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -818,8 +995,7 @@ class GameLogic {
 
     let index = 0;
 
-    if (count === 5) {
-      if (room.useClassicFivePlayerSetup) {
+    if (count === 5 && room.useClassicFivePlayerSetup) {
         this.assignSpecificRole(room, shuffled[index], 'Sheriff');
         index++;
         this.assignSpecificRole(room, shuffled[index], 'Vitalist');
@@ -834,171 +1010,53 @@ class GameLogic {
         this.assignExecutionerTargets(room);
         this.assignGuardianAngelTargets(room);
         return room;
-      }
-
-      const slotPlan = [
-        { faction: 'Crew', subfaction: 'Info' },
-        { faction: 'Crew', subfaction: 'Protection' },
-        { faction: 'Crew', subfaction: 'Killing' },
-        { faction: 'Assassin', subfaction: 'Power' },
-      ];
-
-      for (const slot of slotPlan) {
-        this.assignRoleFromSlot(room, shuffled[index], slot.faction, slot.subfaction);
-        index++;
-      }
-
-      this.assignNeutralSpecialRole(room, shuffled[index], ['Evil']);
-      index++;
-
-      room.playerOrder = shuffled;
-      this.assignExecutionerTargets(room);
-      this.assignGuardianAngelTargets(room);
-      return room;
     }
 
-    if (count === 7) {
-      const slotPlan = [
-        { faction: 'Crew', subfaction: 'Info' },
-        { faction: 'Crew', subfaction: 'Protection' },
-        { faction: 'Crew', subfaction: 'Killing' },
-        { faction: 'Assassin', subfaction: 'Power' },
-      ];
-
-      for (const slot of slotPlan) {
-        this.assignRoleFromSlot(room, shuffled[index], slot.faction, slot.subfaction);
-        index++;
-      }
-
-      this.assignRoleFromPool(
-        room,
-        shuffled[index],
-        'Assassin',
-        [
-          ...this.getRolePoolForRoom(room, 'Assassin', 'Concealing'),
-          ...this.getRolePoolForRoom(room, 'Assassin', 'Support'),
-        ]
-      );
-      index++;
-
-      this.assignRoleFromPool(
-        room,
-        shuffled[index],
-        'Crew',
-        [
-          ...this.getRolePoolForRoom(room, 'Crew', 'Unbound'),
-          ...this.getRolePoolForRoom(room, 'Crew', 'Chaos'),
-        ]
-      );
-      index++;
-
-      this.assignNeutralSpecialRole(room, shuffled[index], ['Evil', 'Benign', 'Killing']);
-      room.playerOrder = shuffled;
-      this.assignExecutionerTargets(room);
-      this.assignGuardianAngelTargets(room);
-      return room;
-    }
-
-    if (count === 6) {
-      this.assignRoleFromSlot(room, shuffled[index], 'Assassin', 'Power');
-      index++;
-
-      this.assignNeutralSpecialRole(room, shuffled[index], ['Evil', 'Benign', 'Killing']);
-      index++;
-
-      this.assignRoleFromSlot(room, shuffled[index], 'Crew', 'Killing');
-      index++;
-
-      this.assignRoleFromSlot(room, shuffled[index], 'Crew', 'Protection');
-      index++;
-
-      this.assignRoleFromSlot(room, shuffled[index], 'Crew', 'Info');
-      index++;
-
-      this.assignRoleFromPool(
-        room,
-        shuffled[index],
-        'Crew',
-        [
-          ...this.getRolePoolForRoom(room, 'Crew', 'Unbound'),
-          ...this.getRolePoolForRoom(room, 'Crew', 'Chaos'),
-        ]
-      );
-
-      room.playerOrder = shuffled;
-      this.assignExecutionerTargets(room);
-      this.assignGuardianAngelTargets(room);
-      return room;
-    }
-
-    for (let i = 0; i < assassinCount; i++) {
-      if (i === 0) {
-        this.assignRoleFromSlot(room, shuffled[index], 'Assassin', 'Power');
-      } else if (i === 1) {
-        this.assignRoleFromPool(
-          room,
-          shuffled[index],
-          'Assassin',
-          [
-            ...this.getRolePoolForRoom(room, 'Assassin', 'Concealing'),
-            ...this.getRolePoolForRoom(room, 'Assassin', 'Support'),
-          ]
-        );
-      } else {
-        this.assignRoleFromPool(
-          room,
-          shuffled[index],
-          'Assassin',
-          [
-            ...this.getRolePoolForRoom(room, 'Assassin', 'Power'),
-            ...this.getRolePoolForRoom(room, 'Assassin', 'Concealing'),
-            ...this.getRolePoolForRoom(room, 'Assassin', 'Support'),
-          ]
-        );
-      }
-      index++;
-    }
-
-    if (index < shuffled.length) {
-      this.assignNeutralSpecialRole(room, shuffled[index], ['Evil', 'Benign', 'Killing']);
-      index++;
-    }
-
-    if (count === 10 && index < shuffled.length) {
-      this.assignNeutralSpecialRole(room, shuffled[index], ['Evil', 'Benign', 'Killing']);
-      index++;
-    }
-
-    this.assignRoleFromSlot(room, shuffled[index], 'Crew', 'Killing');
-    index++;
-
-    this.assignRoleFromSlot(room, shuffled[index], 'Crew', 'Protection');
-    index++;
-
-    if (index < shuffled.length) {
-      this.assignRoleFromSlot(room, shuffled[index], 'Crew', 'Info');
-      index++;
-    }
-
-    if (index < shuffled.length) {
-      this.assignRoleFromSlot(room, shuffled[index], 'Crew', 'Unbound');
-      index++;
-    }
-
-    if (index < shuffled.length) {
-      this.assignRoleFromSlot(room, shuffled[index], 'Crew', 'Chaos');
-      index++;
-    }
-
-    while (index < shuffled.length) {
+    const slotPlan = this.getBalancePlanForPlayerCount(count);
+    for (const slot of slotPlan) {
       const playerId = shuffled[index];
-      if (room.disableVillagerRole) {
-        this.assignFallbackCrewRole(room, playerId);
-      } else {
-        const player = room.players.get(playerId);
-        player.role = 'Villager';
-        player.faction = 'Crew';
+      if (!playerId) break;
+
+      let assigned = false;
+      if (slot.type === 'slot') {
+        assigned = this.assignRoleFromSlot(room, playerId, slot.faction, slot.subfaction);
+      } else if (slot.type === 'neutral') {
+        assigned = this.assignNeutralSpecialRole(room, playerId, slot.categories);
+      } else if (slot.type === 'pool') {
+        const rolePool = slot.pools.flatMap((poolEntry) => {
+          if (Array.isArray(poolEntry)) {
+            return poolEntry.flatMap((subfaction) => this.getRolePoolForRoom(room, slot.faction, subfaction));
+          }
+          return this.getRolePoolForRoom(room, slot.faction, poolEntry);
+        });
+        assigned = this.assignRoleFromPool(room, playerId, slot.faction, rolePool);
+      } else if (slot.type === 'crew-flex') {
+        assigned = this.assignFlexibleCrewRole(room, playerId);
       }
+
+      if (!assigned) {
+        if (slot.faction === 'Crew' || slot.type === 'crew-flex') {
+          assigned = this.assignFlexibleCrewRole(room, playerId) || this.assignFallbackCrewRole(room, playerId);
+        } else if (slot.faction === 'Assassin' || (slot.type === 'pool' && slot.faction === 'Assassin')) {
+          assigned = this.assignRoleFromPool(
+            room,
+            playerId,
+            'Assassin',
+            [
+              ...this.getRolePoolForRoom(room, 'Assassin', 'Power'),
+              ...this.getRolePoolForRoom(room, 'Assassin', 'Concealing'),
+              ...this.getRolePoolForRoom(room, 'Assassin', 'Support'),
+            ]
+          );
+        } else if (slot.type === 'neutral') {
+          assigned = this.assignNeutralSpecialRole(room, playerId, ['Evil', 'Benign', 'Killing']);
+        }
+      }
+
+      if (!assigned) {
+        this.assignFlexibleCrewRole(room, playerId) || this.assignFallbackCrewRole(room, playerId);
+      }
+
       index++;
     }
 
@@ -1021,6 +1079,8 @@ class GameLogic {
     room.morningMessages = [];
     room.chatMessages = [];
     room.assassinChatMessages = [];
+    room.abyssChatMessages = [];
+    room.abyssActiveMediumId = null;
     room.currentPhaseSummaryId = null;
     room.lastMedicTarget = null;
     room.lastWardenTargets = {};
@@ -1081,6 +1141,7 @@ class GameLogic {
       player.aceOfBladesKillsAvailable = 0;
       player.aceOfBladesRollNightNumber = 0;
       player.mayorStoredVotes = 0;
+      player.mediumMediateUsesRemaining = 3;
       player.alturistReviveTargetId = null;
       player.scientistExperimentUsesRemaining = 1;
       player.scientistSwapTargetIds = [];
@@ -1105,7 +1166,8 @@ class GameLogic {
     room.chatMessages = [];
     room.assassinChatMessages = [];
     room.jailChatMessages = [];
-    room.jailChatMessages = [];
+    room.abyssChatMessages = [];
+    room.abyssActiveMediumId = null;
     room.currentPhaseSummaryId = null;
     room.traitorActivated = false;
     room.jailedPlayerId = null;
@@ -1303,6 +1365,9 @@ class GameLogic {
       if (action !== 'evil-eye') return { error: 'Invalid action for Oracle' };
       if ((player.oracleEvilEyeUsesRemaining ?? 3) <= 0) return { error: 'You have no Evil Eye uses remaining' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
+    } else if (activeRole === 'Medium') {
+      if (action !== 'mediate') return { error: 'Invalid action for Medium' };
+      if ((player.mediumMediateUsesRemaining ?? 3) <= 0) return { error: 'You have no Mediate uses remaining' };
     } else if (activeRole === 'Vitalist') {
       const target = room.players.get(targetId);
       if (!target || !target.alive) return { error: 'Invalid target' };
@@ -1652,6 +1717,16 @@ class GameLogic {
         targetId,
         queuedTargetId: null,
       };
+    } else if (activeRole === 'Medium') {
+      player.mediumMediateUsesRemaining = Math.max(0, (player.mediumMediateUsesRemaining ?? 3) - 1);
+      room.abyssActiveMediumId = playerId;
+      room.abyssChatMessages = [];
+      room.nightActions[playerId] = {
+        action,
+        targetId: null,
+        queuedTargetId: null,
+      };
+      return { success: true, room, player: this.getPlayerData(code, playerId), immediateAbyssActivated: true };
     } else if (activeRole === 'Officer') {
       if (action === 'detain' && targetId) {
         this.clearOfficerJail(room);
@@ -1849,6 +1924,7 @@ class GameLogic {
       if (activeRole === 'Karma') continue;
       if (activeRole === 'Inquisitor') continue;
       if (activeRole === 'Lawyer') continue;
+      if (activeRole === 'Medium' && (player.mediumMediateUsesRemaining ?? 3) <= 0) continue;
       if (activeRole === 'Scientist') continue;
       if (activeRole === 'Swapper') continue;
       if (activeRole === 'Narcissist') continue;
@@ -3778,6 +3854,7 @@ class GameLogic {
       }
     }
 
+    this.clearAbyssChat(room);
     room.morningMessages = messages;
     const alivePlayers = Array.from(room.players.values()).filter(p => p.alive).map(p => p.name);
     const morningLines = messages.filter((msg) => msg.public).map((msg) => msg.text);
@@ -4768,6 +4845,7 @@ class GameLogic {
     if (action === 'abracadabra') return 'Magician has made a player disappear.';
     if (action === 'guard') return 'Warden has guarded someone.';
     if (action === 'detain') return 'The Officer has arrested someone.';
+    if (action === 'mediate') return 'The Medium is hearing things.';
     if (action === 'sacrifice') return 'The Alturist has sacrificed themselves.';
     if (action === 'mimic') return 'Imitator has shifted abilities.';
     if (action === 'inherit') return 'Amnesiac has claimed a forgotten role.';
@@ -4994,6 +5072,35 @@ class GameLogic {
     return { success: true, message };
   }
 
+  addAbyssChatMessage(code, playerId, text) {
+    const room = this.rooms.get(code);
+    if (!room) return { error: 'Room not found' };
+    if (room.state !== 'night') return { error: 'Abyss chat is unavailable' };
+    if (!this.canUseAbyssChat(room, playerId)) return { error: 'Abyss chat is unavailable' };
+
+    const player = room.players.get(playerId);
+    if (!player) return { error: 'Player not found' };
+    const cleanText = String(text || '').trim().replace(/\s+/g, ' ');
+    if (!cleanText) return { error: 'Message cannot be empty' };
+    if (cleanText.length > 280) return { error: 'Message is too long' };
+
+    const message = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      type: 'player',
+      senderId: playerId,
+      senderName: player.name,
+      senderAlive: player.alive,
+      text: cleanText,
+      createdAt: Date.now(),
+      phase: room.state,
+    };
+
+    room.abyssChatMessages.push(message);
+    if (room.abyssChatMessages.length > 120) room.abyssChatMessages = room.abyssChatMessages.slice(-120);
+    room.lastAction = Date.now();
+    return { success: true, message };
+  }
+
   getAssassinChatMessagesForPlayer(code, playerId) {
     const room = this.rooms.get(code);
     if (!room) return [];
@@ -5009,6 +5116,13 @@ class GameLogic {
     if (!room) return [];
     if (!this.canUseJailChat(room, playerId)) return [];
     return room.jailChatMessages.slice(-120);
+  }
+
+  getAbyssChatMessagesForPlayer(code, playerId) {
+    const room = this.rooms.get(code);
+    if (!room) return [];
+    if (!this.canUseAbyssChat(room, playerId)) return [];
+    return room.abyssChatMessages.slice(-120);
   }
 
   getPlayerData(code, playerId) {
@@ -5059,6 +5173,8 @@ class GameLogic {
         ? ((Array.isArray(room.votes[playerId].targets) ? room.votes[playerId].targets.length : 0))
         : (player.role === 'Mayor' && typeof room.votes[playerId] === 'string' && room.votes[playerId] !== 'skip' ? 1 : 0),
       lawyerStoredVotes: player.role === 'Lawyer' ? Math.max(0, player.lawyerStoredVotes ?? 0) : 0,
+      mediumMediateUsesRemaining: activeRole === 'Medium' ? (player.mediumMediateUsesRemaining ?? 3) : null,
+      abyssAvailable: this.canUseAbyssChat(room, playerId),
       lawyerObjectionUsesRemaining: player.role === 'Lawyer' ? (player.lawyerObjectionUsesRemaining ?? 2) : null,
       lawyerProtectedTargetId: player.role === 'Lawyer' ? (player.lawyerProtectedTargetId || null) : null,
       lawyerProtectedTargetName: player.role === 'Lawyer' && player.lawyerProtectedTargetId

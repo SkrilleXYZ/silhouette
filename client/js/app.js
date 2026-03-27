@@ -50,10 +50,13 @@
     assassinChatOverlayDraft: '',
     jailChatDraft: '',
     jailChatOverlayDraft: '',
+    abyssChatDraft: '',
+    abyssChatOverlayDraft: '',
     aceOfBladesRollAnimation: null,
     selectedTargets: [],
     assassinChatMessages: [],
     jailChatMessages: [],
+    abyssChatMessages: [],
     currentChatChannel: 'public',
     oracleVotingTab: 'ability',
     selectedVotingAbilityTargets: [],
@@ -186,6 +189,19 @@
           name: 'Corruption',
           type: 'Voting',
           description: 'Skipped votes during voting are stored to be used later.',
+        },
+      ],
+    },
+    Medium: {
+      faction: 'Crew',
+      subfaction: 'Unbound',
+      description: 'Allows you to talk to the dead by switching dimensions. Can be used 3 times.',
+      revealText: 'Lavender and magenta drift across the veil. Slip into the Abyss and speak with the dead before dawn closes it again.',
+      abilities: [
+        {
+          name: 'Mediate',
+          type: 'Night',
+          description: 'Allows you to talk to the dead by switching dimensions. Can be used 3 times.',
         },
       ],
     },
@@ -984,6 +1000,7 @@
     state.chatMessages = response.room?.chatMessages || [];
     state.assassinChatMessages = response.assassinChatMessages || [];
     state.jailChatMessages = response.jailChatMessages || [];
+    state.abyssChatMessages = response.abyssChatMessages || [];
     state.gamePhase = response.room?.state || null;
     state.hasActed = !!response.player?.hasSubmittedAction;
     state.hasVoted = !!response.player?.hasVoted;
@@ -1264,12 +1281,13 @@
       if (state.currentScreen === 'room') renderRoom();
     });
 
-    state.socket.on('game-started', ({ player, room, assassinChatMessages, jailChatMessages, revealEndsAt, revealDurationMs }) => {
+    state.socket.on('game-started', ({ player, room, assassinChatMessages, jailChatMessages, abyssChatMessages, revealEndsAt, revealDurationMs }) => {
       state.playerData = player;
       state.roomData = room;
       state.chatMessages = room.chatMessages || [];
       state.assassinChatMessages = assassinChatMessages || [];
       state.jailChatMessages = jailChatMessages || [];
+      state.abyssChatMessages = abyssChatMessages || [];
       state.hasActed = false;
       state.hasVoted = false;
       state.votesCast = 0;
@@ -1282,6 +1300,8 @@
       state.assassinChatOverlayDraft = '';
       state.jailChatDraft = '';
       state.jailChatOverlayDraft = '';
+      state.abyssChatDraft = '';
+      state.abyssChatOverlayDraft = '';
       state.currentChatChannel = 'public';
       state.selectedAction = null;
       state.selectedTarget = null;
@@ -1311,9 +1331,11 @@
       state.selectedTargets = [];
       state.selectedVotingAbilityTargets = [];
       state.oracleVotingTab = phase === 'voting' ? 'ability' : 'vote';
-      if (state.currentChatChannel === 'jail' && !canUseJailChat()) {
+      if (state.currentChatChannel === 'abyss' && !canUseAbyssChat()) {
         state.currentChatChannel = 'public';
-      } else if (state.playerData?.faction !== 'Assassin' || state.playerData?.alive === false) {
+      } else if (state.currentChatChannel === 'jail' && !canUseJailChat()) {
+        state.currentChatChannel = 'public';
+      } else if (state.currentChatChannel === 'assassin' && !canUseAssassinChat()) {
         state.currentChatChannel = 'public';
       }
       if (messages) state.morningMessages = messages;
@@ -1326,7 +1348,7 @@
       renderChatBox();
     });
 
-    state.socket.on('player-updated', ({ player, assassinChatMessages, jailChatMessages }) => {
+    state.socket.on('player-updated', ({ player, assassinChatMessages, jailChatMessages, abyssChatMessages }) => {
       const previousPlayer = state.playerData;
       queueAmnesiacInheritanceTransition(previousPlayer, player);
       queueTraitorTurnTransition(previousPlayer, player);
@@ -1338,9 +1360,14 @@
       if (Array.isArray(jailChatMessages)) {
         state.jailChatMessages = jailChatMessages;
       }
-      if (state.currentChatChannel === 'jail' && !player.isJailed && !player.officerJailedTargetId) {
+      if (Array.isArray(abyssChatMessages)) {
+        state.abyssChatMessages = abyssChatMessages;
+      }
+      if (state.currentChatChannel === 'abyss' && !player.abyssAvailable) {
         state.currentChatChannel = 'public';
-      } else if ((player.faction !== 'Assassin' || player.alive === false) && (!player.isJailed && !player.officerJailedTargetId)) {
+      } else if (state.currentChatChannel === 'jail' && !player.isJailed && !player.officerJailedTargetId) {
+        state.currentChatChannel = 'public';
+      } else if (state.currentChatChannel === 'assassin' && (player.faction !== 'Assassin' || player.alive === false)) {
         state.currentChatChannel = 'public';
       }
       state.hasActed = player.hasSubmittedAction;
@@ -1370,6 +1397,12 @@
     state.socket.on('jail-chat-message', ({ message }) => {
       state.jailChatMessages.push(message);
       if (state.jailChatMessages.length > 120) state.jailChatMessages = state.jailChatMessages.slice(-120);
+      renderChatBox();
+    });
+
+    state.socket.on('abyss-chat-message', ({ message }) => {
+      state.abyssChatMessages.push(message);
+      if (state.abyssChatMessages.length > 120) state.abyssChatMessages = state.abyssChatMessages.slice(-120);
       renderChatBox();
     });
 
@@ -1438,7 +1471,10 @@
       state.assassinChatOverlayDraft = '';
       state.jailChatDraft = '';
       state.jailChatOverlayDraft = '';
+      state.abyssChatDraft = '';
+      state.abyssChatOverlayDraft = '';
       state.jailChatMessages = [];
+      state.abyssChatMessages = [];
       state.selectedAction = null;
       state.selectedTarget = null;
       state.aceOfBladesRollAnimation = null;
@@ -1446,6 +1482,7 @@
       state.morningMessages = [];
       state.chatMessages = room.chatMessages || [];
       state.assassinChatMessages = [];
+      state.abyssChatMessages = [];
       state.chatDraft = '';
       state.chatOverlayDraft = '';
       state.assassinChatDraft = '';
@@ -1566,6 +1603,7 @@
     if (normalizedRole === 'warden') return 'warden';
     if (normalizedRole === 'oracle') return 'oracle';
     if (normalizedRole === 'lawyer') return 'lawyer';
+    if (normalizedRole === 'medium') return 'medium';
     if (normalizedRole === 'officer') return 'officer';
     if (normalizedRole === 'inquisitor') return 'inquisitor';
     if (normalizedRole === 'disruptor') return 'disruptor';
@@ -2357,6 +2395,7 @@
     if (/Magician has made a player disappear\./i.test(text)) return 'summary-magician';
     if (/Warden has guarded someone\./i.test(text)) return 'summary-warden';
     if (/The Officer has arrested someone\./i.test(text)) return 'summary-officer';
+    if (/The Medium is hearing things\./i.test(text)) return 'summary-medium';
     if (/has been jailed by the Officer\./i.test(text)) return 'summary-officer';
     if (/was executed by the Officer/i.test(text)) return 'summary-officer';
     if (/The Alturist has sacrificed themselves\./i.test(text)) return 'summary-alturist';
@@ -2497,6 +2536,9 @@
     }
     if (/Lawyer has objected this decision\./i.test(text) && String(message.source || '').trim() === 'Lawyer') {
       return ' system-result-lawyer-protect';
+    }
+    if (/The Medium is hearing things\./i.test(text) && String(message.source || '').trim() === 'Medium') {
+      return ' system-result-medium';
     }
     if ((/The Officer has arrested someone\./i.test(text) || /has been jailed by the Officer\./i.test(text) || /was executed by the Officer/i.test(text)) && String(message.source || '').trim() === 'Officer') {
       return ' system-result-officer';
@@ -4106,9 +4148,14 @@
     return state.playerData?.alive !== false && (!!state.playerData?.isJailed || !!state.playerData?.officerJailedTargetId);
   }
 
+  function canUseAbyssChat() {
+    return state.gamePhase === 'night' && !!state.playerData?.abyssAvailable;
+  }
+
   function getActiveChatChannel() {
     if (state.currentChatChannel === 'assassin' && canUseAssassinChat()) return 'assassin';
     if (state.currentChatChannel === 'jail' && canUseJailChat()) return 'jail';
+    if (state.currentChatChannel === 'abyss' && canUseAbyssChat()) return 'abyss';
     return 'public';
   }
 
@@ -4118,6 +4165,9 @@
     }
     if (channel === 'jail') {
       return [...(state.jailChatMessages || [])].sort((a, b) => a.createdAt - b.createdAt);
+    }
+    if (channel === 'abyss') {
+      return [...(state.abyssChatMessages || [])].sort((a, b) => a.createdAt - b.createdAt);
     }
 
     const viewerIsDead = state.playerData?.alive === false;
@@ -4170,6 +4220,9 @@
     if (channel === 'jail') {
       return isOverlayForm ? (state.jailChatOverlayDraft || '') : (state.jailChatDraft || '');
     }
+    if (channel === 'abyss') {
+      return isOverlayForm ? (state.abyssChatOverlayDraft || '') : (state.abyssChatDraft || '');
+    }
     return isOverlayForm ? (state.chatOverlayDraft || '') : (state.chatDraft || '');
   }
 
@@ -4182,6 +4235,11 @@
     if (channel === 'jail') {
       if (isOverlayForm) state.jailChatOverlayDraft = value;
       else state.jailChatDraft = value;
+      return;
+    }
+    if (channel === 'abyss') {
+      if (isOverlayForm) state.abyssChatOverlayDraft = value;
+      else state.abyssChatDraft = value;
       return;
     }
     if (isOverlayForm) state.chatOverlayDraft = value;
@@ -4197,6 +4255,11 @@
     if (channel === 'jail') {
       state.jailChatDraft = value;
       state.jailChatOverlayDraft = value;
+      return;
+    }
+    if (channel === 'abyss') {
+      state.abyssChatDraft = value;
+      state.abyssChatOverlayDraft = value;
       return;
     }
     state.chatDraft = value;
@@ -4236,6 +4299,8 @@
         ? 'send-assassin-chat-message'
         : channel === 'jail'
           ? 'send-jail-chat-message'
+          : channel === 'abyss'
+            ? 'send-abyss-chat-message'
           : 'send-chat-message';
       const previousText = text;
       if (input) input.value = '';
@@ -4295,6 +4360,7 @@
     const activeChannel = getActiveChatChannel();
     const assassinChatAvailable = canUseAssassinChat();
     const jailChatAvailable = canUseJailChat();
+    const abyssChatAvailable = canUseAbyssChat();
     const canPublicChat = (
       mode === 'lobby'
       || mode === 'morning'
@@ -4303,7 +4369,14 @@
     ) && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced && !state.playerData?.isJailed;
     const canAssassinChat = assassinChatAvailable && mode !== 'hidden' && mode !== 'ended' && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced;
     const canJailChat = jailChatAvailable && mode !== 'hidden' && mode !== 'ended';
-    const canChat = activeChannel === 'assassin' ? canAssassinChat : activeChannel === 'jail' ? canJailChat : canPublicChat;
+    const canAbyssChat = abyssChatAvailable && mode === 'night' && mode !== 'hidden' && mode !== 'ended';
+    const canChat = activeChannel === 'assassin'
+      ? canAssassinChat
+      : activeChannel === 'jail'
+        ? canJailChat
+        : activeChannel === 'abyss'
+          ? canAbyssChat
+          : canPublicChat;
     const isDaytimeInline = mode === 'lobby' || mode === 'morning';
     const isDaytimeFullscreen = isDaytimeInline && state.chatOverlayOpen;
     const isForcedExpandedNight = mode === 'night'
@@ -4324,6 +4397,10 @@
         ? (canJailChat
           ? (state.playerData?.isJailed ? 'Speak privately with the Officer.' : 'Speak privately with your prisoner.')
           : 'Jail chat is unavailable.')
+      : activeChannel === 'abyss'
+        ? (canAbyssChat
+          ? (state.playerData?.alive === false ? 'Speak with the Medium from beyond the veil.' : 'Speak with the dead through the Abyss.')
+          : 'Abyss chat is unavailable.')
       : (canPublicChat
         ? (mode === 'lobby' ? 'Chat before the game starts.' : 'Chat is open for discussion.')
         : mode === 'readonly'
@@ -4339,7 +4416,7 @@
     const isStandaloneOverlay = isOverlayOpen;
     const isDeadSpectator = state.playerData?.alive === false;
 
-    panel.className = `phase-chat-panel ${isStandaloneOverlay ? 'chat-overlay-anchor' : isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}${activeChannel === 'jail' ? ' chat-channel-jail' : ''}${mode === 'lobby' ? ' chat-lobby room-chat-panel' : ''}${mode === 'morning' ? ' chat-morning' : ''}${mode === 'night' && isExpandedMode ? ' chat-night-expanded' : ''}`;
+    panel.className = `phase-chat-panel ${isStandaloneOverlay ? 'chat-overlay-anchor' : isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}${activeChannel === 'jail' ? ' chat-channel-jail' : ''}${activeChannel === 'abyss' ? ' chat-channel-abyss' : ''}${mode === 'lobby' ? ' chat-lobby room-chat-panel' : ''}${mode === 'morning' ? ' chat-morning' : ''}${mode === 'night' && isExpandedMode ? ' chat-night-expanded' : ''}`;
     if (gameContainer) {
       gameContainer.classList.toggle('chat-overlay-active', isStandaloneOverlay);
     }
@@ -4359,6 +4436,9 @@
     if (jailChatAvailable) {
       channelTabs.push(`<button class="chat-channel-tab${activeChannel === 'jail' ? ' active' : ''}" data-chat-channel="jail" type="button">Jail</button>`);
     }
+    if (abyssChatAvailable) {
+      channelTabs.push(`<button class="chat-channel-tab${activeChannel === 'abyss' ? ' active' : ''}" data-chat-channel="abyss" type="button">Abyss</button>`);
+    }
     const tabsMarkup = channelTabs.length > 1 ? `<div class="chat-channel-tabs">${channelTabs.join('')}</div>` : '';
 
     if (isDockedMode && !isOverlayOpen) {
@@ -4371,8 +4451,8 @@
             </svg>
           </span>
           <span class="chat-dock-copy">
-            <span class="chat-dock-title">${activeChannel === 'assassin' ? 'Open Assassin Chat' : activeChannel === 'jail' ? 'Open Jail Chat' : 'Open Chat'}</span>
-            <span class="chat-dock-subtitle">${activeChannel === 'assassin' ? (canAssassinChat ? 'Private assassin coordination' : 'Assassin chat unavailable') : activeChannel === 'jail' ? (canJailChat ? 'Private jail discussion' : 'Jail chat unavailable') : canPublicChat ? 'Discussion and actions' : state.playerData?.isBlackmailed ? 'You have been blackmailed' : state.playerData?.isSilenced ? 'You have been silenced' : state.playerData?.isJailed ? 'Public chat disabled while jailed' : 'View updates'}</span>
+            <span class="chat-dock-title">${activeChannel === 'assassin' ? 'Open Assassin Chat' : activeChannel === 'jail' ? 'Open Jail Chat' : activeChannel === 'abyss' ? 'Open Abyss Chat' : 'Open Chat'}</span>
+            <span class="chat-dock-subtitle">${activeChannel === 'assassin' ? (canAssassinChat ? 'Private assassin coordination' : 'Assassin chat unavailable') : activeChannel === 'jail' ? (canJailChat ? 'Private jail discussion' : 'Jail chat unavailable') : activeChannel === 'abyss' ? (canAbyssChat ? 'Private channel to the dead' : 'Abyss chat unavailable') : canPublicChat ? 'Discussion and actions' : state.playerData?.isBlackmailed ? 'You have been blackmailed' : state.playerData?.isSilenced ? 'You have been silenced' : state.playerData?.isJailed ? 'Public chat disabled while jailed' : 'View updates'}</span>
           </span>
         </button>`;
       const openBtn = panel.querySelector('#chat-open-btn');
@@ -4391,11 +4471,11 @@
     if (isStandaloneOverlay) {
       panel.innerHTML = '';
       overlay.innerHTML = `
-        <div class="chat-fullscreen-shell${canChat ? '' : ' chat-locked'}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}${activeChannel === 'jail' ? ' chat-channel-jail' : ''}${mode === 'lobby' ? ' chat-lobby' : ''}">
+        <div class="chat-fullscreen-shell${canChat ? '' : ' chat-locked'}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}${activeChannel === 'jail' ? ' chat-channel-jail' : ''}${activeChannel === 'abyss' ? ' chat-channel-abyss' : ''}${mode === 'lobby' ? ' chat-lobby' : ''}">
           ${localPanel}
           <div class="chat-panel-header">
             <div>
-              <div class="chat-panel-title">${activeChannel === 'assassin' ? 'Assassin Chat' : activeChannel === 'jail' ? 'Jail Chat' : 'Room Chat'}</div>
+              <div class="chat-panel-title">${activeChannel === 'assassin' ? 'Assassin Chat' : activeChannel === 'jail' ? 'Jail Chat' : activeChannel === 'abyss' ? 'Abyss Chat' : 'Room Chat'}</div>
               <div class="chat-panel-subtitle">${subtitle}</div>
             </div>
             <div class="chat-header-actions">
@@ -4440,7 +4520,7 @@
       ${localPanel}
       <div class="chat-panel-header">
         <div>
-          <div class="chat-panel-title">${activeChannel === 'assassin' ? 'Assassin Chat' : activeChannel === 'jail' ? 'Jail Chat' : 'Room Chat'}</div>
+          <div class="chat-panel-title">${activeChannel === 'assassin' ? 'Assassin Chat' : activeChannel === 'jail' ? 'Jail Chat' : activeChannel === 'abyss' ? 'Abyss Chat' : 'Room Chat'}</div>
           <div class="chat-panel-subtitle">${subtitle}</div>
         </div>
         <div class="chat-header-actions">
@@ -4529,6 +4609,7 @@
       || player.role === 'Scientist'
       || player.role === 'Swapper'
       || player.role === 'Mayor'
+      || (activeRole === 'Medium' && (player.mediumMediateUsesRemaining ?? 3) <= 0)
       || player.role === 'Alturist'
       || (player.role === 'The Vessel' && !player.vesselAwakened)
       || player.role === 'Narcissist'
@@ -4555,6 +4636,8 @@
             ? 'Your swap can only be used during voting. Wait for dawn...'
           : player.role === 'Mayor'
             ? 'Your corruption is saved for voting. Wait for dawn...'
+          : activeRole === 'Medium'
+            ? 'You have no Mediate uses left. Wait for dawn...'
           : player.role === 'Alturist'
             ? 'No dead players can be revived yet. Wait for dawn...'
             : player.role === 'The Vessel'
@@ -4864,6 +4947,9 @@
     } else if (activeRole === 'Warden') {
       state.selectedAction = 'guard';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="guard">Guard</button></div>';
+    } else if (activeRole === 'Medium') {
+      state.selectedAction = 'mediate';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="mediate">Mediate</button></div>';
     } else if (activeRole === 'Officer') {
       if (officerHasPrisoner) {
         state.selectedAction = 'execute';
@@ -4982,6 +5068,7 @@
     else if (activeRole === 'Veteran') actionDesc = 'Stand watch tonight.';
     else if (activeRole === 'Mirror Caster') actionDesc = 'Choose a player to mirror tonight';
     else if (activeRole === 'Warden') actionDesc = 'Choose a player to block all night interactions on.';
+    else if (activeRole === 'Medium') actionDesc = 'Switch dimensions and open the Abyss for yourself and every dead player tonight.';
     else if (activeRole === 'Officer') actionDesc = officerHasPrisoner
       ? (player.officerJailedTargetName
         ? officerVerdictAvailable
@@ -5001,6 +5088,7 @@
     const isTargetlessRole = activeRole === 'Veteran'
       || activeRole === 'Guardian Angel'
       || activeRole === 'Survivalist'
+      || activeRole === 'Medium'
       || (activeRole === 'Officer' && officerHasPrisoner)
       || (activeRole === 'Ace of Blades' && (aceOfBladesNeedsRoll || aceOfBladesRollAnimating))
       || (activeRole === 'Arsonist' && state.selectedAction === 'ignite')
@@ -5056,7 +5144,7 @@
           }).join('')}
         </div>` : ''}
         <div class="chat-local-actions">
-          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) || (isMultiTargetRole && multiSelectedTargets.length < requiredMultiTargetCount) || (activeRole === 'Arsonist' && state.selectedAction === 'ignite' && !arsonistCanIgniteTonight) || (activeRole === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) || (activeRole === 'The Purge' && state.selectedAction === 'fascism' && !purgeCanUseFascismTonight) || (activeRole === 'Officer' && officerHasPrisoner && !officerVerdictAvailable) || aceOfBladesRollAnimating ? 'disabled' : ''}>${activeRole === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : activeRole === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : activeRole === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : activeRole === 'Oracle' ? `Confirm ${player.oracleEvilEyeUsesRemaining ?? 3}/3` : activeRole === 'Prophet' && state.selectedAction === 'gospel' ? `Confirm ${player.prophetGospelUsesRemaining ?? 2}/2` : activeRole === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 4}/4` : activeRole === 'Ace of Blades' && aceOfBladesNeedsRoll ? 'Roll 3Fold' : activeRole === 'Ace of Blades' ? `Confirm ${isMultiTargetRole ? multiSelectedTargets.length : (state.selectedTarget ? 1 : 0)}/${aceOfBladesKillsAvailable}` : activeRole === 'Arsonist' && state.selectedAction === 'ignite' ? `Ignite ${arsonistDousedTargetIds.length}` : activeRole === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : activeRole === 'The Purge' && state.selectedAction === 'fascism' ? `Confirm ${player.purgeFascismUsesRemaining ?? 1}/1` : activeRole === 'Teleporter' ? `Confirm ${multiSelectedTargets.length}/2` : isMultiTargetRole ? `Confirm ${multiSelectedTargets.length}/3+` : 'Confirm'}</button>
+          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) || (isMultiTargetRole && multiSelectedTargets.length < requiredMultiTargetCount) || (activeRole === 'Arsonist' && state.selectedAction === 'ignite' && !arsonistCanIgniteTonight) || (activeRole === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) || (activeRole === 'The Purge' && state.selectedAction === 'fascism' && !purgeCanUseFascismTonight) || (activeRole === 'Officer' && officerHasPrisoner && !officerVerdictAvailable) || aceOfBladesRollAnimating ? 'disabled' : ''}>${activeRole === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : activeRole === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : activeRole === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : activeRole === 'Medium' ? `Confirm ${player.mediumMediateUsesRemaining ?? 3}/3` : activeRole === 'Oracle' ? `Confirm ${player.oracleEvilEyeUsesRemaining ?? 3}/3` : activeRole === 'Prophet' && state.selectedAction === 'gospel' ? `Confirm ${player.prophetGospelUsesRemaining ?? 2}/2` : activeRole === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 4}/4` : activeRole === 'Ace of Blades' && aceOfBladesNeedsRoll ? 'Roll 3Fold' : activeRole === 'Ace of Blades' ? `Confirm ${isMultiTargetRole ? multiSelectedTargets.length : (state.selectedTarget ? 1 : 0)}/${aceOfBladesKillsAvailable}` : activeRole === 'Arsonist' && state.selectedAction === 'ignite' ? `Ignite ${arsonistDousedTargetIds.length}` : activeRole === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : activeRole === 'The Purge' && state.selectedAction === 'fascism' ? `Confirm ${player.purgeFascismUsesRemaining ?? 1}/1` : activeRole === 'Teleporter' ? `Confirm ${multiSelectedTargets.length}/2` : isMultiTargetRole ? `Confirm ${multiSelectedTargets.length}/3+` : 'Confirm'}</button>
           <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>
         </div>
       </div>

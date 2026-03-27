@@ -101,6 +101,7 @@ io.on('connection', (socket) => {
       playerId,
       assassinChatMessages: game.getAssassinChatMessagesForPlayer(normalizedCode, playerId),
       jailChatMessages: game.getJailChatMessagesForPlayer(normalizedCode, playerId),
+      abyssChatMessages: game.getAbyssChatMessagesForPlayer(normalizedCode, playerId),
       allPlayers: publicData.state === 'ended' ? game.getAllPlayersWithRoles(normalizedCode) : null,
       winner: result.room?.winner || null,
       timer: getActiveTimerState(normalizedCode),
@@ -146,6 +147,7 @@ io.on('connection', (socket) => {
         room: game.getRoomPublicData(mapping.code),
         assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, playerId),
         jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, playerId),
+        abyssChatMessages: game.getAbyssChatMessagesForPlayer(mapping.code, playerId),
         revealEndsAt,
         revealDurationMs: ROLE_REVEAL_DELAY_MS
       });
@@ -229,6 +231,7 @@ io.on('connection', (socket) => {
       player: playerData,
       assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, mapping.playerId),
       jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, mapping.playerId),
+      abyssChatMessages: game.getAbyssChatMessagesForPlayer(mapping.code, mapping.playerId),
     });
     if (result.immediateJailTargetId) {
       const publicData = game.getRoomPublicData(mapping.code);
@@ -238,7 +241,23 @@ io.on('connection', (socket) => {
         player: jailedPlayerData,
         assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, result.immediateJailTargetId),
         jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, result.immediateJailTargetId),
+        abyssChatMessages: game.getAbyssChatMessagesForPlayer(mapping.code, result.immediateJailTargetId),
       });
+    }
+    if (result.immediateAbyssActivated) {
+      const currentRoom = game.getRoom(mapping.code);
+      if (currentRoom) {
+        for (const [otherPlayerId, otherPlayer] of currentRoom.players) {
+          if (otherPlayerId === mapping.playerId) continue;
+          if (otherPlayer.alive && otherPlayerId !== currentRoom.abyssActiveMediumId) continue;
+          io.to(getPlayerChannel(otherPlayerId)).emit('player-updated', {
+            player: game.getPlayerData(mapping.code, otherPlayerId),
+            assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, otherPlayerId),
+            jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, otherPlayerId),
+            abyssChatMessages: game.getAbyssChatMessagesForPlayer(mapping.code, otherPlayerId),
+          });
+        }
+      }
     }
     if (result.immediateAlturistRevive) {
       const publicData = game.getRoomPublicData(mapping.code);
@@ -249,6 +268,7 @@ io.on('connection', (socket) => {
           player: revivedPlayerData,
           assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, result.revivedPlayerId),
           jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, result.revivedPlayerId),
+          abyssChatMessages: game.getAbyssChatMessagesForPlayer(mapping.code, result.revivedPlayerId),
         });
       }
     }
@@ -274,6 +294,7 @@ io.on('connection', (socket) => {
       player: playerData,
       assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, mapping.playerId),
       jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, mapping.playerId),
+      abyssChatMessages: game.getAbyssChatMessagesForPlayer(mapping.code, mapping.playerId),
     });
     if (result.immediateReleasedTargetId) {
       const publicData = game.getRoomPublicData(mapping.code);
@@ -283,6 +304,7 @@ io.on('connection', (socket) => {
         player: releasedPlayerData,
         assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, result.immediateReleasedTargetId),
         jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, result.immediateReleasedTargetId),
+        abyssChatMessages: game.getAbyssChatMessagesForPlayer(mapping.code, result.immediateReleasedTargetId),
       });
     }
     callback({ success: true, player: playerData });
@@ -318,6 +340,7 @@ io.on('connection', (socket) => {
       player: playerData,
       assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, mapping.playerId),
       jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, mapping.playerId),
+      abyssChatMessages: game.getAbyssChatMessagesForPlayer(mapping.code, mapping.playerId),
     });
     io.to(mapping.code).emit('vote-update', {
       voterId: mapping.playerId,
@@ -350,6 +373,7 @@ io.on('connection', (socket) => {
       player: playerData,
       assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, mapping.playerId),
       jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, mapping.playerId),
+      abyssChatMessages: game.getAbyssChatMessagesForPlayer(mapping.code, mapping.playerId),
     });
     io.to(mapping.code).emit('room-updated', publicData);
     if (callback) callback({ success: true, player: playerData, room: publicData });
@@ -429,6 +453,31 @@ io.on('connection', (socket) => {
     }
     if (room?.jailedOfficerId) {
       io.to(getPlayerChannel(room.jailedOfficerId)).emit('jail-chat-message', { message: result.message });
+    }
+
+    if (callback) callback({ success: true, message: result.message });
+  });
+
+  socket.on('send-abyss-chat-message', ({ text }, callback) => {
+    const mapping = socketMap.get(socket.id);
+    if (!mapping) {
+      if (callback) callback({ success: false, error: 'Not in a room' });
+      return;
+    }
+
+    const result = game.addAbyssChatMessage(mapping.code, mapping.playerId, text);
+    if (result.error) {
+      if (callback) callback({ success: false, error: result.error });
+      return;
+    }
+
+    const room = game.getRoom(mapping.code);
+    if (room?.abyssActiveMediumId) {
+      io.to(getPlayerChannel(room.abyssActiveMediumId)).emit('abyss-chat-message', { message: result.message });
+      for (const [playerId, player] of room.players) {
+        if (player.alive) continue;
+        io.to(getPlayerChannel(playerId)).emit('abyss-chat-message', { message: result.message });
+      }
     }
 
     if (callback) callback({ success: true, message: result.message });
@@ -581,6 +630,7 @@ function resolveNightPhase(code) {
       player: game.getPlayerData(code, convertedPlayerId),
       assassinChatMessages: game.getAssassinChatMessagesForPlayer(code, convertedPlayerId),
       jailChatMessages: game.getJailChatMessagesForPlayer(code, convertedPlayerId),
+      abyssChatMessages: game.getAbyssChatMessagesForPlayer(code, convertedPlayerId),
     });
   }
 
@@ -636,6 +686,7 @@ function resolveVotingPhase(code) {
       player: game.getPlayerData(code, convertedPlayerId),
       assassinChatMessages: game.getAssassinChatMessagesForPlayer(code, convertedPlayerId),
       jailChatMessages: game.getJailChatMessagesForPlayer(code, convertedPlayerId),
+      abyssChatMessages: game.getAbyssChatMessagesForPlayer(code, convertedPlayerId),
     });
   }
 

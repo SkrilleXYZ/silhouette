@@ -100,6 +100,9 @@
   --mayor: hsl(278, 86%, 72%);
   --mayor-dim: hsl(266, 42%, 18%);
   --mayor-glow: hsla(278, 86%, 72%, 0.34);
+  --medium: hsl(304, 92%, 76%);
+  --medium-dim: hsl(274, 40%, 18%);
+  --medium-glow: hsla(304, 92%, 76%, 0.34);
   --lawyer: hsl(43, 56%, 72%);
   --lawyer-dim: hsl(36, 34%, 18%);
   --lawyer-glow: hsla(43, 56%, 72%, 0.34);
@@ -4840,6 +4843,18 @@ body {
   animation: searchSweep 1.15s linear infinite;
 }
 
+.action-btn[data-action="mediate"].selected {
+  border-color: var(--medium);
+  color: hsl(304, 100%, 92%);
+  background: linear-gradient(135deg, rgba(78, 18, 94, 0.98), rgba(42, 12, 68, 0.98) 54%, rgba(102, 26, 112, 0.96));
+  box-shadow: 0 0 18px var(--medium-glow);
+}
+
+.action-btn[data-action="mediate"].selected::before {
+  background: linear-gradient(115deg, transparent, rgba(255, 176, 240, 0.32), transparent);
+  animation: searchSweep 1.15s linear infinite;
+}
+
 .action-btn[data-action="protect"].selected {
   border-color: hsl(156, 78%, 52%);
   color: hsl(154, 90%, 84%);
@@ -5815,6 +5830,30 @@ body {
 .phase-chat-panel.chat-channel-assassin .chat-panel-subtitle,
 .chat-fullscreen-shell.chat-channel-assassin .chat-panel-subtitle {
   color: hsl(0, 42%, 74%);
+}
+
+.phase-chat-panel.chat-channel-abyss .chat-channel-tab.active,
+.chat-fullscreen-shell.chat-channel-abyss .chat-channel-tab.active {
+  border-color: rgba(228, 112, 255, 0.28);
+  background: rgba(78, 22, 88, 0.42);
+  box-shadow: inset 0 0 0 1px rgba(228, 112, 255, 0.08);
+}
+
+.phase-chat-panel.chat-channel-abyss .chat-panel-header,
+.chat-fullscreen-shell.chat-channel-abyss .chat-panel-header {
+  border-bottom-color: rgba(228, 112, 255, 0.12);
+  background:
+    linear-gradient(180deg, rgba(36, 12, 42, 0.98), rgba(16, 8, 24, 0.98));
+}
+
+.phase-chat-panel.chat-channel-abyss .chat-panel-title,
+.chat-fullscreen-shell.chat-channel-abyss .chat-panel-title {
+  color: hsl(300, 100%, 94%);
+}
+
+.phase-chat-panel.chat-channel-abyss .chat-panel-subtitle,
+.chat-fullscreen-shell.chat-channel-abyss .chat-panel-subtitle {
+  color: hsl(292, 46%, 76%);
 }
 
 .phase-chat-panel.chat-dead .chat-panel-subtitle,
@@ -6827,6 +6866,29 @@ body {
   text-shadow: 0 1px 8px rgba(220, 170, 255, 0.1);
 }
 
+.chat-message.system.system-result-medium {
+  border-color: rgba(212, 118, 255, 0.46);
+  background:
+    radial-gradient(circle at 84% 18%, rgba(255, 222, 252, 0.14), transparent 16%),
+    radial-gradient(circle at 18% 110%, rgba(212, 118, 255, 0.22), transparent 40%),
+    linear-gradient(135deg, rgba(44, 10, 52, 0.98), rgba(88, 18, 94, 0.94) 44%, rgba(132, 28, 122, 0.92) 100%);
+  box-shadow: 0 0 18px rgba(150, 56, 182, 0.18);
+}
+
+.chat-message.system.system-result-medium::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(255, 176, 244, 0.06), rgba(212, 118, 255, 0.1) 46%, transparent 82%);
+  pointer-events: none;
+}
+
+.chat-message.system.system-result-medium .chat-message-meta,
+.chat-message.system.system-result-medium .chat-message-text {
+  color: hsl(304, 100%, 95%);
+  text-shadow: 0 1px 8px rgba(236, 188, 255, 0.1);
+}
+
 .chat-message.system.system-result-pestilence {
   border-color: rgba(162, 92, 255, 0.48);
   background:
@@ -7226,6 +7288,15 @@ body {
   border-color: rgba(162, 92, 255, 0.44);
   color: hsl(282, 100%, 96%);
   box-shadow: inset 0 1px 0 rgba(230, 206, 255, 0.08), 0 0 0 1px rgba(162, 92, 255, 0.08);
+}
+
+.chat-summary-line.summary-medium {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(255, 222, 252, 0.16), transparent 18%),
+    linear-gradient(135deg, rgba(36, 8, 42, 0.96), rgba(78, 16, 88, 0.94) 38%, rgba(126, 26, 118, 0.9));
+  border-color: rgba(212, 118, 255, 0.44);
+  color: hsl(304, 100%, 96%);
+  box-shadow: inset 0 1px 0 rgba(248, 214, 255, 0.08), 0 0 0 1px rgba(212, 118, 255, 0.08);
 }
 
 .chat-summary-line.summary-swapper {
@@ -9617,6 +9688,45 @@ body {
   text-shadow: 0 0 18px rgba(212, 184, 112, 0.2);
 }
 
+.role-card.role-theme-medium .role-card-glow { background: radial-gradient(circle, rgba(244, 144, 255, 0.84) 0%, rgba(148, 58, 176, 0.24) 42%, transparent 76%); }
+.role-card.role-theme-medium .role-card-inner { border-color: rgba(212, 118, 255, 0.42); box-shadow: inset 0 0 0 1px rgba(252, 214, 255, 0.08), 0 0 24px rgba(114, 42, 146, 0.18); }
+.role-card.role-theme-medium .role-faction { color: var(--medium); }
+.role-card.role-theme-medium .role-divider { background: linear-gradient(90deg, rgba(255, 236, 255, 0.96), rgba(238, 132, 255, 0.92) 48%, rgba(176, 82, 228, 0.94) 100%); }
+.role-card.role-theme-medium .role-name {
+  background: linear-gradient(90deg, hsl(306, 100%, 92%), hsl(322, 86%, 76%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 18px rgba(212, 118, 255, 0.18);
+}
+
+.role-reveal-panel.role-theme-medium {
+  border-color: rgba(212, 118, 255, 0.44);
+  background:
+    radial-gradient(circle at top, rgba(234, 126, 255, 0.18), transparent 38%),
+    linear-gradient(180deg, rgba(34, 10, 46, 0.96), rgba(12, 8, 24, 0.98));
+}
+
+.role-reveal-panel.role-theme-medium.settled {
+  box-shadow:
+    0 0 0 1px rgba(212, 118, 255, 0.08),
+    0 28px 70px -36px rgba(126, 44, 148, 0.36);
+}
+
+.role-reveal-item.role-theme-medium.is-selected {
+  border-color: rgba(228, 136, 255, 0.64);
+  box-shadow: 0 0 18px rgba(212, 118, 255, 0.22);
+}
+
+.role-reveal-item.role-theme-medium .role-reveal-name,
+.role-reveal-item.role-theme-medium .role-reveal-faction {
+  color: var(--medium);
+}
+
+.role-reveal-result.role-theme-medium strong {
+  color: var(--medium);
+  text-shadow: 0 0 18px rgba(212, 118, 255, 0.2);
+}
+
 .role-card.role-theme-officer .role-card-glow { background: radial-gradient(circle, rgba(112, 190, 255, 0.82) 0%, rgba(42, 92, 176, 0.24) 42%, transparent 76%); }
 .role-card.role-theme-officer .role-card-inner { border-color: rgba(116, 188, 255, 0.42); box-shadow: inset 0 0 0 1px rgba(194, 228, 255, 0.08), 0 0 24px rgba(32, 76, 146, 0.18); }
 .role-card.role-theme-officer .role-faction { color: var(--officer); }
@@ -9690,6 +9800,12 @@ body {
   box-shadow: 0 0 16px rgba(228, 134, 78, 0.16);
 }
 
+.gpl-role.role-theme-medium {
+  background: linear-gradient(135deg, rgba(44, 12, 56, 0.96), rgba(96, 24, 112, 0.92));
+  color: var(--medium);
+  box-shadow: 0 0 16px rgba(212, 118, 255, 0.16);
+}
+
 #screen-roles .roles-guide-card.role-theme-aceofblades,
 #screen-roles .roles-guide-card.role-theme-aceofblades .roles-guide-card-icon {
   border-color: rgba(222, 148, 82, 0.72);
@@ -9709,8 +9825,29 @@ body {
   color: hsl(42, 100%, 76%);
 }
 
+#screen-roles .roles-guide-card.role-theme-medium,
+#screen-roles .roles-guide-card.role-theme-medium .roles-guide-card-icon {
+  border-color: rgba(212, 118, 255, 0.72);
+  color: var(--medium);
+}
+
+#screen-roles .roles-guide-card.role-theme-medium {
+  --roles-guide-tint-a: rgba(244, 144, 255, 0.1);
+  --roles-guide-tint-b: rgba(126, 44, 148, 0.09);
+}
+
+#screen-roles .roles-guide-card.role-theme-medium:hover {
+  box-shadow: 0 0 20px -10px rgba(212, 118, 255, 0.42);
+}
+
+#screen-roles .roles-guide-card.role-theme-medium .roles-guide-ability-highlight {
+  color: var(--medium);
+}
+
 .search-target-role.role-theme-aceofblades { color: hsl(42, 100%, 78%); text-shadow: 0 0 12px rgba(228, 134, 78, 0.2); }
 .gameover-player-role.role-theme-aceofblades { color: hsl(42, 100%, 78%); }
+.search-target-role.role-theme-medium { color: var(--medium); text-shadow: 0 0 12px rgba(212, 118, 255, 0.18); }
+.gameover-player-role.role-theme-medium { color: var(--medium); }
 
 .ace-wheel-panel {
   margin-top: 14px;
