@@ -4779,7 +4779,8 @@
     const shouldUseExpandedSelfNightChat = activeRole === 'Veteran'
       || activeRole === 'Survivalist'
       || activeRole === 'Guardian Angel'
-      || (activeRole === 'Blackout' && state.selectedAction === 'flash');
+      || (activeRole === 'Blackout' && state.selectedAction === 'flash')
+      || (activeRole === 'The Purge' && state.selectedAction === 'fascism');
 
     if (
       player.role === 'Villager'
@@ -4928,9 +4929,6 @@
           colorHex: guardianAngelTargetPlayer.colorHex,
         })
       : '';
-    const guardianAngelTargets = guardianAngelFixedTargetId
-      ? targets.filter((target) => target.id === guardianAngelFixedTargetId)
-      : [];
     const blackoutCanFlashTonight = activeRole === 'Blackout'
       ? (player.blackoutFlashUsesRemaining ?? 3) > 0
         && !player.blackoutFlashUsedThisNight
@@ -5333,9 +5331,7 @@
       ? targets.filter((target) => arsonistDousedTargetIds.includes(target.id))
       : player.role === 'Imitator' && !player.imitatorCopiedRole
         ? imitatorTargets
-        : activeRole === 'Guardian Angel'
-          ? guardianAngelTargets
-          : targets;
+        : targets;
     const isMultiTargetRole = activeRole === 'Traplord' || activeRole === 'Teleporter' || (activeRole === 'Ace of Blades' && aceOfBladesKillsAvailable > 1) || (activeRole === 'Psychopath' && psychopathKillsAvailable > 1);
     const requiredMultiTargetCount = activeRole === 'Teleporter'
       ? 2
@@ -5344,7 +5340,7 @@
         : activeRole === 'Psychopath'
           ? 1
         : 3;
-    const shouldShowTargetList = ((!isTargetlessRole || activeRole === 'Guardian Angel') && !aceOfBladesRollAnimating) || activeRole === 'Arsonist';
+    const shouldShowTargetList = (!isTargetlessRole && !aceOfBladesRollAnimating) || activeRole === 'Arsonist';
     const targetLabel = activeRole === 'Arsonist' && state.selectedAction === 'ignite'
       ? `DOUSED PLAYERS${displayedTargets.length ? ` (${displayedTargets.length})` : ''}`
       : activeRole === 'Ace of Blades'
