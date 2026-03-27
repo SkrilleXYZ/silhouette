@@ -4909,7 +4909,7 @@ class GameLogic {
       } else if (lawyerProtector) {
         message = {
           type: 'protected',
-          text: 'Lawyer has objected this decision.',
+          text: 'The Lawyer has objected this decision.',
           playerId: eliminated,
           source: 'Lawyer',
           public: true

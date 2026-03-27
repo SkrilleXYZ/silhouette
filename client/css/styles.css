@@ -10859,6 +10859,14 @@ body {
   box-shadow: inset 0 1px 0 rgba(255, 220, 162, 0.04), 0 16px 34px -28px rgba(158, 42, 28, 0.26);
 }
 
+.ace-wheel-panel.is-spinning {
+  animation: aceWheelPanelAmbient 5s ease-in-out forwards;
+}
+
+.ace-wheel-panel.is-landed {
+  animation: aceWheelPanelLanded 0.9s cubic-bezier(0.14, 0.9, 0.24, 1) both;
+}
+
 .ace-wheel-header {
   font-size: 0.74rem;
   font-weight: 700;
@@ -10884,6 +10892,10 @@ body {
     inset 0 1px 0 rgba(255, 226, 176, 0.1),
     inset 0 -1px 0 rgba(122, 18, 24, 0.2),
     0 18px 34px -28px rgba(144, 28, 22, 0.5);
+}
+
+.ace-wheel-panel.is-spinning .ace-reel-shell {
+  animation: aceReelShellPulse 5s ease-in-out forwards;
 }
 
 .ace-reel-shell::before,
@@ -10928,7 +10940,7 @@ body {
 }
 
 .ace-wheel-panel.is-spinning .ace-reel-track {
-  animation: aceReelSpin 1.65s cubic-bezier(0.16, 0.86, 0.22, 1) forwards;
+  animation: aceReelSpin 5s cubic-bezier(0.08, 0.86, 0.18, 1) forwards;
 }
 
 .ace-reel-row {
@@ -10977,6 +10989,38 @@ body {
   pointer-events: none;
 }
 
+.ace-wheel-panel.is-landed .ace-reel-highlight {
+  animation: aceReelHighlightHit 0.9s cubic-bezier(0.16, 0.88, 0.2, 1) both;
+}
+
+.ace-reel-result-burst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 74px;
+  height: 74px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 220, 156, 0.74);
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255, 244, 214, 0.88), rgba(255, 188, 92, 0.42) 34%, rgba(88, 12, 18, 0.94) 74%),
+    linear-gradient(135deg, rgba(112, 14, 20, 0.94), rgba(42, 10, 10, 0.98));
+  color: hsl(42, 100%, 84%);
+  font-family: 'Cinzel', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  text-shadow: 0 0 16px rgba(255, 230, 168, 0.38);
+  box-shadow:
+    0 0 0 1px rgba(255, 214, 136, 0.14),
+    0 0 28px rgba(212, 64, 36, 0.34),
+    0 0 52px rgba(255, 194, 96, 0.18);
+  pointer-events: none;
+  animation: aceReelResultBurst 0.9s cubic-bezier(0.12, 0.88, 0.22, 1) both;
+}
+
 .ace-wheel-odds {
   display: flex;
   justify-content: center;
@@ -10993,19 +11037,118 @@ body {
     transform: translateY(0);
     filter: blur(0px) saturate(0.9);
   }
-  12% {
-    filter: blur(1px) saturate(1);
+  10% {
+    transform: translateY(calc(var(--ace-reel-row-height) * -2.2));
+    filter: blur(1.2px) saturate(1);
   }
-  70% {
-    transform: translateY(calc((2 - var(--ace-reel-stop, 2)) * var(--ace-reel-row-height) - (var(--ace-reel-row-height) * 0.18)));
-    filter: blur(1.8px) saturate(1.08);
+  28% {
+    transform: translateY(calc(var(--ace-reel-row-height) * -4.9));
+    filter: blur(2.4px) saturate(1.08);
   }
-  88% {
-    transform: translateY(calc((2 - var(--ace-reel-stop, 2)) * var(--ace-reel-row-height) + (var(--ace-reel-row-height) * 0.08)));
+  46% {
+    transform: translateY(calc(var(--ace-reel-row-height) * -1.6));
+    filter: blur(1.8px) saturate(1.06);
+  }
+  68% {
+    transform: translateY(calc(var(--ace-reel-row-height) * -4.2));
+    filter: blur(2.2px) saturate(1.1);
+  }
+  84% {
+    transform: translateY(calc((2 - var(--ace-reel-stop, 2)) * var(--ace-reel-row-height) - (var(--ace-reel-row-height) * 0.32)));
+    filter: blur(1.2px) saturate(1.12);
+  }
+  93% {
+    transform: translateY(calc((2 - var(--ace-reel-stop, 2)) * var(--ace-reel-row-height) + (var(--ace-reel-row-height) * 0.12)));
+    filter: blur(0.35px) saturate(1.08);
   }
   100% {
     transform: translateY(calc((2 - var(--ace-reel-stop, 2)) * var(--ace-reel-row-height)));
     filter: blur(0px) saturate(1);
+  }
+}
+
+@keyframes aceWheelPanelAmbient {
+  0%, 100% {
+    box-shadow: inset 0 1px 0 rgba(255, 220, 162, 0.04), 0 16px 34px -28px rgba(158, 42, 28, 0.26);
+  }
+  35% {
+    box-shadow: inset 0 1px 0 rgba(255, 220, 162, 0.08), 0 20px 42px -24px rgba(184, 44, 28, 0.34);
+  }
+  72% {
+    box-shadow: inset 0 1px 0 rgba(255, 220, 162, 0.1), 0 26px 52px -22px rgba(214, 86, 36, 0.38);
+  }
+}
+
+@keyframes aceWheelPanelLanded {
+  0% {
+    transform: scale(0.985);
+    box-shadow: inset 0 1px 0 rgba(255, 220, 162, 0.08), 0 20px 42px -24px rgba(184, 44, 28, 0.34);
+  }
+  45% {
+    transform: scale(1.02);
+    box-shadow: inset 0 1px 0 rgba(255, 220, 162, 0.12), 0 28px 58px -20px rgba(244, 108, 44, 0.42);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: inset 0 1px 0 rgba(255, 220, 162, 0.08), 0 22px 44px -22px rgba(208, 84, 36, 0.32);
+  }
+}
+
+@keyframes aceReelShellPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 226, 176, 0.1),
+      inset 0 -1px 0 rgba(122, 18, 24, 0.2),
+      0 18px 34px -28px rgba(144, 28, 22, 0.5);
+  }
+  45% {
+    transform: scale(1.015);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 226, 176, 0.14),
+      inset 0 -1px 0 rgba(122, 18, 24, 0.24),
+      0 22px 42px -26px rgba(174, 36, 24, 0.58);
+  }
+  82% {
+    transform: scale(1.03);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 226, 176, 0.16),
+      inset 0 -1px 0 rgba(122, 18, 24, 0.28),
+      0 28px 56px -24px rgba(214, 84, 34, 0.66);
+  }
+}
+
+@keyframes aceReelHighlightHit {
+  0% {
+    transform: translateY(-50%) scale(0.92);
+    opacity: 0.42;
+  }
+  36% {
+    transform: translateY(-50%) scale(1.08);
+    opacity: 1;
+    box-shadow:
+      0 0 0 1px rgba(255, 188, 108, 0.12),
+      inset 0 1px 0 rgba(255, 236, 196, 0.24),
+      0 0 36px rgba(238, 104, 46, 0.34);
+  }
+  100% {
+    transform: translateY(-50%) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes aceReelResultBurst {
+  0% {
+    transform: translate(-50%, -50%) scale(0.4);
+    opacity: 0;
+  }
+  52% {
+    transform: translate(-50%, -50%) scale(1.14);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
   }
 }
 
@@ -11123,4 +11266,236 @@ body {
   border-left-color: rgba(116, 188, 255, 0.54);
   background: linear-gradient(90deg, rgba(16, 54, 88, 0.18), rgba(0, 0, 0, 0));
   text-shadow: 0 0 12px rgba(96, 176, 255, 0.14);
+}
+
+.chat-message.system[class*="system-result-"] .chat-message-meta,
+.chat-message.system[class*="system-result-"] .chat-message-text,
+.chat-summary-line[class*="summary-"] {
+  background-image: var(--ability-message-gradient, none);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+@supports (-webkit-text-fill-color: transparent) {
+  .chat-message.system[class*="system-result-"] .chat-message-meta,
+  .chat-message.system[class*="system-result-"] .chat-message-text,
+  .chat-summary-line[class*="summary-"] {
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+.chat-message.system.system-result-search,
+.chat-summary-line.summary-search {
+  --ability-message-gradient: linear-gradient(135deg, hsl(49, 100%, 97%), hsl(40, 100%, 76%));
+}
+
+.chat-summary-line.summary-shoot,
+.chat-summary-line.summary-sniper {
+  --ability-message-gradient: linear-gradient(135deg, hsl(47, 100%, 97%), hsl(38, 96%, 76%));
+}
+
+.chat-message.system.system-result-prophet,
+.chat-summary-line.summary-prophet {
+  --ability-message-gradient: linear-gradient(135deg, hsl(356, 100%, 95%), hsl(347, 74%, 72%));
+}
+
+.chat-message.system.system-result-examine,
+.chat-summary-line.summary-examine {
+  --ability-message-gradient: linear-gradient(135deg, hsl(278, 100%, 97%), hsl(264, 100%, 80%));
+}
+
+.chat-message.system.system-result-tracker,
+.chat-summary-line.summary-track {
+  --ability-message-gradient: linear-gradient(135deg, hsl(195, 100%, 97%), hsl(188, 100%, 78%));
+}
+
+.chat-message.system.system-result-stalker,
+.chat-summary-line.summary-stalk {
+  --ability-message-gradient: linear-gradient(135deg, hsl(154, 100%, 97%), hsl(140, 62%, 76%));
+}
+
+.chat-message.system.system-result-trap,
+.chat-summary-line.summary-traplord {
+  --ability-message-gradient: linear-gradient(135deg, hsl(307, 100%, 97%), hsl(295, 84%, 78%));
+}
+
+.chat-message.system.system-result-protect,
+.chat-message.system.system-result-vitalist,
+.chat-summary-line.summary-protect,
+.chat-summary-line.summary-vitalist {
+  --ability-message-gradient: linear-gradient(135deg, hsl(145, 100%, 97%), hsl(132, 86%, 74%));
+}
+
+.chat-message.system.system-result-mirror,
+.chat-summary-line.summary-mirrorcaster {
+  --ability-message-gradient: linear-gradient(135deg, hsl(205, 100%, 97%), hsl(194, 100%, 82%));
+}
+
+.chat-message.system.system-result-survivalist,
+.chat-summary-line.summary-survivalist {
+  --ability-message-gradient: linear-gradient(135deg, hsl(30, 100%, 97%), hsl(22, 100%, 74%));
+}
+
+.chat-message.system.system-result-guardian-angel,
+.chat-summary-line.summary-guardianangel,
+.chat-message.system.system-result-guardian-shift {
+  --ability-message-gradient: linear-gradient(135deg, hsl(49, 100%, 97%), hsl(41, 82%, 80%));
+}
+
+.chat-message.system.system-result-executioner-shift,
+.chat-summary-line.summary-executioner {
+  --ability-message-gradient: linear-gradient(135deg, hsl(47, 100%, 97%), hsl(36, 100%, 72%));
+}
+
+.chat-message.system.system-result-blackout,
+.chat-summary-line.summary-blackout {
+  --ability-message-gradient: linear-gradient(135deg, hsl(218, 20%, 96%), hsl(216, 14%, 72%));
+}
+
+.chat-message.system.system-result-blackmail,
+.chat-summary-line.summary-blackmailer {
+  --ability-message-gradient: linear-gradient(135deg, hsl(44, 100%, 97%), hsl(33, 84%, 72%));
+}
+
+.chat-message.system.system-result-silenced,
+.chat-summary-line.summary-silencer {
+  --ability-message-gradient: linear-gradient(135deg, hsl(0, 100%, 97%), hsl(356, 88%, 76%));
+}
+
+.chat-message.system.system-result-hypnotic,
+.chat-summary-line.summary-hypnotic {
+  --ability-message-gradient: linear-gradient(135deg, hsl(330, 100%, 97%), hsl(318, 70%, 74%));
+}
+
+.chat-message.system.system-result-overload,
+.chat-summary-line.summary-overload {
+  --ability-message-gradient: linear-gradient(135deg, hsl(113, 100%, 97%), hsl(102, 88%, 72%));
+}
+
+.chat-message.system.system-result-teleporter,
+.chat-summary-line.summary-teleporter {
+  --ability-message-gradient: linear-gradient(135deg, hsl(204, 100%, 97%), hsl(195, 100%, 74%));
+}
+
+.chat-summary-line.summary-swapper {
+  --ability-message-gradient: linear-gradient(135deg, hsl(203, 100%, 97%), hsl(191, 90%, 78%));
+}
+
+.chat-message.system.system-result-magician,
+.chat-summary-line.summary-magician {
+  --ability-message-gradient: linear-gradient(135deg, hsl(252, 100%, 97%), hsl(244, 90%, 78%));
+}
+
+.chat-message.system.system-result-killed,
+.chat-summary-line.summary-kill {
+  --ability-message-gradient: linear-gradient(135deg, hsl(0, 100%, 97%), hsl(0, 88%, 74%));
+}
+
+.chat-message.system.system-result-vessel,
+.chat-summary-line.summary-vessel {
+  --ability-message-gradient: linear-gradient(135deg, hsl(286, 100%, 97%), hsl(270, 84%, 78%));
+}
+
+.chat-summary-line.summary-alturist {
+  --ability-message-gradient: linear-gradient(135deg, hsl(44, 100%, 97%), hsl(28, 92%, 74%));
+}
+
+.chat-summary-line.summary-imitator {
+  --ability-message-gradient: linear-gradient(135deg, hsl(342, 100%, 97%), hsl(332, 74%, 80%));
+}
+
+.chat-summary-line.summary-amnesiac {
+  --ability-message-gradient: linear-gradient(135deg, hsl(220, 48%, 97%), hsl(218, 24%, 80%));
+}
+
+.chat-summary-line.summary-arsonist {
+  --ability-message-gradient: linear-gradient(135deg, hsl(28, 100%, 97%), hsl(16, 96%, 72%));
+}
+
+.chat-message.system.system-result-purge,
+.chat-summary-line.summary-thepurge {
+  --ability-message-gradient: linear-gradient(135deg, hsl(0, 100%, 97%), hsl(0, 82%, 72%));
+}
+
+.chat-message.system.system-result-warden,
+.chat-message.system.system-result-warden-confirm,
+.chat-summary-line.summary-warden {
+  --ability-message-gradient: linear-gradient(135deg, hsl(188, 100%, 97%), hsl(181, 78%, 76%));
+}
+
+.chat-message.system.system-result-redflag {
+  --ability-message-gradient: linear-gradient(135deg, hsl(0, 100%, 97%), hsl(356, 86%, 74%));
+}
+
+.chat-message.system.system-result-oracle,
+.chat-message.system.system-result-oracle-protect,
+.chat-summary-line.summary-oracle,
+.chat-summary-line.summary-oracle-protect {
+  --ability-message-gradient: linear-gradient(135deg, hsl(326, 100%, 97%), hsl(315, 86%, 76%));
+}
+
+.chat-message.system.system-result-inquisitor,
+.chat-summary-line.summary-inquisitor {
+  --ability-message-gradient: linear-gradient(135deg, hsl(188, 100%, 97%), hsl(176, 92%, 74%));
+}
+
+.chat-message.system.system-result-disruptor,
+.chat-summary-line.summary-disruptor {
+  --ability-message-gradient: linear-gradient(135deg, hsl(358, 100%, 97%), hsl(346, 76%, 72%));
+}
+
+.chat-message.system.system-result-manipulator,
+.chat-summary-line.summary-manipulator {
+  --ability-message-gradient: linear-gradient(135deg, hsl(38, 100%, 97%), hsl(22, 84%, 72%));
+}
+
+.chat-message.system.system-result-medium,
+.chat-summary-line.summary-medium {
+  --ability-message-gradient: linear-gradient(135deg, hsl(301, 100%, 97%), hsl(286, 78%, 76%));
+}
+
+.chat-summary-line.summary-tethered,
+.chat-summary-line.summary-tetherhex {
+  --ability-message-gradient: linear-gradient(135deg, hsl(141, 100%, 97%), hsl(126, 86%, 78%));
+}
+
+.chat-message.system.system-result-psychopath,
+.chat-summary-line.summary-psychopath {
+  --ability-message-gradient: linear-gradient(135deg, hsl(0, 100%, 97%), hsl(350, 88%, 72%));
+}
+
+.chat-message.system.system-result-devastator,
+.chat-summary-line.summary-devastator {
+  --ability-message-gradient: linear-gradient(135deg, hsl(22, 100%, 97%), hsl(11, 92%, 70%));
+}
+
+.chat-message.system.system-result-dracula,
+.chat-summary-line.summary-dracula {
+  --ability-message-gradient: linear-gradient(135deg, hsl(355, 100%, 97%), hsl(348, 82%, 70%));
+}
+
+.chat-message.system.system-result-vampire,
+.chat-summary-line.summary-vampire {
+  --ability-message-gradient: linear-gradient(135deg, hsl(354, 100%, 97%), hsl(346, 86%, 74%));
+}
+
+.chat-message.system.system-result-pestilence,
+.chat-summary-line.summary-pestilence,
+.chat-summary-line.summary-wither {
+  --ability-message-gradient: linear-gradient(135deg, hsl(356, 100%, 97%), hsl(340, 88%, 70%));
+}
+
+.chat-message.system.system-result-lawyer-protect,
+.chat-summary-line.summary-lawyer-protect {
+  --ability-message-gradient: linear-gradient(135deg, hsl(47, 100%, 97%), hsl(39, 70%, 72%));
+}
+
+.chat-summary-line.summary-veteran {
+  --ability-message-gradient: linear-gradient(135deg, hsl(44, 100%, 97%), hsl(34, 88%, 76%));
+}
+
+.chat-message.system.system-result-officer,
+.chat-message.system.system-result-officer-shift,
+.chat-summary-line.summary-officer {
+  --ability-message-gradient: linear-gradient(135deg, hsl(201, 100%, 97%), hsl(206, 88%, 76%));
 }

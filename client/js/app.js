@@ -2096,7 +2096,10 @@
   }
 
   function buildRoleRevealSequence(finalRole) {
-    const roomPlayerCount = Array.isArray(state.roomData?.players) ? state.roomData.players.length : 0;
+    const roomPlayerCount = Math.max(
+      Number(state.roomData?.playerCount) || 0,
+      Array.isArray(state.roomData?.players) ? state.roomData.players.length : 0
+    );
     const roles = Object.entries(ROLE_DEFINITIONS)
       .filter(([role]) => !(state.roomData?.disableVillagerRole && role === 'Villager'))
       .filter(([role]) => role !== 'Psychopath' || roomPlayerCount >= 6)
@@ -2519,7 +2522,7 @@
     if (/The Vessel has taken revenge\./i.test(text)) return 'summary-vessel';
     if (/An Assassin has moved through the shadows\./i.test(text)) return 'summary-kill';
     if (/The exiled player was protected by the Oracle\./i.test(text)) return 'summary-oracle-protect';
-    if (/Lawyer has objected this decision\./i.test(text)) return 'summary-lawyer-protect';
+    if (/The Lawyer has objected this decision\./i.test(text)) return 'summary-lawyer-protect';
     if (/protected someone/i.test(text)) return 'summary-protect';
     if (/moved through the shadows/i.test(text)) return 'summary-kill';
     return '';
@@ -2634,7 +2637,7 @@
     if (/The exiled player was protected by the Oracle\./i.test(text) && String(message.source || '').trim() === 'Oracle') {
       return ' system-result-oracle-protect';
     }
-    if (/Lawyer has objected this decision\./i.test(text) && String(message.source || '').trim() === 'Lawyer') {
+    if (/The Lawyer has objected this decision\./i.test(text) && String(message.source || '').trim() === 'Lawyer') {
       return ' system-result-lawyer-protect';
     }
     if (/The Medium is hearing whispers\./i.test(text) && String(message.source || '').trim() === 'Medium') {
@@ -4929,6 +4932,7 @@
       : 0;
     const aceOfBladesNeedsRoll = activeRole === 'Ace of Blades' && aceOfBladesKillsAvailable <= 0;
     const aceOfBladesRollAnimating = activeRole === 'Ace of Blades' && !!state.aceOfBladesRollAnimation;
+    const aceOfBladesRollPhase = aceOfBladesRollAnimating ? (state.aceOfBladesRollAnimation?.phase || 'spinning') : null;
     const aceOfBladesRollResult = aceOfBladesRollAnimating ? Number(state.aceOfBladesRollAnimation?.result) || 1 : 1;
     const arsonistCanIgniteTonight = activeRole === 'Arsonist' && arsonistDousedTargetIds.length > 0;
     const officerHasPrisoner = activeRole === 'Officer' && !!player.officerJailedTargetId;
@@ -5122,7 +5126,7 @@
       ? (() => {
           const aceReelValues = [1, 2, 3, 1, 2, 3, 1, 2, 3];
           const aceReelStopIndex = aceOfBladesRollAnimating ? (6 + Math.max(0, aceOfBladesRollResult - 1)) : 1;
-          return `<div class="ace-wheel-panel ${aceOfBladesRollAnimating ? 'is-spinning' : ''}">
+          return `<div class="ace-wheel-panel ${aceOfBladesRollAnimating ? 'is-spinning' : ''} ${aceOfBladesRollPhase === 'landed' ? 'is-landed' : ''}">
             <div class="ace-wheel-header">3FOLD</div>
             <div class="ace-reel-shell">
               <div class="ace-reel-window">
@@ -5131,6 +5135,7 @@
                 </div>
                 <div class="ace-reel-highlight"></div>
               </div>
+              ${aceOfBladesRollPhase === 'landed' ? `<div class="ace-reel-result-burst">${aceOfBladesRollResult}</div>` : ''}
             </div>
             <div class="ace-wheel-odds"><span>1 kill 60%</span><span>2 kills 30%</span><span>3 kills 10%</span></div>
           </div>`;
@@ -5505,16 +5510,23 @@
               }
               if (responseActiveRole === 'Ace of Blades' && response.rollResult) {
                 const animationToken = Date.now();
-                state.aceOfBladesRollAnimation = { result: response.rollResult, token: animationToken };
+                state.aceOfBladesRollAnimation = { result: response.rollResult, token: animationToken, phase: 'spinning' };
                 renderNightPhase(container);
                 showToast(`3Fold rolled ${response.rollResult}`, 'info');
                 window.setTimeout(() => {
                   if (state.aceOfBladesRollAnimation?.token !== animationToken) return;
-                  state.aceOfBladesRollAnimation = null;
+                  state.aceOfBladesRollAnimation = { result: response.rollResult, token: animationToken, phase: 'landed' };
                   if (state.currentScreen === 'game' && state.gamePhase === 'night') {
                     renderNightPhase(container);
                   }
-                }, 1650);
+                  window.setTimeout(() => {
+                    if (state.aceOfBladesRollAnimation?.token !== animationToken) return;
+                    state.aceOfBladesRollAnimation = null;
+                    if (state.currentScreen === 'game' && state.gamePhase === 'night') {
+                      renderNightPhase(container);
+                    }
+                  }, 900);
+                }, 5000);
                 return;
               } else if (responseActiveRole !== 'Ace of Blades') {
                 state.aceOfBladesRollAnimation = null;
