@@ -449,6 +449,21 @@
         },
       ],
     },
+    Psychopath: {
+      faction: 'Assassin',
+      subfaction: 'Power',
+      hiddenFromGuide: false,
+      hiddenFromReveal: false,
+      description: 'Skipped kills during night can be stacked and used later. Maximum 3 kills at once.',
+      revealText: 'Blood-red hunger coils around the blade. Hold back now, then unleash a bloodbath when the night is right.',
+      abilities: [
+        {
+          name: 'Bloodbath',
+          type: 'Night',
+          description: 'Skipped kills during night can be stacked and used later. Maximum 3 kills at once.',
+        },
+      ],
+    },
     'Ace of Blades': {
       faction: 'Assassin',
       subfaction: 'Power',
@@ -1628,6 +1643,7 @@
     if (normalizedRole === 'redflag') return 'redflag';
     if (normalizedRole === 'silencer') return 'silencer';
     if (normalizedRole === 'assassin') return 'assassin';
+    if (normalizedRole === 'psychopath') return 'psychopath';
     if (normalizedRole === 'ace of blades') return 'aceofblades';
     if (normalizedRole === 'traitor') return 'traitor';
     if (normalizedRole === 'sniper') return 'sniper';
@@ -2009,7 +2025,9 @@
     const roomPlayerCount = Array.isArray(state.roomData?.players) ? state.roomData.players.length : 0;
     const roles = Object.entries(ROLE_DEFINITIONS)
       .filter(([role]) => !(state.roomData?.disableVillagerRole && role === 'Villager'))
+      .filter(([role]) => role !== 'Psychopath' || roomPlayerCount >= 6)
       .filter(([role]) => role !== 'Ace of Blades' || roomPlayerCount >= 8)
+      .filter(([role]) => role !== 'Sniper' || roomPlayerCount >= 6)
       .filter(([, roleInfo]) => !roleInfo.hiddenFromReveal)
       .map(([role]) => role);
     const sequence = [];
@@ -2384,6 +2402,7 @@
     if (/was exiled by the Inquisitor\./i.test(text)) return 'summary-inquisitor';
     if (/The Disruptor has veto'd the voting\./i.test(text)) return 'summary-disruptor';
     if (/The Manipulator has played with the results\./i.test(text)) return 'summary-manipulator';
+    if (/The Psychopath is plotting\./i.test(text)) return 'summary-psychopath';
     if (/Pestilence became all powerful\./i.test(text)) return 'summary-pestilence';
     if (/had their places swapped by the Swapper\./i.test(text)) return 'summary-swapper';
     if (/used their gun/i.test(text)) return 'summary-shoot';
@@ -2553,6 +2572,9 @@
     }
     if (/The Manipulator has played with the results\./i.test(text) && String(message.source || '').trim() === 'Manipulator') {
       return ' system-result-manipulator';
+    }
+    if (/The Psychopath is plotting\./i.test(text) && String(message.source || '').trim() === 'Psychopath') {
+      return ' system-result-psychopath';
     }
     if (/Pestilence became all powerful\./i.test(text) && String(message.source || '').trim() === 'Pestilence') {
       return ' system-result-pestilence';
@@ -3036,7 +3058,7 @@
       renderChatBox();
       return;
     }
-    const shouldUseExpandedSelfNightChat = activeRole === 'Veteran' || activeRole === 'Survivalist' || activeRole === 'Guardian Angel';
+    const shouldUseExpandedSelfNightChat = activeRole === 'Veteran' || activeRole === 'Survivalist' || activeRole === 'Guardian Angel' || activeRole === 'Medium';
 
     if (
       player.role === 'Villager'
@@ -4717,6 +4739,12 @@
     const aceOfBladesKillsAvailable = activeRole === 'Ace of Blades'
       ? Math.max(0, Number(player.aceOfBladesKillsAvailable) || 0)
       : 0;
+    const psychopathKillsAvailable = activeRole === 'Psychopath'
+      ? Math.max(1, Math.min(3, Number(player.psychopathKillsAvailable) || 1))
+      : 1;
+    const psychopathStoredKills = activeRole === 'Psychopath'
+      ? Math.max(0, Number(player.psychopathStoredKills) || 0)
+      : 0;
     const aceOfBladesNeedsRoll = activeRole === 'Ace of Blades' && aceOfBladesKillsAvailable <= 0;
     const aceOfBladesRollAnimating = activeRole === 'Ace of Blades' && !!state.aceOfBladesRollAnimation;
     const arsonistCanIgniteTonight = activeRole === 'Arsonist' && arsonistDousedTargetIds.length > 0;
@@ -4827,6 +4855,15 @@
       }
     }
 
+    if (activeRole === 'Psychopath') {
+      state.selectedAction = 'kill';
+      if (psychopathKillsAvailable > 1) {
+        state.selectedTarget = null;
+      } else if (Array.isArray(state.selectedTargets) && state.selectedTargets.length) {
+        state.selectedTargets = [];
+      }
+    }
+
     if (activeRole === 'Officer') {
       if (officerHasPrisoner) {
         if (!officerVerdictAvailable) {
@@ -4840,11 +4877,13 @@
       }
     }
 
-    if (activeRole === 'Traplord' || activeRole === 'Teleporter' || (activeRole === 'Ace of Blades' && aceOfBladesKillsAvailable > 1)) {
+    if (activeRole === 'Traplord' || activeRole === 'Teleporter' || (activeRole === 'Ace of Blades' && aceOfBladesKillsAvailable > 1) || (activeRole === 'Psychopath' && psychopathKillsAvailable > 1)) {
       state.selectedAction = 'trap';
       if (activeRole === 'Teleporter') {
         state.selectedAction = 'teleport';
       } else if (activeRole === 'Ace of Blades') {
+        state.selectedAction = 'kill';
+      } else if (activeRole === 'Psychopath') {
         state.selectedAction = 'kill';
       }
       if (!Array.isArray(state.selectedTargets)) {
@@ -4853,12 +4892,14 @@
         state.selectedTargets = [...new Set(state.selectedTargets)].slice(-2);
       } else if (activeRole === 'Ace of Blades') {
         state.selectedTargets = [...new Set(state.selectedTargets)].slice(-aceOfBladesKillsAvailable);
+      } else if (activeRole === 'Psychopath') {
+        state.selectedTargets = [...new Set(state.selectedTargets)].slice(-psychopathKillsAvailable);
       }
     } else if (Array.isArray(state.selectedTargets) && state.selectedTargets.length) {
       state.selectedTargets = [];
     }
 
-    multiSelectedTargets = (activeRole === 'Traplord' || activeRole === 'Teleporter' || (activeRole === 'Ace of Blades' && aceOfBladesKillsAvailable > 1))
+    multiSelectedTargets = (activeRole === 'Traplord' || activeRole === 'Teleporter' || (activeRole === 'Ace of Blades' && aceOfBladesKillsAvailable > 1) || (activeRole === 'Psychopath' && psychopathKillsAvailable > 1))
       ? (Array.isArray(state.selectedTargets) ? state.selectedTargets : [])
       : [];
 
@@ -4963,6 +5004,8 @@
         : '<div class="action-buttons"><button class="action-btn selected" data-action="detain">Detain</button></div>';
     } else if (activeRole === 'Ace of Blades') {
       actionsHTML = `<div class="action-buttons"><button class="action-btn selected assassin-action" data-action="${aceOfBladesNeedsRoll ? 'threefold' : 'kill'}">${aceOfBladesNeedsRoll ? '3Fold' : 'Kill'}</button></div>${aceWheelHTML}`;
+    } else if (activeRole === 'Psychopath') {
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected assassin-action psychopath-action" data-action="kill">Bloodbath</button></div>';
     } else if (activeRole === 'Oracle') {
       state.selectedAction = 'evil-eye';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="evil-eye">Evil Eye</button></div>';
@@ -5046,6 +5089,9 @@
       : aceOfBladesRollAnimating
         ? 'Chance is spinning. Hold steady while the wheel decides your kill count.'
         : `Your roll gave you ${aceOfBladesKillsAvailable} kill${aceOfBladesKillsAvailable === 1 ? '' : 's'} tonight. Choose exactly ${aceOfBladesKillsAvailable} target${aceOfBladesKillsAvailable === 1 ? '' : 's'}.`;
+    else if (activeRole === 'Psychopath') actionDesc = psychopathStoredKills > 0
+      ? `You have ${psychopathStoredKills} stored kill${psychopathStoredKills === 1 ? '' : 's'}. Unleash up to ${psychopathKillsAvailable} kill${psychopathKillsAvailable === 1 ? '' : 's'} tonight, or skip to keep stacking.`
+      : 'Skip tonight to stack a future kill, or strike now and stay on schedule.';
     else if (activeRole === 'Wither') actionDesc = 'Infect 1 player tonight. Infected players silently spread infection through future interactions.';
     else if (activeRole === 'Pestilence') actionDesc = 'You are immortal to every kill. Choose a player to eliminate tonight.';
     else if (activeRole === 'Blackmailer') actionDesc = state.selectedAction === 'blackmail'
@@ -5103,17 +5149,21 @@
         : activeRole === 'Guardian Angel'
           ? guardianAngelTargets
           : targets;
-    const isMultiTargetRole = activeRole === 'Traplord' || activeRole === 'Teleporter' || (activeRole === 'Ace of Blades' && aceOfBladesKillsAvailable > 1);
+    const isMultiTargetRole = activeRole === 'Traplord' || activeRole === 'Teleporter' || (activeRole === 'Ace of Blades' && aceOfBladesKillsAvailable > 1) || (activeRole === 'Psychopath' && psychopathKillsAvailable > 1);
     const requiredMultiTargetCount = activeRole === 'Teleporter'
       ? 2
       : activeRole === 'Ace of Blades'
         ? aceOfBladesKillsAvailable
+        : activeRole === 'Psychopath'
+          ? 1
         : 3;
     const shouldShowTargetList = (!isTargetlessRole && !aceOfBladesRollAnimating) || activeRole === 'Arsonist';
     const targetLabel = activeRole === 'Arsonist' && state.selectedAction === 'ignite'
       ? `DOUSED PLAYERS${displayedTargets.length ? ` (${displayedTargets.length})` : ''}`
       : activeRole === 'Ace of Blades'
         ? `SELECT ${aceOfBladesKillsAvailable} TARGET${aceOfBladesKillsAvailable === 1 ? '' : 'S'}${isMultiTargetRole && multiSelectedTargets.length ? ` (${multiSelectedTargets.length} SELECTED)` : ''}`
+        : activeRole === 'Psychopath'
+          ? `SELECT UP TO ${psychopathKillsAvailable} TARGET${psychopathKillsAvailable === 1 ? '' : 'S'}${multiSelectedTargets.length ? ` (${multiSelectedTargets.length} SELECTED)` : ''}`
       : isMultiTargetRole
         ? `${activeRole === 'Teleporter' ? 'SELECT 2 TARGETS' : 'SELECT AT LEAST 3 TARGETS'}${multiSelectedTargets.length ? ` (${multiSelectedTargets.length} SELECTED)` : ''}`
         : 'SELECT TARGET';
@@ -5146,7 +5196,7 @@
           }).join('')}
         </div>` : ''}
         <div class="chat-local-actions">
-          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) || (isMultiTargetRole && multiSelectedTargets.length < requiredMultiTargetCount) || (activeRole === 'Arsonist' && state.selectedAction === 'ignite' && !arsonistCanIgniteTonight) || (activeRole === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) || (activeRole === 'The Purge' && state.selectedAction === 'fascism' && !purgeCanUseFascismTonight) || (activeRole === 'Officer' && officerHasPrisoner && !officerVerdictAvailable) || aceOfBladesRollAnimating ? 'disabled' : ''}>${activeRole === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : activeRole === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : activeRole === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : activeRole === 'Medium' ? `Confirm ${player.mediumMediateUsesRemaining ?? 3}/3` : activeRole === 'Oracle' ? `Confirm ${player.oracleEvilEyeUsesRemaining ?? 3}/3` : activeRole === 'Prophet' && state.selectedAction === 'gospel' ? `Confirm ${player.prophetGospelUsesRemaining ?? 2}/2` : activeRole === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 4}/4` : activeRole === 'Ace of Blades' && aceOfBladesNeedsRoll ? 'Roll 3Fold' : activeRole === 'Ace of Blades' ? `Confirm ${isMultiTargetRole ? multiSelectedTargets.length : (state.selectedTarget ? 1 : 0)}/${aceOfBladesKillsAvailable}` : activeRole === 'Arsonist' && state.selectedAction === 'ignite' ? `Ignite ${arsonistDousedTargetIds.length}` : activeRole === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : activeRole === 'The Purge' && state.selectedAction === 'fascism' ? `Confirm ${player.purgeFascismUsesRemaining ?? 1}/1` : activeRole === 'Teleporter' ? `Confirm ${multiSelectedTargets.length}/2` : isMultiTargetRole ? `Confirm ${multiSelectedTargets.length}/3+` : 'Confirm'}</button>
+          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) || (isMultiTargetRole && multiSelectedTargets.length < requiredMultiTargetCount) || (activeRole === 'Arsonist' && state.selectedAction === 'ignite' && !arsonistCanIgniteTonight) || (activeRole === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) || (activeRole === 'The Purge' && state.selectedAction === 'fascism' && !purgeCanUseFascismTonight) || (activeRole === 'Officer' && officerHasPrisoner && !officerVerdictAvailable) || aceOfBladesRollAnimating ? 'disabled' : ''}>${activeRole === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : activeRole === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : activeRole === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : activeRole === 'Medium' ? `Confirm ${player.mediumMediateUsesRemaining ?? 3}/3` : activeRole === 'Oracle' ? `Confirm ${player.oracleEvilEyeUsesRemaining ?? 3}/3` : activeRole === 'Prophet' && state.selectedAction === 'gospel' ? `Confirm ${player.prophetGospelUsesRemaining ?? 2}/2` : activeRole === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 4}/4` : activeRole === 'Ace of Blades' && aceOfBladesNeedsRoll ? 'Roll 3Fold' : activeRole === 'Ace of Blades' ? `Confirm ${isMultiTargetRole ? multiSelectedTargets.length : (state.selectedTarget ? 1 : 0)}/${aceOfBladesKillsAvailable}` : activeRole === 'Psychopath' ? `Confirm ${isMultiTargetRole ? multiSelectedTargets.length : (state.selectedTarget ? 1 : 0)}/${psychopathKillsAvailable}` : activeRole === 'Arsonist' && state.selectedAction === 'ignite' ? `Ignite ${arsonistDousedTargetIds.length}` : activeRole === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : activeRole === 'The Purge' && state.selectedAction === 'fascism' ? `Confirm ${player.purgeFascismUsesRemaining ?? 1}/1` : activeRole === 'Teleporter' ? `Confirm ${multiSelectedTargets.length}/2` : isMultiTargetRole ? `Confirm ${multiSelectedTargets.length}/3+` : 'Confirm'}</button>
           <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>
         </div>
       </div>
@@ -5208,6 +5258,8 @@
             state.selectedTargets = [...multiSelectedTargets.slice(-1), targetId];
           } else if (activeRole === 'Ace of Blades') {
             state.selectedTargets = [...multiSelectedTargets.slice(-(Math.max(0, requiredMultiTargetCount - 1))), targetId];
+          } else if (activeRole === 'Psychopath') {
+            state.selectedTargets = [...multiSelectedTargets.slice(-(Math.max(0, psychopathKillsAvailable - 1))), targetId];
           } else {
             state.selectedTargets = [...multiSelectedTargets, targetId];
           }
@@ -5230,7 +5282,7 @@
           targetId: isTargetlessRole || isMultiTargetRole ? null : state.selectedTarget,
           targetIds: isMultiTargetRole
             ? multiSelectedTargets
-            : (activeRole === 'Ace of Blades' && state.selectedAction === 'kill' && state.selectedTarget ? [state.selectedTarget] : null),
+            : ((activeRole === 'Ace of Blades' || activeRole === 'Psychopath') && state.selectedAction === 'kill' && state.selectedTarget ? [state.selectedTarget] : null),
         }, (response) => {
           if (response.success) {
             if (response.player) {
@@ -5239,7 +5291,7 @@
               state.playerData = response.player;
               state.hasActed = !!response.player.hasSubmittedAction;
               const responseActiveRole = getActiveNightRole(response.player);
-              if (responseActiveRole === 'Traplord' || responseActiveRole === 'Teleporter' || responseActiveRole === 'Ace of Blades') {
+              if (responseActiveRole === 'Traplord' || responseActiveRole === 'Teleporter' || responseActiveRole === 'Ace of Blades' || responseActiveRole === 'Psychopath') {
                 state.selectedTargets = [];
               }
               if (responseActiveRole === 'Ace of Blades' && response.rollResult) {
