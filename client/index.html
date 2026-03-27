@@ -201,13 +201,35 @@
                   <span class="room-settings-kicker">GAME SETTINGS</span>
                   <span class="room-settings-subtitle">Open to view room rules</span>
                 </span>
-                <span class="room-settings-chevron" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="6 9 12 15 18 9"/>
-                  </svg>
+                <span class="room-settings-actions">
+                  <button type="button" class="room-settings-expand" id="btn-room-settings-fullscreen" aria-label="Open settings fullscreen">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <polyline points="9 21 3 21 3 15"></polyline>
+                      <line x1="21" y1="3" x2="14" y2="10"></line>
+                      <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                  </button>
+                  <span class="room-settings-chevron" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </span>
                 </span>
               </summary>
               <div class="room-settings-body">
+                <div class="room-settings-body-header">
+                  <div class="room-settings-body-copy">
+                    <div class="room-settings-body-title">Game Settings</div>
+                    <div class="room-settings-body-subtitle">Adjust room rules in one place.</div>
+                  </div>
+                  <button type="button" class="room-settings-close" id="btn-room-settings-close" aria-label="Close fullscreen settings">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </div>
                 <label class="room-setting-toggle">
                   <span class="room-setting-copy">
                     <span class="room-setting-title">Anonymous Votes</span>
@@ -238,6 +260,14 @@
                     <span class="room-setting-subtitle">Remove Villager from the role wheel and role assignment pool</span>
                   </span>
                   <input type="checkbox" id="toggle-disable-villager-role">
+                  <span class="room-toggle-slider"></span>
+                </label>
+                <label class="room-setting-toggle">
+                  <span class="room-setting-copy">
+                    <span class="room-setting-title">Enable Traitor</span>
+                    <span class="room-setting-subtitle">If no Assassins remain with 6+ players alive, a random Crew member becomes a Traitor</span>
+                  </span>
+                  <input type="checkbox" id="toggle-enable-traitor">
                   <span class="room-toggle-slider"></span>
                 </label>
                 <label class="room-setting-toggle">

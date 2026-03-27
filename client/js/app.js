@@ -33,6 +33,7 @@
     allPlayersWithRoles: [],
     playerListOpen: false,
     chatOverlayOpen: false,
+    roomSettingsFullscreenOpen: false,
     forceExpandedNightChat: false,
     roleRevealActive: false,
     roleRevealEndsAt: 0,
@@ -172,6 +173,7 @@
     Mayor: {
       faction: 'Crew',
       subfaction: 'Unbound',
+      hiddenFromReveal: false,
       description: 'Skipped votes during voting are stored to be used later.',
       revealText: 'Deep purple influence settles over the chamber. Pass on a vote now and return later with more weight in your hand.',
       abilities: [
@@ -379,6 +381,20 @@
       subfaction: 'Power',
       description: 'Eliminate the crew. Stay hidden. Strike silently.',
       revealText: 'Crimson intent burns bright. Stay hidden and strike first.',
+      abilities: [
+        {
+          name: 'Kill',
+          type: 'Night',
+          description: 'Eliminate a player.',
+        },
+      ],
+    },
+    Traitor: {
+      faction: 'Assassin',
+      subfaction: 'Special',
+      hiddenFromReveal: true,
+      description: 'If there are no Assassins left while the game has at least 6 players, a random Crew member becomes an Assassin.',
+      revealText: 'Blue loyalty tears open into red betrayal. You were Crew once. Now the knife points the other way.',
       abilities: [
         {
           name: 'Kill',
@@ -1239,11 +1255,14 @@
       renderChatBox();
     });
 
-    state.socket.on('player-updated', ({ player }) => {
+    state.socket.on('player-updated', ({ player, assassinChatMessages }) => {
       const previousPlayer = state.playerData;
       queueAmnesiacInheritanceTransition(previousPlayer, player);
       queueLifeTransition(previousPlayer, player);
       state.playerData = player;
+      if (Array.isArray(assassinChatMessages)) {
+        state.assassinChatMessages = assassinChatMessages;
+      }
       if (player.faction !== 'Assassin' || player.alive === false) {
         state.currentChatChannel = 'public';
       }
@@ -1285,6 +1304,9 @@
     state.socket.on('private-chat-message', ({ message }) => {
       state.privateChatMessages.push(message);
       if (state.privateChatMessages.length > 50) state.privateChatMessages = state.privateChatMessages.slice(-50);
+      if (message?.type === 'system') {
+        state.currentChatChannel = 'public';
+      }
       renderChatBox();
     });
 
@@ -1362,10 +1384,26 @@
       overlay.classList.remove('active');
       overlay.innerHTML = '';
     }
+    setRoomSettingsFullscreen(false);
     const screen = document.getElementById(`screen-${screenId}`);
     if (screen) {
       screen.classList.add('active');
       state.currentScreen = screenId;
+    }
+  }
+
+  function setRoomSettingsFullscreen(open) {
+    state.roomSettingsFullscreenOpen = !!open;
+    const panel = document.querySelector('.room-settings-panel');
+    if (!panel) return;
+    if (open) {
+      panel.classList.add('is-fullscreen');
+      panel.open = true;
+      document.body.classList.add('room-settings-fullscreen-open');
+    } else {
+      panel.classList.remove('is-fullscreen');
+      panel.open = false;
+      document.body.classList.remove('room-settings-fullscreen-open');
     }
   }
 
@@ -1461,6 +1499,7 @@
     if (normalizedRole === 'redflag') return 'redflag';
     if (normalizedRole === 'silencer') return 'silencer';
     if (normalizedRole === 'assassin') return 'assassin';
+    if (normalizedRole === 'traitor') return 'traitor';
     if (normalizedRole === 'sniper') return 'sniper';
     if (normalizedRole === 'tetherhex') return 'tetherhex';
     if (normalizedRole === 'hypnotic') return 'hypnotic';
@@ -1560,6 +1599,7 @@
       manipulator: { glowBackground: 'var(--manipulator)', titleColor: 'hsl(286, 100%, 84%)', titleShadow: '0 0 30px rgba(180, 74, 255, 0.26)' },
       mayor: { glowBackground: 'var(--mayor)', titleColor: 'hsl(278, 100%, 86%)', titleShadow: '0 0 30px rgba(126, 74, 214, 0.26)' },
       prophet: { glowBackground: 'var(--prophet)', titleColor: 'var(--prophet)', titleShadow: '0 0 30px rgba(168, 42, 48, 0.28)' },
+      traitor: { glowBackground: 'linear-gradient(90deg, hsl(212, 96%, 68%), hsl(0, 88%, 62%))', titleColor: 'hsl(0, 100%, 88%)', titleShadow: '0 0 30px rgba(162, 72, 96, 0.28)' },
       narcissist: { glowBackground: 'hsl(270, 82%, 58%)', titleColor: 'hsl(270, 90%, 78%)', titleShadow: '0 0 30px rgba(124, 58, 237, 0.24)' },
       teleporter: { glowBackground: 'var(--teleporter)', titleColor: 'var(--teleporter)', titleShadow: '0 0 30px rgba(126, 184, 255, 0.24)' },
       swapper: { glowBackground: 'hsl(286, 100%, 68%)', titleColor: 'hsl(48, 100%, 84%)', titleShadow: '0 0 30px rgba(176, 104, 255, 0.26)' },
@@ -2045,6 +2085,11 @@
     if (disableVillagerRoleToggle) {
       disableVillagerRoleToggle.checked = !!data.disableVillagerRole;
       disableVillagerRoleToggle.disabled = !(state.isHost || state.playerId === data.hostId);
+    }
+    const enableTraitorToggle = document.getElementById('toggle-enable-traitor');
+    if (enableTraitorToggle) {
+      enableTraitorToggle.checked = !!data.enableTraitor;
+      enableTraitorToggle.disabled = !(state.isHost || state.playerId === data.hostId);
     }
     const classicFivePlayerSetupToggle = document.getElementById('toggle-classic-five-player-setup');
     if (classicFivePlayerSetupToggle) {
@@ -3441,6 +3486,15 @@
       });
     });
 
+    document.getElementById('toggle-enable-traitor').addEventListener('change', (event) => {
+      state.socket.emit('update-room-settings', { enableTraitor: event.target.checked }, (response) => {
+        if (!response.success) {
+          showToast(response.error || 'Could not update room settings', 'error');
+          event.target.checked = !!state.roomData?.enableTraitor;
+        }
+      });
+    });
+
     document.getElementById('toggle-classic-five-player-setup').addEventListener('change', (event) => {
       state.socket.emit('update-room-settings', { useClassicFivePlayerSetup: event.target.checked }, (response) => {
         if (!response.success) {
@@ -3466,6 +3520,28 @@
           event.target.checked = !!state.roomData?.sheriffKillsNeutralEvil;
         }
       });
+    });
+
+    const roomSettingsExpandBtn = document.getElementById('btn-room-settings-fullscreen');
+    if (roomSettingsExpandBtn) {
+      roomSettingsExpandBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setRoomSettingsFullscreen(true);
+      });
+    }
+
+    const roomSettingsCloseBtn = document.getElementById('btn-room-settings-close');
+    if (roomSettingsCloseBtn) {
+      roomSettingsCloseBtn.addEventListener('click', () => {
+        setRoomSettingsFullscreen(false);
+      });
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && state.roomSettingsFullscreenOpen) {
+        setRoomSettingsFullscreen(false);
+      }
     });
 
     document.getElementById('btn-back-home').addEventListener('click', () => {
@@ -4526,7 +4602,7 @@
     } else if (activeRole === 'Sniper') {
       state.selectedAction = 'longshot';
       actionsHTML = `<div class="action-buttons"><button class="action-btn selected ${actionClass}" data-action="longshot">Longshot</button></div>`;
-    } else if (activeRole === 'Assassin' || activeRole === 'Disruptor' || activeRole === 'Manipulator') {
+    } else if (activeRole === 'Assassin' || activeRole === 'Traitor' || activeRole === 'Disruptor' || activeRole === 'Manipulator') {
       state.selectedAction = 'kill';
       actionsHTML = `<div class="action-buttons"><button class="action-btn selected ${actionClass}" data-action="kill">Kill</button></div>`;
     } else if (player.role === 'Imitator') {
@@ -4603,6 +4679,7 @@
     else if (activeRole === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
     else if (activeRole === 'Sniper') actionDesc = 'Mark a player with a distant shot. The bullet lands 2 rounds later.';
     else if (activeRole === 'Assassin') actionDesc = 'Choose a crew member to eliminate';
+    else if (activeRole === 'Traitor') actionDesc = 'You have turned on the Crew. Choose a player to eliminate.';
     else if (activeRole === 'Disruptor') actionDesc = 'Eliminate a player at night. Veto becomes available during voting.';
     else if (activeRole === 'Manipulator') actionDesc = 'Eliminate a player at night. Surprise becomes available during voting.';
     else if (player.role === 'Imitator') actionDesc = 'Choose a living player to borrow their role for tonight.';

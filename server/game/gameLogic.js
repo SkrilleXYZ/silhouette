@@ -116,6 +116,7 @@ class GameLogic {
       anonymousEjects: false,
       hiddenRoleList: false,
       disableVillagerRole: false,
+      enableTraitor: false,
       useClassicFivePlayerSetup: false,
       sheriffKillsCrewTarget: false,
       sheriffKillsNeutralEvil: false,
@@ -1214,7 +1215,7 @@ class GameLogic {
     } else if (activeRole === 'Veteran') {
       if (action !== 'instinct') return { error: 'Invalid action for Veteran' };
       if ((player.veteranUsesRemaining ?? 4) <= 0) return { error: 'You have no Instinct uses remaining' };
-    } else if (activeRole === 'Assassin' || activeRole === 'Disruptor' || activeRole === 'Manipulator') {
+    } else if (activeRole === 'Assassin' || activeRole === 'Traitor' || activeRole === 'Disruptor' || activeRole === 'Manipulator') {
       const target = room.players.get(targetId);
       if (!target || !target.alive) return { error: 'Invalid target' };
       if (action !== 'kill') return { error: `Invalid action for ${activeRole}` };
@@ -2368,7 +2369,11 @@ class GameLogic {
           ? action.igniteTargetIds.filter((targetId) => room.players.get(targetId)?.alive)
           : [];
         action.igniteTargetIds = igniteTargetIds;
-        player.arsonistDousedTargetIds = player.arsonistDousedTargetIds.filter((targetId) => !igniteTargetIds.includes(targetId));
+        player.arsonistDousedTargetIds = player.arsonistDousedTargetIds.filter((targetId) => {
+          if (!igniteTargetIds.includes(targetId)) return true;
+          const igniteTarget = room.players.get(targetId);
+          return igniteTarget?.role === 'The Vessel' && !igniteTarget.vesselAwakened;
+        });
       }
     }
 
@@ -2517,7 +2522,7 @@ class GameLogic {
       if (isSuppressedByPurge(player)) continue;
       if (disabledAbilityTargets.has(playerId)) continue;
 
-      if (action.action === 'kill' && activeRole === 'Assassin' && action.targetId) {
+      if (action.action === 'kill' && (activeRole === 'Assassin' || activeRole === 'Traitor') && action.targetId) {
         if (veteranAlertIds.has(action.targetId)) {
           killed.add(playerId);
         } else if (mirroredTargets.has(action.targetId)) {
@@ -3431,13 +3436,14 @@ class GameLogic {
     room.recentKillers = [...(room.recentKillers || []), Array.from(killersThisNight)].slice(-2);
     room.nightActions = {};
 
+    const traitorConvertedPlayerId = this.maybeTriggerTraitorOverthrow(code);
     const winCheck = this.checkWinCondition(code);
     if (winCheck) {
       room.state = 'ended';
       room.winner = winCheck;
     }
 
-    return { room, messages, searchResults, privateMessages, winner: room.winner };
+    return { room, messages, searchResults, privateMessages, winner: room.winner, traitorConvertedPlayerId };
   }
 
   submitVote(code, voterId, targetId) {
@@ -3591,6 +3597,9 @@ class GameLogic {
     }
     if (typeof settings.disableVillagerRole === 'boolean') {
       room.disableVillagerRole = settings.disableVillagerRole;
+    }
+    if (typeof settings.enableTraitor === 'boolean') {
+      room.enableTraitor = settings.enableTraitor;
     }
     if (typeof settings.useClassicFivePlayerSetup === 'boolean') {
       room.useClassicFivePlayerSetup = settings.useClassicFivePlayerSetup;
@@ -3784,6 +3793,7 @@ class GameLogic {
         candidate.scientistSwapTargetIds = [];
       }
 
+      const traitorConvertedPlayerId = this.maybeTriggerTraitorOverthrow(code);
       const winCheck = this.checkWinCondition(code);
       if (winCheck) {
         room.state = 'ended';
@@ -3802,7 +3812,8 @@ class GameLogic {
         message,
         voteCounts: {},
         eliminated,
-        winner: room.winner
+        winner: room.winner,
+        traitorConvertedPlayerId
       };
     }
 
@@ -3840,6 +3851,7 @@ class GameLogic {
         candidate.scientistSwapTargetIds = [];
       }
 
+      const traitorConvertedPlayerId = this.maybeTriggerTraitorOverthrow(code);
       const winCheck = this.checkWinCondition(code);
       if (winCheck) {
         room.state = 'ended';
@@ -3858,7 +3870,8 @@ class GameLogic {
         message,
         voteCounts: {},
         eliminated: null,
-        winner: room.winner
+        winner: room.winner,
+        traitorConvertedPlayerId
       };
     }
 
@@ -4062,6 +4075,7 @@ class GameLogic {
       candidate.scientistSwapTargetIds = [];
     }
 
+    const traitorConvertedPlayerId = this.maybeTriggerTraitorOverthrow(code);
     const winCheck = this.checkWinCondition(code);
     if (winCheck) {
       room.state = 'ended';
@@ -4080,7 +4094,8 @@ class GameLogic {
       message,
       voteCounts,
       eliminated,
-      winner: room.winner
+      winner: room.winner,
+      traitorConvertedPlayerId
     };
   }
 
@@ -4094,6 +4109,28 @@ class GameLogic {
     }
     this.beginPhaseSummary(code, 'Voting has started.');
     return room;
+  }
+
+  maybeTriggerTraitorOverthrow(code) {
+    const room = this.rooms.get(code);
+    if (!room || !room.enableTraitor) return null;
+
+    const alivePlayers = Array.from(room.players.values()).filter((player) => player.alive);
+    if (alivePlayers.length < 6) return null;
+
+    const aliveAssassins = alivePlayers.filter((player) => player.faction === 'Assassin');
+    if (aliveAssassins.length > 0) return null;
+
+    const eligibleCrew = alivePlayers.filter((player) => player.faction === 'Crew');
+    if (!eligibleCrew.length) return null;
+
+    const chosenPlayer = eligibleCrew[Math.floor(Math.random() * eligibleCrew.length)];
+    chosenPlayer.role = 'Traitor';
+    chosenPlayer.faction = 'Assassin';
+    delete room.nightActions[chosenPlayer.id];
+
+    this.appendToPhaseSummary(code, 'A Traitor has joined the Assassins.');
+    return chosenPlayer.id;
   }
 
   checkWinCondition(code) {
@@ -4252,6 +4289,7 @@ class GameLogic {
       anonymousEjects: room.anonymousEjects,
       hiddenRoleList: room.hiddenRoleList,
       disableVillagerRole: room.disableVillagerRole,
+      enableTraitor: room.enableTraitor,
       useClassicFivePlayerSetup: room.useClassicFivePlayerSetup,
       sheriffKillsCrewTarget: room.sheriffKillsCrewTarget,
       sheriffKillsNeutralEvil: room.sheriffKillsNeutralEvil,
@@ -4313,6 +4351,7 @@ class GameLogic {
     if (action === 'interlinked') return 'Tetherhex has forged a lethal bond.';
     if (action === 'kill') {
       if (activeRole === 'The Vessel') return 'The Vessel has taken revenge.';
+      if (activeRole === 'Traitor') return 'A Traitor has struck from within.';
       return 'An Assassin has moved through the shadows.';
     }
     return null;
