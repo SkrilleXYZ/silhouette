@@ -2478,7 +2478,7 @@
     if (/The Psychopath is plotting\./i.test(text)) return 'summary-psychopath';
     if (/The Devastator has strapped a player with dynamites\./i.test(text)) return 'summary-devastator';
     if (/The Dracula is thirsty for blood\.?$/i.test(text)) return 'summary-dracula';
-    if (/A Vampire was hungry\./i.test(text)) return 'summary-vampire';
+    if (/A Vampie was thirsty\.?$/i.test(text)) return 'summary-vampire';
     if (/Pestilence became all powerful\./i.test(text)) return 'summary-pestilence';
     if (/had their places swapped by the Swapper\./i.test(text)) return 'summary-swapper';
     if (/used their gun/i.test(text)) return 'summary-shoot';
@@ -2658,7 +2658,7 @@
     if ((/The Dracula is thirsty for blood\.?$/i.test(text) || /Your fangs have grown\.?$/i.test(text)) && String(message.source || '').trim() === 'Dracula') {
       return ' system-result-dracula';
     }
-    if (/A Vampire was hungry\./i.test(text) && String(message.source || '').trim() === 'Vampire') {
+    if (/A Vampie was thirsty\.?$/i.test(text) && String(message.source || '').trim() === 'Vampire') {
       return ' system-result-vampire';
     }
     if (/Pestilence became all powerful\./i.test(text) && String(message.source || '').trim() === 'Pestilence') {

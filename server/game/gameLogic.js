@@ -5139,7 +5139,7 @@ class GameLogic {
     if (action === 'interlinked') return 'Tetherhex has forged a lethal bond.';
     if (action === 'kill') {
       if (activeRole === 'Psychopath') return 'The Psychopath is plotting.';
-      if (activeRole === 'Vampire') return 'A Vampire was hungry.';
+      if (activeRole === 'Vampire') return 'A Vampie was thirsty';
       if (activeRole === 'The Vessel') return 'The Vessel has taken revenge.';
       return 'An Assassin has moved through the shadows.';
     }
