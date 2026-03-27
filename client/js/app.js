@@ -2100,8 +2100,8 @@
     const roles = Object.entries(ROLE_DEFINITIONS)
       .filter(([role]) => !(state.roomData?.disableVillagerRole && role === 'Villager'))
       .filter(([role]) => role !== 'Psychopath' || roomPlayerCount >= 6)
-      .filter(([role]) => role !== 'Devastator' || roomPlayerCount >= 6)
-      .filter(([role]) => role !== 'Ace of Blades' || roomPlayerCount >= 8)
+      .filter(([role]) => role !== 'Devastator' || roomPlayerCount >= 7)
+      .filter(([role]) => role !== 'Ace of Blades' || roomPlayerCount >= 6)
       .filter(([role]) => role !== 'Sniper' || roomPlayerCount >= 6)
       .filter(([, roleInfo]) => !roleInfo.hiddenFromReveal)
       .map(([role]) => role);
@@ -3627,7 +3627,7 @@
     return state.roomData.players.filter(p => {
       if (!p.alive) return false;
       if (p.id === state.playerId) return activeRole === 'Vitalist' || activeRole === 'Mirror Caster' || activeRole === 'Teleporter' || activeRole === 'Warden';
-      if (state.playerData.faction === 'Assassin' && (activeRole === 'Assassin' || activeRole === 'Disruptor' || activeRole === 'Manipulator')) {
+      if (state.playerData.faction === 'Assassin' && (activeRole === 'Assassin' || activeRole === 'Disruptor' || activeRole === 'Manipulator' || activeRole === 'Ace of Blades')) {
         const isTeammate = state.playerData.teammates?.some(t => t.id === p.id);
         if (isTeammate) return false;
       }
@@ -4937,8 +4937,6 @@
     const aceOfBladesNeedsRoll = activeRole === 'Ace of Blades' && aceOfBladesKillsAvailable <= 0;
     const aceOfBladesRollAnimating = activeRole === 'Ace of Blades' && !!state.aceOfBladesRollAnimation;
     const aceOfBladesRollResult = aceOfBladesRollAnimating ? Number(state.aceOfBladesRollAnimation?.result) || 1 : 1;
-    const aceOfBladesSpinOffset = aceOfBladesRollResult === 1 ? 252 : aceOfBladesRollResult === 2 ? 90 : 18;
-    const aceOfBladesSpinDegrees = 1440 + aceOfBladesSpinOffset;
     const arsonistCanIgniteTonight = activeRole === 'Arsonist' && arsonistDousedTargetIds.length > 0;
     const officerHasPrisoner = activeRole === 'Officer' && !!player.officerJailedTargetId;
     const officerVerdictAvailable = activeRole === 'Officer' && !!player.officerVerdictAvailable;
@@ -5128,19 +5126,22 @@
 
     let actionsHTML = '';
     const aceWheelHTML = activeRole === 'Ace of Blades' && (aceOfBladesNeedsRoll || aceOfBladesRollAnimating)
-      ? `<div class="ace-wheel-panel ${aceOfBladesRollAnimating ? 'is-spinning' : ''}">
-          <div class="ace-wheel-header">3FOLD</div>
-          <div class="ace-wheel-shell">
-            <div class="ace-wheel-dial"${aceOfBladesRollAnimating ? ` style="--ace-wheel-spin:${aceOfBladesSpinDegrees}deg;"` : ''}>
-              <div class="ace-wheel-dial-core">${aceOfBladesRollAnimating ? (state.aceOfBladesRollAnimation?.result || '?') : '?'}</div>
+      ? (() => {
+          const aceReelValues = [1, 2, 3, 1, 2, 3, 1, 2, 3];
+          const aceReelStopIndex = aceOfBladesRollAnimating ? (6 + Math.max(0, aceOfBladesRollResult - 1)) : 1;
+          return `<div class="ace-wheel-panel ${aceOfBladesRollAnimating ? 'is-spinning' : ''}">
+            <div class="ace-wheel-header">3FOLD</div>
+            <div class="ace-reel-shell">
+              <div class="ace-reel-window">
+                <div class="ace-reel-track"${aceOfBladesRollAnimating ? ` style="--ace-reel-stop:${aceReelStopIndex};"` : ''}>
+                  ${aceReelValues.map((value) => `<div class="ace-reel-row">${value}</div>`).join('')}
+                </div>
+                <div class="ace-reel-highlight"></div>
+              </div>
             </div>
-            <div class="ace-wheel-pointer"></div>
-            <div class="ace-wheel-label ace-wheel-label-one">1</div>
-            <div class="ace-wheel-label ace-wheel-label-two">2</div>
-            <div class="ace-wheel-label ace-wheel-label-three">3</div>
-          </div>
-          <div class="ace-wheel-odds"><span>1 kill 60%</span><span>2 kills 30%</span><span>3 kills 10%</span></div>
-        </div>`
+            <div class="ace-wheel-odds"><span>1 kill 60%</span><span>2 kills 30%</span><span>3 kills 10%</span></div>
+          </div>`;
+        })()
       : '';
     if (activeRole === 'Sheriff') {
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'shoot' ? 'selected' : ''}" data-action="shoot">Shoot</button><button class="action-btn ${state.selectedAction === 'search' ? 'selected' : ''}" data-action="search">Search</button></div>`;

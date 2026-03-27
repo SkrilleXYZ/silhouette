@@ -114,6 +114,7 @@ class GameLogic {
       jailChatMessages: [],
       abyssChatMessages: [],
       abyssActiveMediumId: null,
+      abyssActiveMediumIds: [],
       currentPhaseSummaryId: null,
       anonymousVotes: false,
       anonymousEjects: false,
@@ -128,6 +129,8 @@ class GameLogic {
       officerKillsNeutralEvil: false,
       jailedPlayerId: null,
       jailedOfficerId: null,
+      imitatorJailedPlayerId: null,
+      imitatorJailedById: null,
       playerOrder: [],
       lastAction: Date.now(),
       lastMedicTarget: null,
@@ -349,8 +352,8 @@ class GameLogic {
   isRoleAvailableForPlayerCount(room, role) {
     const playerCount = room?.players?.size || 0;
     if (role === 'Psychopath') return playerCount >= 6;
-    if (role === 'Devastator') return playerCount >= 6;
-    if (role === 'Ace of Blades') return playerCount >= 8;
+    if (role === 'Devastator') return playerCount >= 7;
+    if (role === 'Ace of Blades') return playerCount >= 6;
     if (role === 'Sniper') return playerCount >= 6;
     return true;
   }
@@ -385,6 +388,29 @@ class GameLogic {
       && player.role === 'Vampire'
       && player.draculaMasterId === draculaId
     )) || null;
+  }
+
+  getDraculaControllerId(room, playerId, player) {
+    if (!room || !player) return null;
+    if (player.role === 'Dracula') return playerId;
+    if (player.role === 'Imitator' && player.imitatorCopiedRole === 'Dracula') {
+      return this.getImitatorCopiedSource(room, player)?.id || null;
+    }
+    return null;
+  }
+
+  getArsonistStateOwner(room, player) {
+    if (!player) return null;
+    if (player.role === 'Arsonist') return player;
+    if (player.role === 'Imitator' && player.imitatorCopiedRole === 'Arsonist') {
+      return this.getImitatorCopiedSource(room, player) || player;
+    }
+    return player;
+  }
+
+  getArsonistDousedTargetIds(room, player) {
+    const owner = this.getArsonistStateOwner(room, player);
+    return Array.isArray(owner?.arsonistDousedTargetIds) ? [...owner.arsonistDousedTargetIds] : [];
   }
 
   getRolePoolForRoom(room, faction, subfaction) {
@@ -494,129 +520,129 @@ class GameLogic {
         { type: 'neutral', categories: ['Evil'] },
       ],
       6: [
-        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
-        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
-        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
-        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
-        { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
         { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
+        { type: 'pool', faction: 'Crew', pools: [['Chaos', 'Unbound']] },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'neutral', categories: ['Evil'] },
       ],
       7: [
         { type: 'slot', faction: 'Crew', subfaction: 'Info' },
         { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
         { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
+        { type: 'pool', faction: 'Crew', pools: [['Chaos', 'Unbound']] },
         { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
-        { type: 'pool', faction: 'Assassin', pools: [['Concealing', 'Support']] },
-        { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Concealing' },
         { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
       ],
       8: [
-        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
-        { type: 'pool', faction: 'Assassin', pools: [['Concealing', 'Support']] },
-        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
-        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
-        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
         { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
         { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
         { type: 'slot', faction: 'Crew', subfaction: 'Unbound' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Concealing' },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
       ],
       9: [
-        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
-        { type: 'pool', faction: 'Assassin', pools: [['Concealing', 'Support']] },
-        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
-        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
-        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
         { type: 'slot', faction: 'Crew', subfaction: 'Info' },
-        { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
-        { type: 'slot', faction: 'Crew', subfaction: 'Unbound' },
-        { type: 'crew-flex' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
+        { type: 'pool', faction: 'Crew', pools: [['Chaos', 'Unbound']] },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Concealing' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Support' },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
       ],
       10: [
-        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
-        { type: 'pool', faction: 'Assassin', pools: [['Concealing', 'Support']] },
-        { type: 'pool', faction: 'Assassin', pools: [['Power', 'Concealing', 'Support']] },
-        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
-        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
-        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
-        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
         { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
         { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
         { type: 'slot', faction: 'Crew', subfaction: 'Unbound' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Concealing' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Support' },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
+        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
       ],
       11: [
-        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
-        { type: 'pool', faction: 'Assassin', pools: [['Concealing', 'Support']] },
-        { type: 'pool', faction: 'Assassin', pools: [['Power', 'Concealing', 'Support']] },
-        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
-        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
-        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
-        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
         { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
         { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
         { type: 'slot', faction: 'Crew', subfaction: 'Unbound' },
-        { type: 'crew-flex' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Concealing' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Support' },
+        { type: 'neutral', categories: ['Evil'] },
+        { type: 'neutral', categories: ['Benign'] },
+        { type: 'neutral', categories: ['Killing'] },
       ],
       12: [
-        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
-        { type: 'pool', faction: 'Assassin', pools: [['Concealing', 'Support']] },
-        { type: 'pool', faction: 'Assassin', pools: [['Power', 'Concealing', 'Support']] },
-        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
-        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
-        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
-        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
         { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
         { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
         { type: 'slot', faction: 'Crew', subfaction: 'Unbound' },
-        { type: 'crew-flex' },
-        { type: 'crew-flex' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Concealing' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Support' },
+        { type: 'neutral', categories: ['Evil', 'Benign'] },
+        { type: 'neutral', categories: ['Evil', 'Benign'] },
+        { type: 'neutral', categories: ['Killing'] },
+        { type: 'neutral', categories: ['Killing'] },
       ],
       13: [
-        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
-        { type: 'pool', faction: 'Assassin', pools: [['Concealing', 'Support']] },
-        { type: 'pool', faction: 'Assassin', pools: [['Power', 'Concealing', 'Support']] },
-        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
-        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
-        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
-        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
         { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
         { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
         { type: 'slot', faction: 'Crew', subfaction: 'Unbound' },
-        { type: 'crew-flex' },
-        { type: 'crew-flex' },
-        { type: 'crew-flex' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Concealing' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Support' },
+        { type: 'neutral', categories: ['Evil', 'Benign'] },
+        { type: 'neutral', categories: ['Evil', 'Benign'] },
+        { type: 'neutral', categories: ['Killing'] },
+        { type: 'neutral', categories: ['Killing'] },
       ],
       14: [
-        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
-        { type: 'pool', faction: 'Assassin', pools: [['Concealing', 'Support']] },
-        { type: 'pool', faction: 'Assassin', pools: [['Power', 'Concealing', 'Support']] },
-        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
-        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
-        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
-        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
         { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
         { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
         { type: 'slot', faction: 'Crew', subfaction: 'Unbound' },
-        { type: 'crew-flex' },
-        { type: 'crew-flex' },
-        { type: 'crew-flex' },
-        { type: 'crew-flex' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Concealing' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Support' },
+        { type: 'neutral', categories: ['Evil', 'Benign'] },
+        { type: 'neutral', categories: ['Evil', 'Benign'] },
+        { type: 'neutral', categories: ['Killing'] },
+        { type: 'neutral', categories: ['Killing'] },
       ],
       15: [
-        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
-        { type: 'pool', faction: 'Assassin', pools: [['Concealing', 'Support']] },
-        { type: 'pool', faction: 'Assassin', pools: [['Power', 'Concealing', 'Support']] },
-        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
-        { type: 'neutral', categories: ['Evil', 'Benign', 'Killing'] },
-        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
-        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
         { type: 'slot', faction: 'Crew', subfaction: 'Info' },
-        { type: 'slot', faction: 'Crew', subfaction: 'Chaos' },
-        { type: 'slot', faction: 'Crew', subfaction: 'Unbound' },
-        { type: 'crew-flex' },
-        { type: 'crew-flex' },
-        { type: 'crew-flex' },
-        { type: 'crew-flex' },
-        { type: 'crew-flex' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Info' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Protection' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
+        { type: 'slot', faction: 'Crew', subfaction: 'Killing' },
+        { type: 'pool', faction: 'Crew', pools: [['Chaos', 'Unbound']] },
+        { type: 'pool', faction: 'Crew', pools: [['Chaos', 'Unbound']] },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Power' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Concealing' },
+        { type: 'slot', faction: 'Assassin', subfaction: 'Support' },
+        { type: 'neutral', categories: ['Evil', 'Benign'] },
+        { type: 'neutral', categories: ['Evil', 'Benign'] },
+        { type: 'neutral', categories: ['Killing'] },
+        { type: 'neutral', categories: ['Killing'] },
       ],
     };
 
@@ -692,29 +718,50 @@ class GameLogic {
     return this.getEffectiveNightRole(player) === 'Inquisitor';
   }
 
+  getAbyssActiveMediumIds(room) {
+    if (!room) return [];
+    if (Array.isArray(room.abyssActiveMediumIds) && room.abyssActiveMediumIds.length > 0) {
+      return [...new Set(room.abyssActiveMediumIds.filter(Boolean))];
+    }
+    return room.abyssActiveMediumId ? [room.abyssActiveMediumId] : [];
+  }
+
+  addAbyssMedium(room, playerId) {
+    if (!room || !playerId) return;
+    const nextIds = this.getAbyssActiveMediumIds(room);
+    if (!nextIds.includes(playerId)) nextIds.push(playerId);
+    room.abyssActiveMediumIds = nextIds;
+    room.abyssActiveMediumId = nextIds[0] || null;
+  }
+
   isPlayerJailed(room, playerId) {
     if (!room || !playerId) return false;
-    return room.jailedPlayerId === playerId;
+    return room.jailedPlayerId === playerId || room.imitatorJailedPlayerId === playerId;
   }
 
   isJailedTargetImmuneAtNight(room, targetId) {
     if (!room || !targetId) return false;
-    return room.jailedPlayerId === targetId;
+    return room.jailedPlayerId === targetId || room.imitatorJailedPlayerId === targetId;
   }
 
   canUseJailChat(room, playerId) {
     if (!room || !playerId) return false;
-    if (!room.jailedPlayerId || !room.jailedOfficerId) return false;
     const player = room.players.get(playerId);
     if (!player || !player.alive) return false;
-    return playerId === room.jailedPlayerId || playerId === room.jailedOfficerId;
+    const jailParticipantIds = new Set([
+      room.jailedPlayerId,
+      room.jailedOfficerId,
+      room.imitatorJailedPlayerId,
+      room.imitatorJailedById,
+    ].filter(Boolean));
+    return jailParticipantIds.has(playerId);
   }
 
   canUseAbyssChat(room, playerId) {
-    if (!room || !playerId || room.state !== 'night' || !room.abyssActiveMediumId) return false;
+    if (!room || !playerId || room.state !== 'night') return false;
     const player = room.players.get(playerId);
     if (!player) return false;
-    if (playerId === room.abyssActiveMediumId) return player.alive;
+    if (this.getAbyssActiveMediumIds(room).includes(playerId)) return player.alive;
     return !player.alive;
   }
 
@@ -730,9 +777,16 @@ class GameLogic {
     room.jailChatMessages = [];
   }
 
+  clearImitatorOfficerJail(room) {
+    if (!room) return;
+    room.imitatorJailedPlayerId = null;
+    room.imitatorJailedById = null;
+  }
+
   clearAbyssChat(room) {
     if (!room) return;
     room.abyssActiveMediumId = null;
+    room.abyssActiveMediumIds = [];
     room.abyssChatMessages = [];
   }
 
@@ -831,7 +885,7 @@ class GameLogic {
     const assignedRoles = this.getAssignedRoleNames(room);
     const pool = categories
       .flatMap((category) => this.roleCatalog?.Neutral?.[category] || [])
-      .filter((role) => !assignedRoles.has(role));
+      .filter((role) => !assignedRoles.has(role) && this.isRoleAvailableForPlayerCount(room, role));
     const role = this.pickRandomRole(pool);
     if (!role) return false;
 
@@ -1135,6 +1189,7 @@ class GameLogic {
     room.assassinChatMessages = [];
     room.abyssChatMessages = [];
     room.abyssActiveMediumId = null;
+    room.abyssActiveMediumIds = [];
     room.currentPhaseSummaryId = null;
     room.lastMedicTarget = null;
     room.lastWardenTargets = {};
@@ -1150,6 +1205,10 @@ class GameLogic {
     room.lastBlackoutFlashNight = {};
     room.blackmailedPlayers = {};
     room.silencedPlayers = {};
+    room.jailedPlayerId = null;
+    room.jailedOfficerId = null;
+    room.imitatorJailedPlayerId = null;
+    room.imitatorJailedById = null;
     room.roleRevealEndsAt = 0;
     room.pendingLongshots = [];
     room.traitorActivated = false;
@@ -1224,10 +1283,13 @@ class GameLogic {
     room.jailChatMessages = [];
     room.abyssChatMessages = [];
     room.abyssActiveMediumId = null;
+    room.abyssActiveMediumIds = [];
     room.currentPhaseSummaryId = null;
     room.traitorActivated = false;
     room.jailedPlayerId = null;
     room.jailedOfficerId = null;
+    room.imitatorJailedPlayerId = null;
+    room.imitatorJailedById = null;
     room.playerOrder = [];
     room.lastAction = Date.now();
     room.lastMedicTarget = null;
@@ -1246,6 +1308,8 @@ class GameLogic {
     room.silencedPlayers = {};
     room.jailedPlayerId = null;
     room.jailedOfficerId = null;
+    room.imitatorJailedPlayerId = null;
+    room.imitatorJailedById = null;
     room.recentKillers = [];
     room.pendingLongshots = [];
     room.roleRevealEndsAt = 0;
@@ -1460,22 +1524,27 @@ class GameLogic {
       if (action !== 'lifeguard') return { error: 'Invalid action for Survivalist' };
       if ((player.survivalistUsesRemaining ?? 4) <= 0) return { error: 'You have no Lifeguard uses remaining' };
     } else if (activeRole === 'Officer') {
+      const isCopiedOfficer = player.role === 'Imitator' && player.imitatorCopiedRole === 'Officer';
       const jailedTargetId = player.officerJailedTargetId || null;
       const verdictAvailable = !!jailedTargetId && (room.nightCount > (player.officerJailNightNumber || 0));
-      if (jailedTargetId) {
+      if (!isCopiedOfficer && jailedTargetId) {
         const jailedTarget = room.players.get(jailedTargetId);
         if (!jailedTarget || !jailedTarget.alive) {
           this.clearOfficerJail(room);
         }
       }
-      if (player.officerJailedTargetId) {
+      if (!isCopiedOfficer && player.officerJailedTargetId) {
         if (!verdictAvailable) return { error: 'You cannot decide the verdict on the same night you detained someone' };
         if (action !== 'release' && action !== 'execute') return { error: 'Invalid action for Officer' };
       } else {
         const target = room.players.get(targetId);
         if (!target || !target.alive) return { error: 'Invalid target' };
         if (action !== 'detain') return { error: 'Invalid action for Officer' };
-        if (room.jailedPlayerId) return { error: 'Someone is already detained' };
+        if (isCopiedOfficer) {
+          if (room.imitatorJailedPlayerId) return { error: 'Someone is already detained by the copied Officer' };
+        } else if (room.jailedPlayerId) {
+          return { error: 'Someone is already detained' };
+        }
         if (targetId === playerId) return { error: 'Cannot target yourself' };
       }
     } else if (activeRole === 'Amnesiac') {
@@ -1633,7 +1702,7 @@ class GameLogic {
       }
     } else if (activeRole === 'Arsonist') {
       const existingAction = room.nightActions[playerId] || {};
-      const currentDousedTargetIds = Array.isArray(player.arsonistDousedTargetIds) ? player.arsonistDousedTargetIds : [];
+      const currentDousedTargetIds = this.getArsonistDousedTargetIds(room, player);
       if (action === 'douse') {
         const target = room.players.get(targetId);
         if (!target || !target.alive) return { error: 'Invalid target' };
@@ -1663,11 +1732,12 @@ class GameLogic {
         return { error: 'You already chose that kill target tonight' };
       }
     } else if (activeRole === 'Dracula') {
+      const draculaControllerId = this.getDraculaControllerId(room, playerId, player) || playerId;
       const target = room.players.get(targetId);
       if (!target || !target.alive) return { error: 'Invalid target' };
       if (action !== 'sire') return { error: 'Invalid action for Dracula' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
-      if (target.role === 'Vampire' && target.draculaMasterId === playerId) {
+      if (target.role === 'Vampire' && target.draculaMasterId === draculaControllerId) {
         return { error: 'Cannot target your Vampire' };
       }
       if (target.role === 'Vampire') {
@@ -1775,7 +1845,7 @@ class GameLogic {
       };
     } else if (activeRole === 'Arsonist') {
       const submittedAt = Date.now();
-      const currentDousedTargetIds = Array.isArray(player.arsonistDousedTargetIds) ? [...player.arsonistDousedTargetIds] : [];
+      const currentDousedTargetIds = this.getArsonistDousedTargetIds(room, player);
       room.nightActions[playerId] = {
         action,
         targetId: action === 'douse' ? targetId : null,
@@ -1801,9 +1871,10 @@ class GameLogic {
       let immediateVampireTargetId = null;
       if (activeRole === 'Dracula' && action === 'sire' && targetId) {
         const target = room.players.get(targetId);
-        const livingVampire = this.getLivingVampireForDracula(room, playerId);
+        const draculaControllerId = this.getDraculaControllerId(room, playerId, player) || playerId;
+        const livingVampire = this.getLivingVampireForDracula(room, draculaControllerId);
         if (target?.alive && target.faction === 'Crew' && !livingVampire) {
-          if (this.convertPlayerToVampire(target, playerId)) {
+          if (this.convertPlayerToVampire(target, draculaControllerId)) {
             delete room.nightActions[target.id];
             immediateVampireTargetId = target.id;
           }
@@ -1863,8 +1934,10 @@ class GameLogic {
       };
     } else if (activeRole === 'Medium') {
       player.mediumMediateUsesRemaining = Math.max(0, (player.mediumMediateUsesRemaining ?? 3) - 1);
-      room.abyssActiveMediumId = playerId;
-      room.abyssChatMessages = [];
+      if (this.getAbyssActiveMediumIds(room).length === 0) {
+        room.abyssChatMessages = [];
+      }
+      this.addAbyssMedium(room, playerId);
       room.nightActions[playerId] = {
         action,
         targetId: null,
@@ -1872,12 +1945,19 @@ class GameLogic {
       };
       return { success: true, room, player: this.getPlayerData(code, playerId), immediateAbyssActivated: true };
     } else if (activeRole === 'Officer') {
+      const isCopiedOfficer = player.role === 'Imitator' && player.imitatorCopiedRole === 'Officer';
       if (action === 'detain' && targetId) {
-        this.clearOfficerJail(room);
-        room.jailedPlayerId = targetId;
-        room.jailedOfficerId = playerId;
-        player.officerJailedTargetId = targetId;
-        player.officerJailNightNumber = room.nightCount;
+        if (isCopiedOfficer) {
+          this.clearImitatorOfficerJail(room);
+          room.imitatorJailedPlayerId = targetId;
+          room.imitatorJailedById = playerId;
+        } else {
+          this.clearOfficerJail(room);
+          room.jailedPlayerId = targetId;
+          room.jailedOfficerId = playerId;
+          player.officerJailedTargetId = targetId;
+          player.officerJailNightNumber = room.nightCount;
+        }
       }
       room.nightActions[playerId] = {
         action,
@@ -2369,17 +2449,24 @@ class GameLogic {
       const activeRole = this.getEffectiveNightRole(player);
       if (!player || activeRole !== 'Officer') continue;
       if (isSuppressedByPurge(player)) continue;
+      const isCopiedOfficer = player.role === 'Imitator' && player.imitatorCopiedRole === 'Officer';
 
       if (action.action === 'detain' && action.targetId) {
         const target = room.players.get(action.targetId);
         if (!target || !target.alive) continue;
-        this.clearOfficerJail(room);
-        room.jailedPlayerId = target.id;
-        room.jailedOfficerId = playerId;
-        player.officerJailedTargetId = target.id;
-        player.officerJailNightNumber = room.nightCount;
+        if (isCopiedOfficer) {
+          this.clearImitatorOfficerJail(room);
+          room.imitatorJailedPlayerId = target.id;
+          room.imitatorJailedById = playerId;
+        } else {
+          this.clearOfficerJail(room);
+          room.jailedPlayerId = target.id;
+          room.jailedOfficerId = playerId;
+          player.officerJailedTargetId = target.id;
+          player.officerJailNightNumber = room.nightCount;
+        }
         jailedTargets.add(target.id);
-      } else if ((action.action === 'release' || action.action === 'execute') && player.officerJailedTargetId) {
+      } else if (!isCopiedOfficer && (action.action === 'release' || action.action === 'execute') && player.officerJailedTargetId) {
         const targetId = player.officerJailedTargetId;
         const target = room.players.get(targetId);
         jailedTargets.add(targetId);
@@ -2869,10 +2956,11 @@ class GameLogic {
       if (isSuppressedByPurge(player)) continue;
       if (disabledAbilityTargets.has(playerId) || veteranCounterKilledActors.has(playerId)) continue;
       if (action.action !== 'sire' || !action.targetId) continue;
+      const draculaControllerId = this.getDraculaControllerId(room, playerId, player) || playerId;
 
       const target = room.players.get(action.targetId);
       if (!target || !target.alive || target.id === playerId) continue;
-      if (target.role === 'Vampire' && target.draculaMasterId === playerId) continue;
+      if (target.role === 'Vampire' && target.draculaMasterId === draculaControllerId) continue;
       if (veteranAlertIds.has(target.id)) {
         killed.add(playerId);
         continue;
@@ -2881,9 +2969,9 @@ class GameLogic {
         continue;
       }
 
-      const livingVampire = this.getLivingVampireForDracula(room, playerId);
+      const livingVampire = this.getLivingVampireForDracula(room, draculaControllerId);
       if (target.faction === 'Crew' && !livingVampire) {
-        if (this.convertPlayerToVampire(target, playerId)) {
+        if (this.convertPlayerToVampire(target, draculaControllerId)) {
           if (!privateMessages[target.id]) privateMessages[target.id] = [];
           privateMessages[target.id].push(
             this.createPrivateSystemMessage(code, 'Your fangs have grown', 'Dracula')
@@ -2984,28 +3072,28 @@ class GameLogic {
     room.pendingLongshots = nextPendingLongshots;
 
     for (const [playerId, player] of room.players) {
-      if (!Array.isArray(player.arsonistDousedTargetIds)) {
-        player.arsonistDousedTargetIds = [];
-      }
-      player.arsonistDousedTargetIds = player.arsonistDousedTargetIds.filter((targetId) => room.players.get(targetId)?.alive);
-
       const action = room.nightActions[playerId];
       const activeRole = this.getEffectiveNightRole(player);
       if (!action || activeRole !== 'Arsonist') continue;
       if (isSuppressedByPurge(player)) continue;
       if (disabledAbilityTargets.has(playerId)) continue;
+      const arsonistStateOwner = this.getArsonistStateOwner(room, player);
+      if (!Array.isArray(arsonistStateOwner.arsonistDousedTargetIds)) {
+        arsonistStateOwner.arsonistDousedTargetIds = [];
+      }
+      arsonistStateOwner.arsonistDousedTargetIds = arsonistStateOwner.arsonistDousedTargetIds.filter((targetId) => room.players.get(targetId)?.alive);
 
       if (action.action === 'douse') {
         const nextDousedTargetIds = action.targetId && room.players.get(action.targetId)?.alive
           ? [action.targetId]
           : [];
-        player.arsonistDousedTargetIds = [...new Set([...player.arsonistDousedTargetIds, ...nextDousedTargetIds])];
+        arsonistStateOwner.arsonistDousedTargetIds = [...new Set([...arsonistStateOwner.arsonistDousedTargetIds, ...nextDousedTargetIds])];
       } else if (action.action === 'ignite') {
         const igniteTargetIds = Array.isArray(action.igniteTargetIds)
           ? action.igniteTargetIds.filter((targetId) => room.players.get(targetId)?.alive)
           : [];
         action.igniteTargetIds = igniteTargetIds;
-        player.arsonistDousedTargetIds = player.arsonistDousedTargetIds.filter((targetId) => {
+        arsonistStateOwner.arsonistDousedTargetIds = arsonistStateOwner.arsonistDousedTargetIds.filter((targetId) => {
           if (!igniteTargetIds.includes(targetId)) return true;
           const igniteTarget = room.players.get(targetId);
           return igniteTarget?.role === 'The Vessel' && !igniteTarget.vesselAwakened;
@@ -4108,6 +4196,13 @@ class GameLogic {
         this.clearOfficerJail(room);
       }
     }
+    if (room.imitatorJailedById) {
+      const imitatorOfficer = room.players.get(room.imitatorJailedById);
+      const imitatorJailedTarget = room.imitatorJailedPlayerId ? room.players.get(room.imitatorJailedPlayerId) : null;
+      if (!imitatorOfficer?.alive || !imitatorJailedTarget?.alive) {
+        this.clearImitatorOfficerJail(room);
+      }
+    }
 
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
@@ -4157,6 +4252,18 @@ class GameLogic {
           text: `${jailedPlayer.name} has been jailed by the Officer.`,
           playerId: jailedPlayer.id,
           source: 'Officer',
+          public: true
+        });
+      }
+    }
+    if (room.imitatorJailedPlayerId) {
+      const jailedPlayer = room.players.get(room.imitatorJailedPlayerId);
+      if (jailedPlayer?.alive) {
+        messages.push({
+          type: 'officer-jail',
+          text: `${jailedPlayer.name} has been jailed by the Imitator.`,
+          playerId: jailedPlayer.id,
+          source: 'Imitator',
           public: true
         });
       }
@@ -4582,6 +4689,7 @@ class GameLogic {
         room.state = 'ended';
         room.winner = winCheck;
       } else {
+        this.clearImitatorOfficerJail(room);
         room.state = 'night';
         room.nightCount++;
         room.nightActions = {};
@@ -4640,6 +4748,7 @@ class GameLogic {
         room.state = 'ended';
         room.winner = winCheck;
       } else {
+        this.clearImitatorOfficerJail(room);
         room.state = 'night';
         room.nightCount++;
         room.nightActions = {};
@@ -4900,6 +5009,7 @@ class GameLogic {
       room.state = 'ended';
       room.winner = winCheck;
     } else {
+      this.clearImitatorOfficerJail(room);
       room.state = 'night';
       room.nightCount++;
       room.nightActions = {};
@@ -5111,7 +5221,7 @@ class GameLogic {
         isHost: id === room.hostId,
         role: player.role,
         faction: player.faction,
-        isJailed: room.jailedPlayerId === id,
+        isJailed: this.isPlayerJailed(room, id),
       });
     }
 
@@ -5138,7 +5248,7 @@ class GameLogic {
       officerKillsNeutralEvil: room.officerKillsNeutralEvil,
       jailedPlayerId: room.jailedPlayerId || null,
       jailedOfficerId: room.jailedOfficerId || null,
-      votingEligibleCount: players.filter((p) => p.alive && !room.blackmailedPlayers?.[p.id] && p.id !== room.jailedPlayerId).length,
+      votingEligibleCount: players.filter((p) => p.alive && !room.blackmailedPlayers?.[p.id] && !this.isPlayerJailed(room, p.id)).length,
     };
   }
 
@@ -5532,15 +5642,29 @@ class GameLogic {
             name: room.players.get(targetId)?.name || null,
           })) : [])
         : [],
-      officerJailedTargetId: activeRole === 'Officer' ? (player.officerJailedTargetId || null) : null,
-      officerJailedTargetName: activeRole === 'Officer' && player.officerJailedTargetId
-        ? (room.players.get(player.officerJailedTargetId)?.name || null)
+      officerJailedTargetId: activeRole === 'Officer'
+        ? ((player.role === 'Imitator' && player.imitatorCopiedRole === 'Officer')
+          ? (room.imitatorJailedPlayerId || null)
+          : (player.officerJailedTargetId || null))
+        : null,
+      officerJailedTargetName: activeRole === 'Officer' && (
+        (player.role === 'Imitator' && player.imitatorCopiedRole === 'Officer')
+          ? room.imitatorJailedPlayerId
+          : player.officerJailedTargetId
+      )
+        ? (room.players.get((player.role === 'Imitator' && player.imitatorCopiedRole === 'Officer')
+          ? room.imitatorJailedPlayerId
+          : player.officerJailedTargetId)?.name || null)
         : null,
       officerVerdictAvailable: activeRole === 'Officer'
-        ? (!!player.officerJailedTargetId && room.nightCount > (player.officerJailNightNumber || 0))
+        ? (player.role === 'Imitator' && player.imitatorCopiedRole === 'Officer'
+          ? false
+          : (!!player.officerJailedTargetId && room.nightCount > (player.officerJailNightNumber || 0)))
         : false,
       isJailed: this.isPlayerJailed(room, playerId),
-      jailedOfficerId: this.isPlayerJailed(room, playerId) ? (room.jailedOfficerId || null) : null,
+      jailedOfficerId: this.isPlayerJailed(room, playerId)
+        ? (room.jailedPlayerId === playerId ? (room.jailedOfficerId || null) : (room.imitatorJailedPlayerId === playerId ? (room.imitatorJailedById || null) : null))
+        : null,
       isBlackmailed: !!room.blackmailedPlayers?.[playerId],
       isSilenced: !!room.silencedPlayers?.[playerId],
       executionerTargetId: player.role === 'Executioner' ? (player.executionerTargetId || null) : null,
@@ -5610,7 +5734,7 @@ class GameLogic {
       oraclePurifyUsesRemaining: player.role === 'Oracle' ? (player.oraclePurifyUsesRemaining ?? 2) : null,
       survivalistUsesRemaining: activeRole === 'Survivalist' ? (player.survivalistUsesRemaining ?? 4) : null,
       witherKnownInfectedIds,
-      arsonistDousedTargetIds: activeRole === 'Arsonist' ? (Array.isArray(player.arsonistDousedTargetIds) ? [...player.arsonistDousedTargetIds] : []) : [],
+      arsonistDousedTargetIds: activeRole === 'Arsonist' ? this.getArsonistDousedTargetIds(room, player) : [],
       arsonistDouseTargetCount: activeRole === 'Arsonist' ? 1 : null,
       blackoutFlashUsesRemaining: activeRole === 'Blackout' ? (player.blackoutFlashUsesRemaining ?? 3) : null,
       blackoutFlashUsedThisNight: activeRole === 'Blackout' ? !!room.nightActions[playerId]?.flashUsedThisNight : false,
@@ -5638,7 +5762,7 @@ class GameLogic {
   getEligibleVoterCount(code) {
     const room = this.rooms.get(code);
     if (!room) return 0;
-    return Array.from(room.players.entries()).filter(([id, player]) => player.alive && !room.blackmailedPlayers?.[id] && id !== room.jailedPlayerId).length;
+    return Array.from(room.players.entries()).filter(([id, player]) => player.alive && !room.blackmailedPlayers?.[id] && !this.isPlayerJailed(room, id)).length;
   }
 
   getAllPlayersWithRoles(code) {
