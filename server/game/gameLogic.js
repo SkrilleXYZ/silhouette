@@ -11,7 +11,7 @@ class GameLogic {
         Unbound: ['Narcissist', 'Inquisitor', 'Alturist', 'The Vessel', 'Karma', 'Mayor'],
       },
       Assassin: {
-        Power: ['Assassin', 'Sniper', 'Tetherhex'],
+        Power: ['Assassin', 'Ace of Blades', 'Sniper', 'Tetherhex'],
         Concealing: ['Hypnotic', 'Blackout', 'Blackmailer', 'The Purge'],
         Support: ['Disruptor', 'Manipulator', 'Prophet'],
       },
@@ -183,6 +183,8 @@ class GameLogic {
       disruptorVetoUsed: false,
       manipulatorSurpriseUsesRemaining: 2,
       manipulatorSurpriseUsed: false,
+      aceOfBladesKillsAvailable: 0,
+      aceOfBladesRollNightNumber: 0,
       mayorStoredVotes: 0,
       alturistReviveTargetId: null,
       scientistExperimentUsesRemaining: 1,
@@ -242,6 +244,8 @@ class GameLogic {
       disruptorVetoUsed: false,
       manipulatorSurpriseUsesRemaining: 2,
       manipulatorSurpriseUsed: false,
+      aceOfBladesKillsAvailable: 0,
+      aceOfBladesRollNightNumber: 0,
       mayorStoredVotes: 0,
       alturistReviveTargetId: null,
       scientistExperimentUsesRemaining: 1,
@@ -520,12 +524,39 @@ class GameLogic {
   }
 
   hasSubmittedAssassinKill(room, excludePlayerId = null) {
-    if (!room?.nightActions) return false;
-    return Object.entries(room.nightActions).some(([actorId, actionState]) => {
-      if (!actionState || actorId === excludePlayerId || (actionState.action !== 'kill' && actionState.action !== 'longshot')) return false;
-      const actor = room.players.get(actorId);
-      return !!actor && actor.alive && actor.faction === 'Assassin';
-    });
+    if (!room?.players) return false;
+    for (const [actorId, actor] of room.players.entries()) {
+      if (actorId === excludePlayerId || !actor?.alive || actor.faction !== 'Assassin') continue;
+      const actionState = room.nightActions?.[actorId];
+      if (actionState && (actionState.action === 'kill' || actionState.action === 'longshot')) {
+        if (actionState.action === 'kill' && !actionState.targetId && !(Array.isArray(actionState.targetIds) && actionState.targetIds.length > 0)) {
+          continue;
+        }
+        return true;
+      }
+      if (this.getEffectiveNightRole(actor) === 'Ace of Blades'
+        && (actor.aceOfBladesRollNightNumber || 0) === room.nightCount
+        && (actor.aceOfBladesKillsAvailable ?? 0) > 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  rollAceOfBladesKillCount(room, playerId) {
+    const player = room?.players?.get(playerId);
+    if (!room || !player) return 1;
+
+    const availableTargetCount = Array.from(room.players.values()).filter((candidate) => (
+      candidate.alive
+      && candidate.id !== playerId
+      && candidate.faction !== 'Assassin'
+    )).length;
+
+    const roll = Math.random();
+    const weightedResult = roll < 0.6 ? 1 : (roll < 0.9 ? 2 : 3);
+
+    return Math.max(1, Math.min(weightedResult, Math.max(1, availableTargetCount)));
   }
 
   clearImitatorMimic(player) {
@@ -603,6 +634,8 @@ class GameLogic {
     player.officerJailNightNumber = target.role === 'Officer' ? (target.officerJailNightNumber || 0) : 0;
     player.manipulatorSurpriseUsesRemaining = target.role === 'Manipulator' ? (target.manipulatorSurpriseUsesRemaining ?? 2) : 2;
     player.manipulatorSurpriseUsed = target.role === 'Manipulator' ? !!target.manipulatorSurpriseUsed : false;
+    player.aceOfBladesKillsAvailable = target.role === 'Ace of Blades' ? Math.max(0, target.aceOfBladesKillsAvailable ?? 0) : 0;
+    player.aceOfBladesRollNightNumber = target.role === 'Ace of Blades' ? (target.aceOfBladesRollNightNumber || 0) : 0;
     player.arsonistDousedTargetIds = target.role === 'Arsonist' ? (Array.isArray(target.arsonistDousedTargetIds) ? [...target.arsonistDousedTargetIds] : []) : [];
 
     return { success: true, player };
@@ -639,6 +672,8 @@ class GameLogic {
       disruptorVetoUsed: !!player.disruptorVetoUsed,
       manipulatorSurpriseUsesRemaining: player.manipulatorSurpriseUsesRemaining ?? 2,
       manipulatorSurpriseUsed: !!player.manipulatorSurpriseUsed,
+      aceOfBladesKillsAvailable: Math.max(0, player.aceOfBladesKillsAvailable ?? 0),
+      aceOfBladesRollNightNumber: player.aceOfBladesRollNightNumber || 0,
       alturistReviveTargetId: player.alturistReviveTargetId || null,
       scientistExperimentUsesRemaining: player.scientistExperimentUsesRemaining ?? 1,
       scientistSwapTargetIds: Array.isArray(player.scientistSwapTargetIds) ? [...player.scientistSwapTargetIds] : [],
@@ -682,6 +717,8 @@ class GameLogic {
       disruptorVetoUsed: !!roleState.disruptorVetoUsed,
       manipulatorSurpriseUsesRemaining: roleState.manipulatorSurpriseUsesRemaining,
       manipulatorSurpriseUsed: !!roleState.manipulatorSurpriseUsed,
+      aceOfBladesKillsAvailable: Math.max(0, roleState.aceOfBladesKillsAvailable ?? 0),
+      aceOfBladesRollNightNumber: roleState.aceOfBladesRollNightNumber || 0,
       alturistReviveTargetId: roleState.alturistReviveTargetId,
       scientistExperimentUsesRemaining: roleState.scientistExperimentUsesRemaining,
       scientistSwapTargetIds: Array.isArray(roleState.scientistSwapTargetIds) ? [...roleState.scientistSwapTargetIds] : [],
@@ -1041,6 +1078,8 @@ class GameLogic {
       player.disruptorVetoUsed = false;
       player.manipulatorSurpriseUsesRemaining = 2;
       player.manipulatorSurpriseUsed = false;
+      player.aceOfBladesKillsAvailable = 0;
+      player.aceOfBladesRollNightNumber = 0;
       player.mayorStoredVotes = 0;
       player.alturistReviveTargetId = null;
       player.scientistExperimentUsesRemaining = 1;
@@ -1332,6 +1371,37 @@ class GameLogic {
       if (this.hasSubmittedAssassinKill(room, playerId)) return { error: 'Another assassin has already chosen the kill tonight' };
       if (player.faction === 'Assassin' && target.faction === 'Assassin') return { error: 'Cannot kill teammates' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
+    } else if (activeRole === 'Ace of Blades') {
+      const existingAction = room.nightActions[playerId] || {};
+      const rolledThisNight = (player.aceOfBladesRollNightNumber || 0) === room.nightCount;
+      if (action === 'threefold') {
+        if (rolledThisNight && (player.aceOfBladesKillsAvailable ?? 0) > 0) {
+          return { error: 'You already rolled 3Fold tonight' };
+        }
+        if (this.hasSubmittedAssassinKill(room, playerId)) return { error: 'Another assassin has already chosen the kill tonight' };
+      } else if (action === 'kill') {
+        if (!rolledThisNight || (player.aceOfBladesKillsAvailable ?? 0) <= 0) {
+          return { error: 'Roll 3Fold before choosing kill targets' };
+        }
+        if (!Array.isArray(targetIds)) return { error: 'Invalid targets' };
+        const normalizedTargetIds = [...new Set(targetIds.map((id) => String(id || '').trim()).filter(Boolean))];
+        const requiredKillCount = Math.max(1, Math.min(3, Number(player.aceOfBladesKillsAvailable) || 1));
+        if (normalizedTargetIds.length !== requiredKillCount) {
+          return { error: `Choose exactly ${requiredKillCount} target${requiredKillCount === 1 ? '' : 's'}` };
+        }
+        if (this.hasSubmittedAssassinKill(room, playerId)) return { error: 'Another assassin has already chosen the kill tonight' };
+        if (existingAction.action === 'kill' && Array.isArray(existingAction.targetIds) && existingAction.targetIds.length) {
+          return { error: 'You already chose your kill targets tonight' };
+        }
+        for (const selectedTargetId of normalizedTargetIds) {
+          const target = room.players.get(selectedTargetId);
+          if (!target || !target.alive) return { error: 'Invalid target' };
+          if (selectedTargetId === playerId) return { error: 'Cannot target yourself' };
+          if (target.faction === 'Assassin') return { error: 'Cannot kill teammates' };
+        }
+      } else {
+        return { error: 'Invalid action for Ace of Blades' };
+      }
     } else if (activeRole === 'Prophet') {
       const target = room.players.get(targetId);
       if (!target || !target.alive) return { error: 'Invalid target' };
@@ -1598,6 +1668,21 @@ class GameLogic {
       if (action === 'detain' && targetId) {
         return { success: true, room, immediateJailTargetId: targetId };
       }
+    } else if (activeRole === 'Ace of Blades') {
+      if (action === 'threefold') {
+        const killCount = this.rollAceOfBladesKillCount(room, playerId);
+        player.aceOfBladesKillsAvailable = killCount;
+        player.aceOfBladesRollNightNumber = room.nightCount;
+        return { success: true, room, rollResult: killCount, player: this.getPlayerData(code, playerId) };
+      }
+      const normalizedTargetIds = [...new Set(targetIds.map((id) => String(id || '').trim()).filter(Boolean))];
+      room.nightActions[playerId] = {
+        action,
+        targetId: normalizedTargetIds[0] || null,
+        targetIds: normalizedTargetIds,
+        submittedAt: Date.now(),
+        queuedTargetId: null,
+      };
     } else if (activeRole === 'Blackmailer') {
       const existingAction = room.nightActions[playerId] || {};
       const submittedAt = Date.now();
@@ -1768,6 +1853,12 @@ class GameLogic {
       if (activeRole === 'Swapper') continue;
       if (activeRole === 'Narcissist') continue;
       if (activeRole === 'The Vessel' && !player.vesselAwakened) continue;
+      if (activeRole === 'Ace of Blades') {
+        if ((player.aceOfBladesRollNightNumber || 0) === room.nightCount && (player.aceOfBladesKillsAvailable ?? 0) > 0) {
+          if (!room.nightActions[id]) return false;
+          continue;
+        }
+      }
       if (activeRole === 'Alturist') {
         const hasDeadTargets = Array.from(room.players.values()).some((candidate) => !candidate.alive && candidate.id !== id);
         if (!hasDeadTargets) continue;
@@ -2750,6 +2841,48 @@ class GameLogic {
           );
         }
       }
+
+      if (action.action === 'kill' && activeRole === 'Ace of Blades' && Array.isArray(action.targetIds) && action.targetIds.length) {
+        for (const targetId of action.targetIds) {
+          if (!targetId || killed.has(targetId)) continue;
+          if (veteranAlertIds.has(targetId)) {
+            killed.add(playerId);
+            break;
+          } else if (mirroredTargets.has(targetId)) {
+            killed.add(playerId);
+            if (!privateMessages[targetId]) {
+              privateMessages[targetId] = [];
+            }
+            privateMessages[targetId].push(
+              this.createPrivateSystemMessage(code, 'A mirrored shield reflected a killing blow away from you.', 'Mirror Caster')
+            );
+          } else if (!protected_.has(targetId) && !blessedTargets.has(targetId) && !lifeguardedTargets.has(targetId)) {
+            killed.add(targetId);
+            killersThisNight.add(playerId);
+            registerKillAttribution(targetId, playerId);
+          } else if (protected_.has(targetId)) {
+            if (!privateMessages[targetId]) {
+              privateMessages[targetId] = [
+                this.createPrivateSystemMessage(code, 'You were protected by the Vitalist during the night.', 'Vitalist')
+              ];
+            }
+          } else if (lifeguardedTargets.has(targetId)) {
+            if (!privateMessages[targetId]) {
+              privateMessages[targetId] = [];
+            }
+            privateMessages[targetId].push(
+              this.createPrivateSystemMessage(code, 'You protected yourself from death during the night.', 'Survivalist')
+            );
+          } else {
+            if (!privateMessages[targetId]) {
+              privateMessages[targetId] = [];
+            }
+            privateMessages[targetId].push(
+              this.createPrivateSystemMessage(code, 'A Guardian Angel blessed you through the night.', 'Guardian Angel')
+            );
+          }
+        }
+      }
     }
 
     for (const [playerId, action] of Object.entries(room.nightActions)) {
@@ -3653,6 +3786,10 @@ class GameLogic {
     this.beginPhaseSummary(code, `Morning ${room.nightCount} begins.`, morningLines);
     room.searchResults = searchResults;
     room.recentKillers = [...(room.recentKillers || []), Array.from(killersThisNight)].slice(-2);
+    for (const [, player] of room.players) {
+      player.aceOfBladesKillsAvailable = 0;
+      player.aceOfBladesRollNightNumber = 0;
+    }
     room.nightActions = {};
 
     const traitorConvertedPlayerId = this.maybeTriggerTraitorOverthrow(code);
@@ -4971,6 +5108,9 @@ class GameLogic {
       disruptorVetoUsed: player.role === 'Disruptor' ? !!player.disruptorVetoUsed : false,
       manipulatorSurpriseUsesRemaining: player.role === 'Manipulator' ? (player.manipulatorSurpriseUsesRemaining ?? 2) : null,
       manipulatorSurpriseUsed: player.role === 'Manipulator' ? !!player.manipulatorSurpriseUsed : false,
+      aceOfBladesKillsAvailable: activeRole === 'Ace of Blades' && (player.aceOfBladesRollNightNumber || 0) === room.nightCount
+        ? Math.max(0, Number(player.aceOfBladesKillsAvailable) || 0)
+        : 0,
       scientistExperimentUsesRemaining: player.role === 'Scientist' ? (player.scientistExperimentUsesRemaining ?? 1) : null,
       scientistSwapTargetIds: player.role === 'Scientist' ? (Array.isArray(player.scientistSwapTargetIds) ? [...player.scientistSwapTargetIds] : []) : [],
       swapperSwapTargetIds: player.role === 'Swapper' ? (Array.isArray(player.swapperSwapTargetIds) ? [...player.swapperSwapTargetIds] : []) : [],
