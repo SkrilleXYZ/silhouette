@@ -2261,10 +2261,11 @@ body {
 .room-code-value { display: flex; align-items: center; gap: 8px; }
 
 #room-code-text {
-  font-family: 'Cinzel', serif;
-  font-size: 1.2rem;
-  font-weight: 700;
-  letter-spacing: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1.08rem;
+  font-weight: 800;
+  letter-spacing: 4px;
+  font-variant-ligatures: none;
   color: var(--crew);
   text-shadow: 0 0 10px var(--crew-glow);
 }
@@ -2534,6 +2535,80 @@ body {
 
 .room-settings-panel.is-fullscreen .room-setting-toggle {
   padding: 16px 18px;
+}
+
+@media (max-width: 640px) and (orientation: portrait) {
+  .room-settings-panel.is-fullscreen {
+    inset: 8px;
+    border-radius: 20px;
+  }
+
+  .room-settings-panel.is-fullscreen .room-settings-body {
+    padding: 14px 14px 16px;
+    gap: 10px;
+  }
+
+  .room-settings-panel.is-fullscreen .room-settings-body-header {
+    padding-bottom: 6px;
+  }
+
+  .room-settings-panel.is-fullscreen .room-settings-body-title {
+    font-size: 0.98rem;
+    letter-spacing: 1.6px;
+  }
+
+  .room-settings-panel.is-fullscreen .room-settings-body-subtitle {
+    font-size: 0.7rem;
+  }
+
+  .room-settings-panel.is-fullscreen .room-setting-toggle {
+    align-items: flex-start;
+    gap: 10px;
+    padding: 13px 14px;
+  }
+
+  .room-settings-panel.is-fullscreen .room-setting-copy {
+    gap: 3px;
+  }
+
+  .room-settings-panel.is-fullscreen .room-setting-title {
+    font-size: 0.8rem;
+    line-height: 1.25;
+  }
+
+  .room-settings-panel.is-fullscreen .room-setting-subtitle {
+    font-size: 0.68rem;
+    line-height: 1.35;
+  }
+
+  .room-settings-panel.is-fullscreen .room-toggle-slider {
+    width: 42px;
+    height: 26px;
+    margin-top: 2px;
+  }
+
+  .room-settings-panel.is-fullscreen .room-toggle-slider::after {
+    width: 18px;
+    height: 18px;
+  }
+
+  .room-settings-panel.is-fullscreen .room-setting-toggle input:checked + .room-toggle-slider::after {
+    transform: translateX(16px);
+  }
+}
+
+@media (max-width: 420px) and (orientation: portrait) {
+  .room-settings-panel.is-fullscreen {
+    inset: 6px;
+  }
+
+  .room-settings-panel.is-fullscreen .room-settings-body {
+    padding: 12px 12px 14px;
+  }
+
+  .room-settings-panel.is-fullscreen .room-setting-toggle {
+    padding: 12px 12px;
+  }
 }
 
 .btn-start:not(:disabled) {
@@ -8705,6 +8780,23 @@ body {
 #screen-roles .roles-guide-card.role-theme-traitor .roles-guide-card-icon {
   border-color: rgba(146, 112, 255, 0.72);
   color: hsl(218, 96%, 74%);
+}
+
+#screen-roles .roles-guide-card.role-theme-traitor {
+  background:
+    linear-gradient(135deg, rgba(16, 34, 68, 0.28) 0%, rgba(34, 20, 58, 0.14) 48%, rgba(82, 18, 26, 0.26) 100%),
+    linear-gradient(180deg, rgba(14, 18, 24, 0.98), rgba(8, 11, 16, 0.98));
+}
+
+#screen-roles .roles-guide-card.role-theme-traitor .roles-guide-card-icon {
+  background: linear-gradient(135deg, rgba(92, 158, 255, 0.16), rgba(255, 82, 82, 0.16));
+}
+
+#screen-roles .roles-guide-card.role-theme-traitor .roles-guide-card-title {
+  background: linear-gradient(90deg, #9fcbff 0%, #8ab7ff 34%, #c09bff 58%, #ff8f8f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 #screen-roles .roles-guide-card.role-theme-prophet,

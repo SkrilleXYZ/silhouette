@@ -397,6 +397,11 @@
       revealText: 'Blue loyalty tears open into red betrayal. You were Crew once. Now the knife points the other way.',
       abilities: [
         {
+          name: 'Overthrow',
+          type: 'Passive',
+          description: 'If there are no Assassins left while the game has at least 6 players, a random Crew member becomes an Assassin.',
+        },
+        {
           name: 'Kill',
           type: 'Night',
           description: 'Eliminate a player.',
