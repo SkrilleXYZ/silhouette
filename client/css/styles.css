@@ -8814,11 +8814,16 @@ body {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   margin-bottom: 4px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.96) 34%, currentColor 100%);
+  background: linear-gradient(
+    90deg,
+    var(--roles-guide-title-start, rgba(255, 255, 255, 0.98)) 0%,
+    var(--roles-guide-title-mid, color-mix(in srgb, currentColor 58%, white 42%)) 42%,
+    var(--roles-guide-title-end, currentColor) 100%
+  );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: 0 0 14px rgba(255, 255, 255, 0.06);
+  text-shadow: 0 0 14px color-mix(in srgb, currentColor 16%, transparent);
 }
 
 #screen-roles .roles-guide-card-meta {
