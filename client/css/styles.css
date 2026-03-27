@@ -5278,11 +5278,9 @@ body {
 }
 
 .target-item {
-  display: grid;
-  grid-template-columns: auto 1fr;
+  display: flex;
   align-items: center;
-  column-gap: 10px;
-  row-gap: 6px;
+  gap: 10px;
   padding: 10px 14px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
@@ -5331,20 +5329,13 @@ body {
   box-shadow: 0 0 8px var(--assassin-glow);
 }
 
-.target-item .target-avatar {
-  grid-column: 1;
-  grid-row: 1 / span 2;
-}
-
 .target-name {
-  grid-column: 2;
   font-size: 0.85rem;
   font-weight: 500;
 }
 
 .target-status {
-  grid-column: 2;
-  justify-self: center;
+  margin-left: auto;
   font-size: 0.62rem;
   letter-spacing: 1px;
   text-transform: uppercase;
