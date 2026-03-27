@@ -18,7 +18,7 @@ class GameLogic {
       Neutral: {
         Evil: ['Jester', 'Executioner'],
         Benign: ['Amnesiac', 'Guardian Angel', 'Survivalist', 'Imitator'],
-        Killing: ['Overload', 'Arsonist', 'Wither', 'Dracula'],
+        Killing: ['Overload', 'Arsonist', 'Wither', 'Dracula', 'All Mighty'],
       },
     };
   }
@@ -192,6 +192,7 @@ class GameLogic {
       psychopathStoredKills: 0,
       aceOfBladesKillsAvailable: 0,
       aceOfBladesRollNightNumber: 0,
+      allMightyResetUsesRemaining: 1,
       draculaMasterId: null,
       mayorStoredVotes: 0,
       mediumMediateUsesRemaining: 3,
@@ -256,6 +257,7 @@ class GameLogic {
       psychopathStoredKills: 0,
       aceOfBladesKillsAvailable: 0,
       aceOfBladesRollNightNumber: 0,
+      allMightyResetUsesRemaining: 1,
       draculaMasterId: null,
       mayorStoredVotes: 0,
       mediumMediateUsesRemaining: 3,
@@ -338,6 +340,33 @@ class GameLogic {
   pickRandomRole(roles) {
     if (!Array.isArray(roles) || !roles.length) return null;
     return roles[Math.floor(Math.random() * roles.length)];
+  }
+
+  pickWeightedRole(roles, getWeight) {
+    if (!Array.isArray(roles) || !roles.length) return null;
+    const weightedRoles = roles
+      .map((role) => ({
+        role,
+        weight: Math.max(0, Number(getWeight?.(role)) || 0),
+      }))
+      .filter((entry) => entry.weight > 0);
+    if (!weightedRoles.length) return null;
+
+    const totalWeight = weightedRoles.reduce((sum, entry) => sum + entry.weight, 0);
+    let roll = Math.random() * totalWeight;
+    for (const entry of weightedRoles) {
+      roll -= entry.weight;
+      if (roll <= 0) return entry.role;
+    }
+    return weightedRoles[weightedRoles.length - 1].role;
+  }
+
+  getNeutralRoleWeight(role, categories = []) {
+    const normalizedCategories = Array.isArray(categories) ? categories : [];
+    if (role === 'All Mighty' && normalizedCategories.includes('Killing')) {
+      return 0.3;
+    }
+    return 1;
   }
 
   getAssignedRoleNames(room) {
@@ -819,11 +848,6 @@ class GameLogic {
       if (actionState?.action === 'psychopath-store') {
         return true;
       }
-      if (this.getEffectiveNightRole(actor) === 'Ace of Blades'
-        && (actor.aceOfBladesRollNightNumber || 0) === room.nightCount
-        && (actor.aceOfBladesKillsAvailable ?? 0) > 0) {
-        return true;
-      }
     }
     return false;
   }
@@ -842,6 +866,54 @@ class GameLogic {
     const weightedResult = roll < 0.6 ? 1 : (roll < 0.9 ? 2 : 3);
 
     return Math.max(1, Math.min(weightedResult, Math.max(1, availableTargetCount)));
+  }
+
+  applyAllMightyDivineReset(code, playerId) {
+    const room = this.rooms.get(code);
+    const player = room?.players?.get(playerId);
+    if (!room || !player) return null;
+
+    const revivedPlayerIds = [];
+    const slainPlayerIds = [];
+
+    this.clearOfficerJail(room);
+    this.clearImitatorOfficerJail(room);
+
+    for (const [otherPlayerId, otherPlayer] of room.players.entries()) {
+      if (!otherPlayer || otherPlayerId === playerId) continue;
+      if (otherPlayer.alive) {
+        otherPlayer.alive = false;
+        slainPlayerIds.push(otherPlayerId);
+        delete room.nightActions[otherPlayerId];
+      } else {
+        otherPlayer.alive = true;
+        revivedPlayerIds.push(otherPlayerId);
+        room.nightActions[otherPlayerId] = { action: 'skip', targetId: null };
+      }
+    }
+
+    room.nightActions[playerId] = {
+      action: 'divine-reset',
+      targetId: null,
+      submittedAt: Date.now(),
+      queuedTargetId: null,
+    };
+
+    room.abyssActiveMediumId = null;
+    room.abyssActiveMediumIds = [];
+
+    const winCheck = this.checkWinCondition(code);
+    if (winCheck) {
+      room.state = 'ended';
+      room.winner = winCheck;
+    }
+
+    return {
+      room,
+      revivedPlayerIds,
+      slainPlayerIds,
+      winner: room.winner || null,
+    };
   }
 
   clearImitatorMimic(player) {
@@ -886,7 +958,7 @@ class GameLogic {
     const pool = categories
       .flatMap((category) => this.roleCatalog?.Neutral?.[category] || [])
       .filter((role) => !assignedRoles.has(role) && this.isRoleAvailableForPlayerCount(room, role));
-    const role = this.pickRandomRole(pool);
+    const role = this.pickWeightedRole(pool, (candidateRole) => this.getNeutralRoleWeight(candidateRole, categories));
     if (!role) return false;
 
     player.role = role;
@@ -922,6 +994,7 @@ class GameLogic {
     player.psychopathStoredKills = target.role === 'Psychopath' ? Math.max(0, target.psychopathStoredKills ?? 0) : 0;
     player.aceOfBladesKillsAvailable = target.role === 'Ace of Blades' ? Math.max(0, target.aceOfBladesKillsAvailable ?? 0) : 0;
     player.aceOfBladesRollNightNumber = target.role === 'Ace of Blades' ? (target.aceOfBladesRollNightNumber || 0) : 0;
+    player.allMightyResetUsesRemaining = target.role === 'All Mighty' ? (target.allMightyResetUsesRemaining ?? 1) : 1;
     player.draculaMasterId = target.role === 'Vampire' ? (target.draculaMasterId || null) : null;
     player.arsonistDousedTargetIds = target.role === 'Arsonist' ? (Array.isArray(target.arsonistDousedTargetIds) ? [...target.arsonistDousedTargetIds] : []) : [];
 
@@ -1089,6 +1162,7 @@ class GameLogic {
       player.mirrorUsesRemaining = 4;
       player.guardianAngelUsesRemaining = 4;
       player.survivalistUsesRemaining = 4;
+      player.allMightyResetUsesRemaining = 1;
       player.blackoutFlashUsesRemaining = 3;
       player.purgeFascismUsesRemaining = 1;
       player.prophetGospelUsesRemaining = 2;
@@ -1229,6 +1303,7 @@ class GameLogic {
       player.mirrorUsesRemaining = 4;
       player.guardianAngelUsesRemaining = 4;
       player.survivalistUsesRemaining = 4;
+      player.allMightyResetUsesRemaining = 1;
       player.blackoutFlashUsesRemaining = 3;
       player.purgeFascismUsesRemaining = 1;
       player.prophetGospelUsesRemaining = 2;
@@ -1722,6 +1797,16 @@ class GameLogic {
       if (action !== 'infect') return { error: 'Invalid action for Wither' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
       if (target.witherInfected) return { error: 'That player is already infected' };
+    } else if (activeRole === 'All Mighty') {
+      if (action === 'smite') {
+        const target = room.players.get(targetId);
+        if (!target || !target.alive) return { error: 'Invalid target' };
+        if (targetId === playerId) return { error: 'Cannot target yourself' };
+      } else if (action === 'divine-reset') {
+        if ((player.allMightyResetUsesRemaining ?? 1) <= 0) return { error: 'Divine Reset has already been used' };
+      } else {
+        return { error: 'Invalid action for All Mighty' };
+      }
     } else if (activeRole === 'Pestilence') {
       const existingAction = room.nightActions[playerId] || {};
       const target = room.players.get(targetId);
@@ -1858,6 +1943,26 @@ class GameLogic {
       room.nightActions[playerId] = {
         action,
         targetId,
+        queuedTargetId: null,
+      };
+    } else if (activeRole === 'All Mighty') {
+      if (action === 'divine-reset') {
+        player.allMightyResetUsesRemaining = 0;
+        const resetResult = this.applyAllMightyDivineReset(code, playerId);
+        return {
+          success: true,
+          room,
+          player: this.getPlayerData(code, playerId),
+          immediateDivineReset: true,
+          revivedPlayerIds: resetResult?.revivedPlayerIds || [],
+          slainPlayerIds: resetResult?.slainPlayerIds || [],
+          winner: resetResult?.winner || null,
+        };
+      }
+      room.nightActions[playerId] = {
+        action,
+        targetId,
+        submittedAt: Date.now(),
         queuedTargetId: null,
       };
     } else if (activeRole === 'Pestilence') {
@@ -3812,6 +3917,53 @@ class GameLogic {
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       const activeRole = this.getEffectiveNightRole(player);
+      if (!player || activeRole !== 'All Mighty') continue;
+      if (isSuppressedByPurge(player)) continue;
+      if (disabledAbilityTargets.has(playerId)) continue;
+
+      if (action.action === 'smite' && action.targetId) {
+        if (veteranAlertIds.has(action.targetId)) {
+          killed.add(playerId);
+        } else if (mirroredTargets.has(action.targetId)) {
+          killed.add(playerId);
+          if (!privateMessages[action.targetId]) {
+            privateMessages[action.targetId] = [];
+          }
+          privateMessages[action.targetId].push(
+            this.createPrivateSystemMessage(code, 'A mirrored shield reflected a killing blow away from you.', 'Mirror Caster')
+          );
+        } else if (!protected_.has(action.targetId) && !blessedTargets.has(action.targetId) && !lifeguardedTargets.has(action.targetId)) {
+          killed.add(action.targetId);
+          killersThisNight.add(playerId);
+          registerKillAttribution(action.targetId, playerId);
+        } else if (protected_.has(action.targetId)) {
+          if (!privateMessages[action.targetId]) {
+            privateMessages[action.targetId] = [];
+          }
+          privateMessages[action.targetId].push(
+            this.createPrivateSystemMessage(code, 'You were protected by the Vitalist during the night.', 'Vitalist')
+          );
+        } else if (lifeguardedTargets.has(action.targetId)) {
+          if (!privateMessages[action.targetId]) {
+            privateMessages[action.targetId] = [];
+          }
+          privateMessages[action.targetId].push(
+            this.createPrivateSystemMessage(code, 'You protected yourself from death during the night.', 'Survivalist')
+          );
+        } else {
+          if (!privateMessages[action.targetId]) {
+            privateMessages[action.targetId] = [];
+          }
+          privateMessages[action.targetId].push(
+            this.createPrivateSystemMessage(code, 'A Guardian Angel blessed you through the night.', 'Guardian Angel')
+          );
+        }
+      }
+    }
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      const activeRole = this.getEffectiveNightRole(player);
       if (!player || activeRole !== 'Overload') continue;
       if (isSuppressedByPurge(player)) continue;
       if (disabledAbilityTargets.has(playerId)) continue;
@@ -5148,6 +5300,8 @@ class GameLogic {
         if (baseWinner === 'Crew') return target.faction === 'Crew';
         if (baseWinner === 'Assassin') return target.faction === 'Assassin';
         if (baseWinner === 'Bloodlust') return this.isBloodlustRole(target.role);
+        if (baseWinner === 'Pestilence') return target.role === 'Pestilence';
+        if (baseWinner === 'All Mighty') return target.role === 'All Mighty';
         return target.role === baseWinner;
       })
       .map((player) => player.id);
@@ -5169,7 +5323,11 @@ class GameLogic {
         if (!player.alive || baseWinner === 'Nobody') return false;
         if (player.role === 'Survivalist') return true;
         if (player.role === 'Imitator' || player.role === 'Amnesiac') {
-          return baseWinner === 'Crew' || baseWinner === 'Assassin';
+          return baseWinner === 'Crew'
+            || baseWinner === 'Assassin'
+            || baseWinner === 'Bloodlust'
+            || baseWinner === 'Pestilence'
+            || (this.roleCatalog?.Neutral?.Killing || []).includes(baseWinner);
         }
         return false;
       })
@@ -5288,6 +5446,8 @@ class GameLogic {
     if (action === 'mediate') return 'The Medium is hearing whispers.';
     if (action === 'demolish') return 'The Devastator has strapped a player with dynamites.';
     if (action === 'sire') return 'The Dracula is thirsty for blood';
+    if (action === 'smite') return 'Praying is not gonna help you tonight.';
+    if (action === 'divine-reset') return 'WHAT GOES UP, MUST COME DOWN!';
     if (action === 'sacrifice') return 'The Alturist has sacrificed themselves.';
     if (action === 'mimic') return 'Imitator has shifted abilities.';
     if (action === 'inherit') return 'Amnesiac has claimed a forgotten role.';
@@ -5309,6 +5469,7 @@ class GameLogic {
     if (action === 'interlinked') return 'Tetherhex has forged a lethal bond.';
     if (action === 'kill') {
       if (activeRole === 'Psychopath') return 'The Psychopath is plotting.';
+      if (activeRole === 'All Mighty') return 'Praying is not gonna help you tonight.';
       if (activeRole === 'Vampire') return 'A Vampie was thirsty';
       if (activeRole === 'The Vessel') return 'The Vessel has taken revenge.';
       return 'An Assassin has moved through the shadows.';
@@ -5628,6 +5789,7 @@ class GameLogic {
         : (player.role === 'Mayor' && typeof room.votes[playerId] === 'string' && room.votes[playerId] !== 'skip' ? 1 : 0),
       lawyerStoredVotes: player.role === 'Lawyer' ? Math.max(0, player.lawyerStoredVotes ?? 0) : 0,
       mediumMediateUsesRemaining: activeRole === 'Medium' ? (player.mediumMediateUsesRemaining ?? 3) : null,
+      allMightyResetUsesRemaining: activeRole === 'All Mighty' ? (player.allMightyResetUsesRemaining ?? 1) : null,
       draculaMasterId: player.role === 'Vampire' ? (player.draculaMasterId || null) : null,
       abyssAvailable: this.canUseAbyssChat(room, playerId),
       lawyerObjectionUsesRemaining: player.role === 'Lawyer' ? (player.lawyerObjectionUsesRemaining ?? 2) : null,

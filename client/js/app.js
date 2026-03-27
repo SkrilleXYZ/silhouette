@@ -753,6 +753,24 @@
         },
       ],
     },
+    'All Mighty': {
+      faction: 'Neutral',
+      subfaction: 'Killing',
+      description: 'Smite a player, or use Divine Reset once to kill every living player and revive every dead player except yourself.',
+      revealText: 'Radiant white, gold, and cosmic violet bend around your hand. Smite a soul outright, or flip life and death across the whole room in one divine command.',
+      abilities: [
+        {
+          name: 'Smite',
+          type: 'Night',
+          description: 'Eliminate a player.',
+        },
+        {
+          name: 'Divine Reset',
+          type: 'Night',
+          description: 'Kill every living player and revive every dead player. This does not include yourself. Can only be used once.',
+        },
+      ],
+    },
     Vampire: {
       faction: 'Neutral',
       subfaction: 'Killing',
@@ -1679,6 +1697,7 @@
     if (normalizedRole === 'wither') return 'wither';
     if (normalizedRole === 'pestilence' || normalizedRole === 'the pestilence') return 'pestilence';
     if (normalizedRole === 'dracula') return 'dracula';
+    if (normalizedRole === 'all mighty') return 'allmighty';
     if (normalizedRole === 'vampire') return 'vampire';
     if (normalizedRole === 'alturist') return 'alturist';
     if (normalizedRole === 'the vessel') return 'vessel';
@@ -1841,6 +1860,7 @@
       arsonist: { glowBackground: 'var(--arsonist)', titleColor: 'var(--arsonist)', titleShadow: '0 0 30px rgba(255, 114, 52, 0.28)' },
       wither: { glowBackground: 'var(--wither)', titleColor: 'var(--wither)', titleShadow: '0 0 30px rgba(162, 24, 38, 0.3)' },
       dracula: { glowBackground: 'linear-gradient(135deg, rgba(148, 10, 24, 0.96), rgba(16, 4, 6, 0.92))', titleColor: 'hsl(356, 100%, 78%)', titleShadow: '0 0 32px rgba(154, 16, 28, 0.34)' },
+      allmighty: { glowBackground: 'linear-gradient(135deg, rgba(255, 252, 238, 0.98), rgba(255, 208, 112, 0.94) 42%, rgba(146, 92, 255, 0.92) 100%)', titleColor: 'hsl(44, 100%, 92%)', titleShadow: '0 0 34px rgba(214, 182, 112, 0.28), 0 0 44px rgba(146, 92, 255, 0.18)' },
       vampire: { glowBackground: 'linear-gradient(135deg, rgba(112, 8, 18, 0.96), rgba(12, 2, 4, 0.92))', titleColor: 'hsl(356, 100%, 76%)', titleShadow: '0 0 30px rgba(132, 12, 22, 0.32)' },
       pestilence: { glowBackground: 'var(--pestilence)', titleColor: 'var(--pestilence)', titleShadow: '0 0 30px rgba(122, 62, 214, 0.34)' },
       blackout: { glowBackground: 'var(--blackout)', titleColor: 'var(--blackout)', titleShadow: '0 0 28px rgba(112, 120, 136, 0.22)' },
@@ -2483,6 +2503,8 @@
     if (/The Psychopath is plotting\./i.test(text)) return 'summary-psychopath';
     if (/The Devastator has strapped a player with dynamites\./i.test(text)) return 'summary-devastator';
     if (/The Dracula is thirsty for blood\.?$/i.test(text)) return 'summary-dracula';
+    if (/Praying is not gonna help you tonight\./i.test(text)) return 'summary-allmighty';
+    if (/WHAT GOES UP, MUST COME DOWN!/i.test(text)) return 'summary-allmighty';
     if (/A Vampie was thirsty\.?$/i.test(text)) return 'summary-vampire';
     if (/Pestilence became all powerful\./i.test(text)) return 'summary-pestilence';
     if (/The Plague is spreading\./i.test(text)) return 'summary-wither';
@@ -2663,6 +2685,9 @@
     }
     if ((/The Dracula is thirsty for blood\.?$/i.test(text) || /Your fangs have grown\.?$/i.test(text)) && String(message.source || '').trim() === 'Dracula') {
       return ' system-result-dracula';
+    }
+    if ((/Praying is not gonna help you tonight\./i.test(text) || /WHAT GOES UP, MUST COME DOWN!/i.test(text)) && String(message.source || '').trim() === 'All Mighty') {
+      return ' system-result-allmighty';
     }
     if (/A Vampie was thirsty\.?$/i.test(text) && String(message.source || '').trim() === 'Vampire') {
       return ' system-result-vampire';
@@ -5126,11 +5151,20 @@
       ? (() => {
           const aceReelValues = [1, 2, 3, 1, 2, 3, 1, 2, 3];
           const aceReelStopIndex = aceOfBladesRollAnimating ? (6 + Math.max(0, aceOfBladesRollResult - 1)) : 1;
-          return `<div class="ace-wheel-panel ${aceOfBladesRollAnimating ? 'is-spinning' : ''} ${aceOfBladesRollPhase === 'landed' ? 'is-landed' : ''}">
+          const acePanelAnimationStyle = aceOfBladesRollAnimating
+            ? 'animation: aceWheelPanelAmbient 5s ease-in-out forwards;'
+            : '';
+          const aceShellAnimationStyle = aceOfBladesRollAnimating
+            ? 'animation: aceReelShellPulse 5s ease-in-out forwards;'
+            : '';
+          const aceTrackAnimationStyle = aceOfBladesRollAnimating
+            ? `--ace-reel-stop:${aceReelStopIndex}; animation: aceReelSpin 5s cubic-bezier(0.08, 0.86, 0.18, 1) forwards;`
+            : '';
+          return `<div class="ace-wheel-panel ${aceOfBladesRollAnimating ? 'is-spinning' : ''} ${aceOfBladesRollPhase === 'landed' ? 'is-landed' : ''}"${acePanelAnimationStyle ? ` style="${acePanelAnimationStyle}"` : ''}>
             <div class="ace-wheel-header">3FOLD</div>
-            <div class="ace-reel-shell">
+            <div class="ace-reel-shell"${aceShellAnimationStyle ? ` style="${aceShellAnimationStyle}"` : ''}>
               <div class="ace-reel-window">
-                <div class="ace-reel-track"${aceOfBladesRollAnimating ? ` style="--ace-reel-stop:${aceReelStopIndex};"` : ''}>
+                <div class="ace-reel-track"${aceTrackAnimationStyle ? ` style="${aceTrackAnimationStyle}"` : ''}>
                   ${aceReelValues.map((value) => `<div class="ace-reel-row">${value}</div>`).join('')}
                 </div>
                 <div class="ace-reel-highlight"></div>
@@ -5171,6 +5205,12 @@
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="sacrifice">Sacrifice</button></div>';
     } else if (activeRole === 'Dracula') {
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected dracula-action" data-action="sire">Sire</button></div>';
+    } else if (activeRole === 'All Mighty') {
+      if (state.selectedAction !== 'smite' && state.selectedAction !== 'divine-reset') {
+        state.selectedAction = 'smite';
+      }
+      const canUseDivineReset = (player.allMightyResetUsesRemaining ?? 1) > 0;
+      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'smite' ? 'selected' : ''}" data-action="smite">Smite</button><button class="action-btn ${state.selectedAction === 'divine-reset' ? 'selected' : ''}" data-action="divine-reset" ${canUseDivineReset ? '' : 'disabled'}>Divine Reset</button></div>`;
     } else if (activeRole === 'Vampire') {
       state.selectedAction = 'kill';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected vampire-action" data-action="kill">Bite</button></div>';
@@ -5302,6 +5342,11 @@
     else if (activeRole === 'Psychopath') actionDesc = psychopathStoredKills > 0
       ? `You have ${psychopathStoredKills} stored kill${psychopathStoredKills === 1 ? '' : 's'}. Unleash up to ${psychopathKillsAvailable} kill${psychopathKillsAvailable === 1 ? '' : 's'} tonight, or skip to keep stacking.`
       : 'Skip tonight to stack a future kill, or strike now and stay on schedule.';
+    else if (activeRole === 'All Mighty') actionDesc = state.selectedAction === 'divine-reset'
+      ? ((player.allMightyResetUsesRemaining ?? 1) > 0
+        ? 'Kill every living player and revive every dead player immediately. You are not included in the reset.'
+        : 'Divine Reset has already been spent. Choose Smite instead.')
+      : 'Choose a player to eliminate with divine judgment.';
     else if (activeRole === 'Dracula') actionDesc = 'Bite a player tonight. Crew become your Vampire if none is alive. Everyone else dies instead.';
     else if (activeRole === 'Vampire') actionDesc = 'Bite a player tonight and feed the bloodline beside Dracula.';
     else if (activeRole === 'Wither') actionDesc = 'Infect 1 player tonight. Infected players silently spread infection through future interactions.';
@@ -5351,6 +5396,7 @@
       || activeRole === 'Medium'
       || (activeRole === 'Officer' && officerHasPrisoner)
       || (activeRole === 'Ace of Blades' && (aceOfBladesNeedsRoll || aceOfBladesRollAnimating))
+      || (activeRole === 'All Mighty' && state.selectedAction === 'divine-reset')
       || (activeRole === 'Arsonist' && state.selectedAction === 'ignite')
       || (activeRole === 'Blackout' && state.selectedAction === 'flash')
       || (activeRole === 'The Purge' && state.selectedAction === 'fascism');
@@ -5372,7 +5418,7 @@
       ? `DOUSED PLAYERS${displayedTargets.length ? ` (${displayedTargets.length})` : ''}`
       : activeRole === 'Ace of Blades'
         ? `SELECT ${aceOfBladesKillsAvailable} TARGET${aceOfBladesKillsAvailable === 1 ? '' : 'S'}${isMultiTargetRole && multiSelectedTargets.length ? ` (${multiSelectedTargets.length} SELECTED)` : ''}`
-        : activeRole === 'Psychopath'
+      : activeRole === 'Psychopath'
           ? `SELECT UP TO ${psychopathKillsAvailable} TARGET${psychopathKillsAvailable === 1 ? '' : 'S'}${multiSelectedTargets.length ? ` (${multiSelectedTargets.length} SELECTED)` : ''}`
       : isMultiTargetRole
         ? `${activeRole === 'Teleporter' ? 'SELECT 2 TARGETS' : 'SELECT AT LEAST 3 TARGETS'}${multiSelectedTargets.length ? ` (${multiSelectedTargets.length} SELECTED)` : ''}`
@@ -5407,7 +5453,7 @@
           }).join('')}
         </div>` : ''}
         <div class="chat-local-actions">
-          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) || (isMultiTargetRole && multiSelectedTargets.length < requiredMultiTargetCount) || (activeRole === 'Arsonist' && state.selectedAction === 'ignite' && !arsonistCanIgniteTonight) || (activeRole === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) || (activeRole === 'The Purge' && state.selectedAction === 'fascism' && !purgeCanUseFascismTonight) || (activeRole === 'Officer' && officerHasPrisoner && !officerVerdictAvailable) || aceOfBladesRollAnimating ? 'disabled' : ''}>${activeRole === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : activeRole === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : activeRole === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : activeRole === 'Medium' ? `Confirm ${player.mediumMediateUsesRemaining ?? 3}/3` : activeRole === 'Oracle' ? `Confirm ${player.oracleEvilEyeUsesRemaining ?? 3}/3` : activeRole === 'Prophet' && state.selectedAction === 'gospel' ? `Confirm ${player.prophetGospelUsesRemaining ?? 2}/2` : activeRole === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 4}/4` : activeRole === 'Ace of Blades' && aceOfBladesNeedsRoll ? 'Roll' : activeRole === 'Ace of Blades' ? `Confirm ${isMultiTargetRole ? multiSelectedTargets.length : (state.selectedTarget ? 1 : 0)}/${aceOfBladesKillsAvailable}` : activeRole === 'Psychopath' ? `Confirm ${isMultiTargetRole ? multiSelectedTargets.length : (state.selectedTarget ? 1 : 0)}/${psychopathKillsAvailable}` : activeRole === 'Arsonist' && state.selectedAction === 'ignite' ? `Ignite ${arsonistDousedTargetIds.length}` : activeRole === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : activeRole === 'The Purge' && state.selectedAction === 'fascism' ? `Confirm ${player.purgeFascismUsesRemaining ?? 1}/1` : activeRole === 'Teleporter' ? `Confirm ${multiSelectedTargets.length}/2` : isMultiTargetRole ? `Confirm ${multiSelectedTargets.length}/3+` : 'Confirm'}</button>
+          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) || (isMultiTargetRole && multiSelectedTargets.length < requiredMultiTargetCount) || (activeRole === 'All Mighty' && state.selectedAction === 'divine-reset' && (player.allMightyResetUsesRemaining ?? 1) <= 0) || (activeRole === 'Arsonist' && state.selectedAction === 'ignite' && !arsonistCanIgniteTonight) || (activeRole === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) || (activeRole === 'The Purge' && state.selectedAction === 'fascism' && !purgeCanUseFascismTonight) || (activeRole === 'Officer' && officerHasPrisoner && !officerVerdictAvailable) || aceOfBladesRollAnimating ? 'disabled' : ''}>${activeRole === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : activeRole === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : activeRole === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : activeRole === 'Medium' ? `Confirm ${player.mediumMediateUsesRemaining ?? 3}/3` : activeRole === 'Oracle' ? `Confirm ${player.oracleEvilEyeUsesRemaining ?? 3}/3` : activeRole === 'Prophet' && state.selectedAction === 'gospel' ? `Confirm ${player.prophetGospelUsesRemaining ?? 2}/2` : activeRole === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 4}/4` : activeRole === 'All Mighty' && state.selectedAction === 'divine-reset' ? `Confirm ${player.allMightyResetUsesRemaining ?? 1}/1` : activeRole === 'Ace of Blades' && aceOfBladesNeedsRoll ? 'Roll' : activeRole === 'Ace of Blades' ? `Confirm ${isMultiTargetRole ? multiSelectedTargets.length : (state.selectedTarget ? 1 : 0)}/${aceOfBladesKillsAvailable}` : activeRole === 'Psychopath' ? `Confirm ${isMultiTargetRole ? multiSelectedTargets.length : (state.selectedTarget ? 1 : 0)}/${psychopathKillsAvailable}` : activeRole === 'Arsonist' && state.selectedAction === 'ignite' ? `Ignite ${arsonistDousedTargetIds.length}` : activeRole === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : activeRole === 'The Purge' && state.selectedAction === 'fascism' ? `Confirm ${player.purgeFascismUsesRemaining ?? 1}/1` : activeRole === 'Teleporter' ? `Confirm ${multiSelectedTargets.length}/2` : isMultiTargetRole ? `Confirm ${multiSelectedTargets.length}/3+` : 'Confirm'}</button>
           <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>
         </div>
       </div>
@@ -5503,6 +5549,10 @@
                 queueAmnesiacInheritanceTransition(previousPlayer, response.player);
                 queueVampireTurnTransition(previousPlayer, response.player);
                 state.playerData = response.player;
+                if (response.room) {
+                  state.roomData = response.room;
+                  state.chatMessages = response.room.chatMessages || state.chatMessages;
+                }
               state.hasActed = !!response.player.hasSubmittedAction;
               const responseActiveRole = getActiveNightRole(response.player);
               if (responseActiveRole === 'Traplord' || responseActiveRole === 'Teleporter' || responseActiveRole === 'Ace of Blades' || responseActiveRole === 'Psychopath') {
@@ -5530,6 +5580,15 @@
                 return;
               } else if (responseActiveRole !== 'Ace of Blades') {
                 state.aceOfBladesRollAnimation = null;
+              }
+              if (response.immediateDivineReset) {
+                state.selectedAction = null;
+                state.selectedTarget = null;
+                state.selectedTargets = [];
+                renderNightPhase(container);
+                playPendingRoleInheritanceTransition();
+                showToast('Divine Reset unleashed', 'success');
+                return;
               }
               if (response.player.role === 'Imitator' && response.player.imitatorCopiedRole) {
                 state.selectedAction = null;

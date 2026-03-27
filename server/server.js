@@ -292,6 +292,21 @@ io.on('connection', (socket) => {
         });
       }
     }
+    if (result.immediateDivineReset) {
+      const publicData = game.getRoomPublicData(mapping.code);
+      io.to(mapping.code).emit('room-updated', publicData);
+      emitRoomPlayerStates(mapping.code);
+      if (result.winner) {
+        clearAllTimers(mapping.code);
+        const allPlayers = game.getAllPlayersWithRoles(mapping.code);
+        io.to(mapping.code).emit('game-over', {
+          winner: result.winner,
+          players: allPlayers
+        });
+      }
+      callback({ success: true, player: game.getPlayerData(mapping.code, mapping.playerId), room: publicData, immediateDivineReset: true, winner: result.winner || null });
+      return;
+    }
     callback({ success: true, player: playerData });
     if (game.checkAllNightActionsSubmitted(mapping.code)) {
       resolveNightPhase(mapping.code);
@@ -621,6 +636,23 @@ function clearAllTimers(code) {
   if (morningTimers.has(code)) {
     clearTimeout(morningTimers.get(code).timeout);
     morningTimers.delete(code);
+  }
+}
+
+function emitFullPlayerState(code, playerId) {
+  io.to(getPlayerChannel(playerId)).emit('player-updated', {
+    player: game.getPlayerData(code, playerId),
+    assassinChatMessages: game.getAssassinChatMessagesForPlayer(code, playerId),
+    jailChatMessages: game.getJailChatMessagesForPlayer(code, playerId),
+    abyssChatMessages: game.getAbyssChatMessagesForPlayer(code, playerId),
+  });
+}
+
+function emitRoomPlayerStates(code) {
+  const room = game.getRoom(code);
+  if (!room) return;
+  for (const [playerId] of room.players) {
+    emitFullPlayerState(code, playerId);
   }
 }
 
