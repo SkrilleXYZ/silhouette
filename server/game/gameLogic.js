@@ -117,6 +117,7 @@ class GameLogic {
       hiddenRoleList: false,
       disableVillagerRole: false,
       enableTraitor: false,
+      traitorActivated: false,
       useClassicFivePlayerSetup: false,
       sheriffKillsCrewTarget: false,
       sheriffKillsNeutralEvil: false,
@@ -925,6 +926,7 @@ class GameLogic {
     room.silencedPlayers = {};
     room.roleRevealEndsAt = 0;
     room.pendingLongshots = [];
+    room.traitorActivated = false;
 
     this.beginPhaseSummary(code, 'Night 1 has begun. Chat is locked until morning.');
 
@@ -983,6 +985,7 @@ class GameLogic {
     room.chatMessages = [];
     room.assassinChatMessages = [];
     room.currentPhaseSummaryId = null;
+    room.traitorActivated = false;
     room.playerOrder = [];
     room.lastAction = Date.now();
     room.lastMedicTarget = null;
@@ -4113,7 +4116,7 @@ class GameLogic {
 
   maybeTriggerTraitorOverthrow(code) {
     const room = this.rooms.get(code);
-    if (!room || !room.enableTraitor) return null;
+    if (!room || !room.enableTraitor || room.traitorActivated) return null;
 
     const alivePlayers = Array.from(room.players.values()).filter((player) => player.alive);
     if (alivePlayers.length < 6) return null;
@@ -4127,6 +4130,7 @@ class GameLogic {
     const chosenPlayer = eligibleCrew[Math.floor(Math.random() * eligibleCrew.length)];
     chosenPlayer.role = 'Traitor';
     chosenPlayer.faction = 'Assassin';
+    room.traitorActivated = true;
     delete room.nightActions[chosenPlayer.id];
 
     this.appendToPhaseSummary(code, 'A Traitor has joined the Assassins.');
@@ -4221,8 +4225,16 @@ class GameLogic {
   withNeutralBenignCoWinners(room, winner) {
     if (!room || !winner) return winner;
 
+    const baseWinner = String(winner.winner || '').trim();
     const survivalistWinnerIds = Array.from(room.players.values())
-      .filter((player) => (player.role === 'Survivalist' || player.role === 'Imitator') && player.alive && String(winner.winner || '') !== 'Nobody')
+      .filter((player) => {
+        if (!player.alive || baseWinner === 'Nobody') return false;
+        if (player.role === 'Survivalist') return true;
+        if (player.role === 'Imitator' || player.role === 'Amnesiac') {
+          return baseWinner === 'Crew' || baseWinner === 'Assassin';
+        }
+        return false;
+      })
       .map((player) => player.id);
 
     if (!survivalistWinnerIds.length) return winner;
@@ -4351,7 +4363,6 @@ class GameLogic {
     if (action === 'interlinked') return 'Tetherhex has forged a lethal bond.';
     if (action === 'kill') {
       if (activeRole === 'The Vessel') return 'The Vessel has taken revenge.';
-      if (activeRole === 'Traitor') return 'A Traitor has struck from within.';
       return 'An Assassin has moved through the shadows.';
     }
     return null;

@@ -1263,6 +1263,7 @@
     state.socket.on('player-updated', ({ player, assassinChatMessages }) => {
       const previousPlayer = state.playerData;
       queueAmnesiacInheritanceTransition(previousPlayer, player);
+      queueTraitorTurnTransition(previousPlayer, player);
       queueLifeTransition(previousPlayer, player);
       state.playerData = player;
       if (Array.isArray(assassinChatMessages)) {
@@ -1604,7 +1605,7 @@
       manipulator: { glowBackground: 'var(--manipulator)', titleColor: 'hsl(286, 100%, 84%)', titleShadow: '0 0 30px rgba(180, 74, 255, 0.26)' },
       mayor: { glowBackground: 'var(--mayor)', titleColor: 'hsl(278, 100%, 86%)', titleShadow: '0 0 30px rgba(126, 74, 214, 0.26)' },
       prophet: { glowBackground: 'var(--prophet)', titleColor: 'var(--prophet)', titleShadow: '0 0 30px rgba(168, 42, 48, 0.28)' },
-      traitor: { glowBackground: 'linear-gradient(90deg, hsl(212, 96%, 68%), hsl(0, 88%, 62%))', titleColor: 'hsl(0, 100%, 88%)', titleShadow: '0 0 30px rgba(162, 72, 96, 0.28)' },
+      traitor: { glowBackground: 'linear-gradient(90deg, hsl(222, 92%, 58%), hsl(10, 94%, 54%))', titleColor: 'hsl(0, 100%, 88%)', titleShadow: '0 0 30px rgba(138, 58, 66, 0.28)' },
       narcissist: { glowBackground: 'hsl(270, 82%, 58%)', titleColor: 'hsl(270, 90%, 78%)', titleShadow: '0 0 30px rgba(124, 58, 237, 0.24)' },
       teleporter: { glowBackground: 'var(--teleporter)', titleColor: 'var(--teleporter)', titleShadow: '0 0 30px rgba(126, 184, 255, 0.24)' },
       swapper: { glowBackground: 'hsl(286, 100%, 68%)', titleColor: 'hsl(48, 100%, 84%)', titleShadow: '0 0 30px rgba(176, 104, 255, 0.26)' },
@@ -1699,6 +1700,10 @@
       .replace(
         'Cannot target the same player twice in a row.',
         '<span class="roles-guide-ability-highlight">Cannot target the same player twice in a row.</span>'
+      )
+      .replace(
+        'Cannot target the same player again until there is no one left.',
+        '<span class="roles-guide-ability-highlight">Cannot target the same player again until there is no one left.</span>'
       )
       .replace(
         'Can target yourself.',
@@ -2255,6 +2260,7 @@
     if (/Sniper has lined up a distant shot\./i.test(text)) return 'summary-sniper';
     if (/Tetherhex has forged a lethal bond\./i.test(text)) return 'summary-tetherhex';
     if (/The Vessel has taken revenge\./i.test(text)) return 'summary-vessel';
+    if (/An Assassin has moved through the shadows\./i.test(text)) return 'summary-kill';
     if (/The exiled player was protected by the Oracle\./i.test(text)) return 'summary-oracle-protect';
     if (/protected someone/i.test(text)) return 'summary-protect';
     if (/moved through the shadows/i.test(text)) return 'summary-kill';
@@ -3159,6 +3165,29 @@
     if (!shouldAnimateAmnesiacInheritance(previousPlayer, nextPlayer)) return;
     state.pendingRoleInheritance = {
       role: nextPlayer.role,
+      type: 'inheritance',
+      timestamp: Date.now(),
+    };
+  }
+
+  function shouldAnimateTraitorTurn(previousPlayer, nextPlayer) {
+    return !!(
+      previousPlayer
+      && nextPlayer
+      && previousPlayer.alive !== false
+      && nextPlayer.alive !== false
+      && previousPlayer.role !== 'Traitor'
+      && nextPlayer.role === 'Traitor'
+      && previousPlayer.faction === 'Crew'
+      && nextPlayer.faction === 'Assassin'
+    );
+  }
+
+  function queueTraitorTurnTransition(previousPlayer, nextPlayer) {
+    if (!shouldAnimateTraitorTurn(previousPlayer, nextPlayer)) return;
+    state.pendingRoleInheritance = {
+      role: nextPlayer.role,
+      type: 'traitor',
       timestamp: Date.now(),
     };
   }
@@ -3171,20 +3200,27 @@
       ? Array.from(gameContent.children).find((child) => child.id !== 'phase-chat-panel')
       : null;
 
+    const transition = state.pendingRoleInheritance;
     state.pendingRoleInheritance = null;
+    const cardClass = transition.type === 'traitor' ? 'role-traitor-turn-enter' : 'role-inheritance-enter';
+    const panelClass = transition.type === 'traitor' ? 'role-traitor-turn-panel-enter' : 'role-inheritance-panel-enter';
 
     if (roleCard) {
-      roleCard.classList.remove('role-inheritance-enter');
+      roleCard.classList.remove('role-inheritance-enter', 'role-traitor-turn-enter');
       void roleCard.offsetWidth;
-      roleCard.classList.add('role-inheritance-enter');
-      window.setTimeout(() => roleCard.classList.remove('role-inheritance-enter'), 820);
+      roleCard.classList.add(cardClass);
+      window.setTimeout(() => roleCard.classList.remove(cardClass), transition.type === 'traitor' ? 1180 : 820);
     }
 
     if (activePanel) {
-      activePanel.classList.remove('role-inheritance-panel-enter');
+      activePanel.classList.remove('role-inheritance-panel-enter', 'role-traitor-turn-panel-enter');
       void activePanel.offsetWidth;
-      activePanel.classList.add('role-inheritance-panel-enter');
-      window.setTimeout(() => activePanel.classList.remove('role-inheritance-panel-enter'), 700);
+      activePanel.classList.add(panelClass);
+      window.setTimeout(() => activePanel.classList.remove(panelClass), transition.type === 'traitor' ? 980 : 700);
+    }
+
+    if (transition.type === 'traitor') {
+      showToast('You have become the Traitor', 'info');
     }
   }
 
