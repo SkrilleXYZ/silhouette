@@ -8814,16 +8814,7 @@ body {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   margin-bottom: 4px;
-  background: linear-gradient(
-    90deg,
-    var(--roles-guide-title-start, rgba(255, 255, 255, 0.98)) 0%,
-    var(--roles-guide-title-mid, color-mix(in srgb, currentColor 58%, white 42%)) 42%,
-    var(--roles-guide-title-end, currentColor) 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 0 14px color-mix(in srgb, currentColor 16%, transparent);
+  color: #f8fafc;
 }
 
 #screen-roles .roles-guide-card-meta {
@@ -9712,13 +9703,6 @@ body {
 
 #screen-roles .roles-guide-card.role-theme-aceofblades:hover {
   box-shadow: 0 0 20px -10px rgba(214, 122, 72, 0.46);
-}
-
-#screen-roles .roles-guide-card.role-theme-aceofblades .roles-guide-card-title {
-  background: linear-gradient(90deg, rgba(255, 242, 206, 0.98), rgba(255, 194, 88, 0.98) 36%, rgba(214, 42, 62, 0.98) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 
 #screen-roles .roles-guide-card.role-theme-aceofblades .roles-guide-ability-highlight {
