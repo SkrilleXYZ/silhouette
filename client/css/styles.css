@@ -52,6 +52,12 @@
   --wither: hsl(352, 78%, 58%);
   --wither-dim: hsl(350, 48%, 14%);
   --wither-glow: hsla(352, 78%, 58%, 0.34);
+  --dracula: hsl(356, 100%, 68%);
+  --dracula-dim: hsl(352, 62%, 10%);
+  --dracula-glow: hsla(356, 100%, 58%, 0.38);
+  --vampire: hsl(0, 86%, 62%);
+  --vampire-dim: hsl(352, 54%, 10%);
+  --vampire-glow: hsla(0, 86%, 56%, 0.34);
   --pestilence: hsl(272, 84%, 66%);
   --pestilence-dim: hsl(270, 42%, 12%);
   --pestilence-glow: hsla(272, 84%, 66%, 0.38);
@@ -4897,6 +4903,38 @@ body {
   animation: searchSweep 1.1s linear infinite;
 }
 
+.action-btn.dracula-action.selected {
+  border-color: var(--dracula);
+  color: hsl(356, 100%, 92%);
+  background: linear-gradient(135deg, rgba(98, 8, 16, 0.98), rgba(24, 3, 5, 0.98) 56%, rgba(138, 12, 24, 0.94));
+  box-shadow: 0 0 18px var(--dracula-glow), inset 0 0 0 1px rgba(255, 196, 196, 0.06);
+}
+
+.action-btn.dracula-action.selected::before,
+.action-btn.dracula-kill-action.selected::before {
+  background: linear-gradient(115deg, transparent, rgba(255, 188, 188, 0.32), transparent);
+  animation: searchSweep 1.1s linear infinite;
+}
+
+.action-btn.dracula-kill-action.selected {
+  border-color: var(--dracula);
+  color: hsl(356, 100%, 92%);
+  background: linear-gradient(135deg, rgba(48, 4, 6, 0.98), rgba(10, 2, 3, 0.98) 56%, rgba(84, 8, 14, 0.94));
+  box-shadow: 0 0 16px rgba(144, 12, 24, 0.22), inset 0 0 0 1px rgba(255, 196, 196, 0.05);
+}
+
+.action-btn.vampire-action.selected {
+  border-color: var(--vampire);
+  color: hsl(0, 100%, 92%);
+  background: linear-gradient(135deg, rgba(60, 4, 8, 0.98), rgba(12, 2, 4, 0.98) 56%, rgba(104, 10, 16, 0.94));
+  box-shadow: 0 0 16px var(--vampire-glow), inset 0 0 0 1px rgba(255, 196, 196, 0.05);
+}
+
+.action-btn.vampire-action.selected::before {
+  background: linear-gradient(115deg, transparent, rgba(255, 188, 188, 0.32), transparent);
+  animation: searchSweep 1.1s linear infinite;
+}
+
 .action-btn[data-action="examine"].selected {
   border-color: var(--investigator);
   color: hsl(270, 100%, 92%);
@@ -7199,6 +7237,52 @@ body {
   text-shadow: 0 1px 8px rgba(255, 204, 166, 0.12);
 }
 
+.chat-message.system.system-result-dracula {
+  border-color: rgba(176, 18, 36, 0.48);
+  background:
+    radial-gradient(circle at 84% 18%, rgba(255, 216, 220, 0.12), transparent 16%),
+    radial-gradient(circle at 18% 110%, rgba(102, 4, 12, 0.28), transparent 42%),
+    linear-gradient(135deg, rgba(26, 2, 4, 0.98), rgba(72, 8, 14, 0.95) 42%, rgba(14, 2, 4, 0.96) 100%);
+  box-shadow: 0 0 18px rgba(150, 10, 24, 0.22);
+}
+
+.chat-message.system.system-result-dracula::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(255, 188, 194, 0.06), rgba(176, 18, 36, 0.12) 46%, transparent 82%);
+  pointer-events: none;
+}
+
+.chat-message.system.system-result-dracula .chat-message-meta,
+.chat-message.system.system-result-dracula .chat-message-text {
+  color: hsl(356, 100%, 95%);
+  text-shadow: 0 1px 8px rgba(255, 182, 190, 0.12);
+}
+
+.chat-message.system.system-result-vampire {
+  border-color: rgba(154, 18, 30, 0.46);
+  background:
+    radial-gradient(circle at 84% 18%, rgba(255, 216, 220, 0.12), transparent 16%),
+    radial-gradient(circle at 18% 110%, rgba(86, 4, 12, 0.28), transparent 42%),
+    linear-gradient(135deg, rgba(20, 2, 4, 0.98), rgba(60, 6, 12, 0.95) 42%, rgba(10, 2, 4, 0.96) 100%);
+  box-shadow: 0 0 18px rgba(132, 10, 20, 0.2);
+}
+
+.chat-message.system.system-result-vampire::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(255, 188, 194, 0.06), rgba(154, 18, 30, 0.12) 46%, transparent 82%);
+  pointer-events: none;
+}
+
+.chat-message.system.system-result-vampire .chat-message-meta,
+.chat-message.system.system-result-vampire .chat-message-text {
+  color: hsl(356, 100%, 95%);
+  text-shadow: 0 1px 8px rgba(255, 182, 190, 0.12);
+}
+
 .chat-message.system.system-result-pestilence {
   border-color: rgba(162, 92, 255, 0.48);
   background:
@@ -7609,6 +7693,24 @@ body {
   box-shadow: inset 0 1px 0 rgba(248, 214, 255, 0.08), 0 0 0 1px rgba(212, 118, 255, 0.08);
 }
 
+.chat-summary-line.summary-dracula {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(255, 214, 220, 0.16), transparent 18%),
+    linear-gradient(135deg, rgba(24, 2, 4, 0.96), rgba(74, 8, 16, 0.94) 38%, rgba(8, 1, 2, 0.92));
+  border-color: rgba(176, 18, 36, 0.44);
+  color: hsl(356, 100%, 96%);
+  box-shadow: inset 0 1px 0 rgba(255, 206, 214, 0.08), 0 0 0 1px rgba(176, 18, 36, 0.08);
+}
+
+.chat-summary-line.summary-vampire {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(255, 214, 220, 0.16), transparent 18%),
+    linear-gradient(135deg, rgba(18, 2, 4, 0.96), rgba(60, 6, 12, 0.94) 38%, rgba(8, 1, 2, 0.92));
+  border-color: rgba(154, 18, 30, 0.44);
+  color: hsl(356, 100%, 96%);
+  box-shadow: inset 0 1px 0 rgba(255, 206, 214, 0.08), 0 0 0 1px rgba(154, 18, 30, 0.08);
+}
+
 .chat-summary-line.summary-psychopath {
   background:
     radial-gradient(circle at 88% 18%, rgba(255, 214, 220, 0.16), transparent 18%),
@@ -7930,9 +8032,15 @@ body {
 
 .gameover-glow.crew-win { background: var(--crew); }
 .gameover-glow.assassin-win { background: var(--assassin); }
+.gameover-glow.bloodlust-win { background: linear-gradient(135deg, rgba(136, 12, 24, 0.96), rgba(18, 2, 4, 0.94)); }
 .gameover-glow.jester-win { background: var(--jester); }
 .gameover-glow.pestilence-win { background: var(--pestilence); }
 .gameover-glow.nobody-win { background: rgba(190, 202, 220, 0.46); }
+
+.gameover-faction.bloodlust-text {
+  color: hsl(356, 100%, 74%);
+  text-shadow: 0 0 30px rgba(164, 12, 24, 0.3);
+}
 
 .gameover-title {
   font-family: 'Cinzel', serif;
@@ -8153,6 +8261,16 @@ body {
 .gameover-player.won:has(.gameover-player-role.role-theme-overload) {
   border-color: rgba(99, 255, 76, 0.54);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 30px rgba(99, 255, 76, 0.26);
+}
+
+.gameover-player.won:has(.gameover-player-role.role-theme-dracula) {
+  border-color: rgba(176, 18, 36, 0.52);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 30px rgba(176, 18, 36, 0.24);
+}
+
+.gameover-player.won:has(.gameover-player-role.role-theme-vampire) {
+  border-color: rgba(154, 18, 30, 0.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 30px rgba(154, 18, 30, 0.22);
 }
 
 .gameover-player.won:has(.gameover-player-role.role-theme-jester) {
@@ -10056,6 +10174,28 @@ body {
   text-shadow: 0 0 18px rgba(255, 132, 62, 0.2);
 }
 
+.role-card.role-theme-dracula .role-card-glow { background: radial-gradient(circle, rgba(186, 20, 36, 0.9) 0%, rgba(68, 6, 12, 0.44) 42%, transparent 76%); }
+.role-card.role-theme-dracula .role-card-inner { border-color: rgba(176, 18, 36, 0.42); box-shadow: inset 0 0 0 1px rgba(255, 196, 196, 0.08), 0 0 24px rgba(94, 8, 18, 0.22); }
+.role-card.role-theme-dracula .role-faction { color: var(--dracula); }
+.role-card.role-theme-dracula .role-divider { background: linear-gradient(90deg, rgba(255, 228, 232, 0.98), rgba(214, 42, 58, 0.94) 42%, rgba(18, 2, 4, 0.96) 100%); }
+.role-card.role-theme-dracula .role-name {
+  background: linear-gradient(90deg, hsl(356, 100%, 94%), hsl(356, 100%, 74%) 46%, hsl(352, 78%, 42%) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 18px rgba(186, 20, 36, 0.2);
+}
+
+.role-card.role-theme-vampire .role-card-glow { background: radial-gradient(circle, rgba(170, 18, 30, 0.88) 0%, rgba(52, 4, 10, 0.42) 42%, transparent 76%); }
+.role-card.role-theme-vampire .role-card-inner { border-color: rgba(154, 18, 30, 0.42); box-shadow: inset 0 0 0 1px rgba(255, 196, 196, 0.08), 0 0 24px rgba(84, 8, 16, 0.2); }
+.role-card.role-theme-vampire .role-faction { color: var(--vampire); }
+.role-card.role-theme-vampire .role-divider { background: linear-gradient(90deg, rgba(255, 228, 232, 0.98), rgba(188, 30, 44, 0.94) 42%, rgba(16, 2, 4, 0.96) 100%); }
+.role-card.role-theme-vampire .role-name {
+  background: linear-gradient(90deg, hsl(356, 100%, 94%), hsl(0, 92%, 72%) 46%, hsl(352, 72%, 36%) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 18px rgba(170, 18, 30, 0.2);
+}
+
 .role-reveal-panel.role-theme-medium {
   border-color: rgba(212, 118, 255, 0.44);
   background:
@@ -10077,6 +10217,20 @@ body {
     linear-gradient(180deg, rgba(46, 14, 8, 0.96), rgba(14, 8, 8, 0.98));
 }
 
+.role-reveal-panel.role-theme-dracula {
+  border-color: rgba(176, 18, 36, 0.44);
+  background:
+    radial-gradient(circle at top, rgba(188, 18, 36, 0.18), transparent 36%),
+    linear-gradient(180deg, rgba(26, 2, 4, 0.96), rgba(8, 2, 4, 0.98));
+}
+
+.role-reveal-panel.role-theme-vampire {
+  border-color: rgba(154, 18, 30, 0.44);
+  background:
+    radial-gradient(circle at top, rgba(170, 18, 30, 0.18), transparent 36%),
+    linear-gradient(180deg, rgba(20, 2, 4, 0.96), rgba(8, 2, 4, 0.98));
+}
+
 .role-reveal-panel.role-theme-medium.settled {
   box-shadow:
     0 0 0 1px rgba(212, 118, 255, 0.08),
@@ -10095,6 +10249,18 @@ body {
     0 28px 70px -36px rgba(146, 32, 18, 0.38);
 }
 
+.role-reveal-panel.role-theme-dracula.settled {
+  box-shadow:
+    0 0 0 1px rgba(176, 18, 36, 0.08),
+    0 28px 70px -36px rgba(110, 8, 18, 0.38);
+}
+
+.role-reveal-panel.role-theme-vampire.settled {
+  box-shadow:
+    0 0 0 1px rgba(154, 18, 30, 0.08),
+    0 28px 70px -36px rgba(96, 8, 16, 0.36);
+}
+
 .role-reveal-item.role-theme-medium.is-selected {
   border-color: rgba(228, 136, 255, 0.64);
   box-shadow: 0 0 18px rgba(212, 118, 255, 0.22);
@@ -10108,6 +10274,16 @@ body {
 .role-reveal-item.role-theme-devastator.is-selected {
   border-color: rgba(255, 144, 82, 0.64);
   box-shadow: 0 0 18px rgba(198, 62, 24, 0.24);
+}
+
+.role-reveal-item.role-theme-dracula.is-selected {
+  border-color: rgba(196, 36, 54, 0.64);
+  box-shadow: 0 0 18px rgba(164, 18, 34, 0.24);
+}
+
+.role-reveal-item.role-theme-vampire.is-selected {
+  border-color: rgba(176, 32, 44, 0.64);
+  box-shadow: 0 0 18px rgba(148, 18, 30, 0.22);
 }
 
 .role-reveal-item.role-theme-medium .role-reveal-name,
@@ -10125,6 +10301,16 @@ body {
   color: var(--devastator);
 }
 
+.role-reveal-item.role-theme-dracula .role-reveal-name,
+.role-reveal-item.role-theme-dracula .role-reveal-faction {
+  color: var(--dracula);
+}
+
+.role-reveal-item.role-theme-vampire .role-reveal-name,
+.role-reveal-item.role-theme-vampire .role-reveal-faction {
+  color: var(--vampire);
+}
+
 .role-reveal-result.role-theme-medium strong {
   color: var(--medium);
   text-shadow: 0 0 18px rgba(212, 118, 255, 0.2);
@@ -10138,6 +10324,16 @@ body {
 .role-reveal-result.role-theme-devastator strong {
   color: var(--devastator);
   text-shadow: 0 0 18px rgba(198, 62, 24, 0.22);
+}
+
+.role-reveal-result.role-theme-dracula strong {
+  color: var(--dracula);
+  text-shadow: 0 0 18px rgba(164, 18, 34, 0.22);
+}
+
+.role-reveal-result.role-theme-vampire strong {
+  color: var(--vampire);
+  text-shadow: 0 0 18px rgba(148, 18, 30, 0.2);
 }
 
 .role-card.role-theme-officer .role-card-glow { background: radial-gradient(circle, rgba(112, 190, 255, 0.82) 0%, rgba(42, 92, 176, 0.24) 42%, transparent 76%); }
@@ -10231,6 +10427,18 @@ body {
   box-shadow: 0 0 16px rgba(198, 62, 24, 0.18);
 }
 
+.gpl-role.role-theme-dracula {
+  background: linear-gradient(135deg, rgba(36, 4, 8, 0.96), rgba(92, 10, 18, 0.92));
+  color: hsl(356, 100%, 88%);
+  box-shadow: 0 0 16px rgba(164, 18, 34, 0.18);
+}
+
+.gpl-role.role-theme-vampire {
+  background: linear-gradient(135deg, rgba(28, 4, 8, 0.96), rgba(78, 8, 14, 0.92));
+  color: hsl(356, 100%, 88%);
+  box-shadow: 0 0 16px rgba(148, 18, 30, 0.16);
+}
+
 #screen-roles .roles-guide-card.role-theme-aceofblades,
 #screen-roles .roles-guide-card.role-theme-aceofblades .roles-guide-card-icon {
   border-color: rgba(222, 148, 82, 0.72);
@@ -10307,6 +10515,44 @@ body {
   color: hsl(24, 100%, 78%);
 }
 
+#screen-roles .roles-guide-card.role-theme-dracula,
+#screen-roles .roles-guide-card.role-theme-dracula .roles-guide-card-icon {
+  border-color: rgba(176, 18, 36, 0.72);
+  color: var(--dracula);
+}
+
+#screen-roles .roles-guide-card.role-theme-dracula {
+  --roles-guide-tint-a: rgba(198, 28, 46, 0.11);
+  --roles-guide-tint-b: rgba(18, 2, 4, 0.12);
+}
+
+#screen-roles .roles-guide-card.role-theme-dracula:hover {
+  box-shadow: 0 0 20px -10px rgba(164, 18, 34, 0.44);
+}
+
+#screen-roles .roles-guide-card.role-theme-dracula .roles-guide-ability-highlight {
+  color: hsl(356, 100%, 80%);
+}
+
+#screen-roles .roles-guide-card.role-theme-vampire,
+#screen-roles .roles-guide-card.role-theme-vampire .roles-guide-card-icon {
+  border-color: rgba(154, 18, 30, 0.72);
+  color: var(--vampire);
+}
+
+#screen-roles .roles-guide-card.role-theme-vampire {
+  --roles-guide-tint-a: rgba(170, 24, 38, 0.1);
+  --roles-guide-tint-b: rgba(16, 2, 4, 0.12);
+}
+
+#screen-roles .roles-guide-card.role-theme-vampire:hover {
+  box-shadow: 0 0 20px -10px rgba(148, 18, 30, 0.42);
+}
+
+#screen-roles .roles-guide-card.role-theme-vampire .roles-guide-ability-highlight {
+  color: hsl(356, 100%, 80%);
+}
+
 .search-target-role.role-theme-aceofblades { color: hsl(42, 100%, 78%); text-shadow: 0 0 12px rgba(228, 134, 78, 0.2); }
 .gameover-player-role.role-theme-aceofblades { color: hsl(42, 100%, 78%); }
 .search-target-role.role-theme-medium { color: var(--medium); text-shadow: 0 0 12px rgba(212, 118, 255, 0.18); }
@@ -10315,6 +10561,10 @@ body {
 .gameover-player-role.role-theme-psychopath { color: hsl(0, 100%, 78%); }
 .search-target-role.role-theme-devastator { color: hsl(24, 100%, 78%); text-shadow: 0 0 12px rgba(198, 62, 24, 0.22); }
 .gameover-player-role.role-theme-devastator { color: hsl(24, 100%, 78%); }
+.search-target-role.role-theme-dracula { color: hsl(356, 100%, 80%); text-shadow: 0 0 12px rgba(164, 18, 34, 0.22); }
+.gameover-player-role.role-theme-dracula { color: hsl(356, 100%, 80%); }
+.search-target-role.role-theme-vampire { color: hsl(356, 100%, 78%); text-shadow: 0 0 12px rgba(148, 18, 30, 0.2); }
+.gameover-player-role.role-theme-vampire { color: hsl(356, 100%, 78%); }
 
 .ace-wheel-panel {
   margin-top: 14px;

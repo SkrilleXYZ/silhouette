@@ -739,6 +739,35 @@
         },
       ],
     },
+    Dracula: {
+      faction: 'Neutral',
+      subfaction: 'Killing',
+      hiddenFromReveal: false,
+      description: 'Transform or kill players by biting them. Build a bloodline and outlive everyone else with your Vampire.',
+      revealText: 'Deep blood-red hunger crawls across a black horizon. Sire one loyal vampire, then drain the rest of the town dry together.',
+      abilities: [
+        {
+          name: 'Sire',
+          type: 'Night',
+          description: 'Transform or kill players by biting them. If the bitten player is a Crew member, they become a Vampire. If they are not Crew or there is already a Vampire alive, the bitten player dies. You can only have 1 Vampire at a time unless your current one dies.',
+        },
+      ],
+    },
+    Vampire: {
+      faction: 'Neutral',
+      subfaction: 'Killing',
+      hiddenFromGuide: false,
+      hiddenFromReveal: true,
+      description: 'Bite a player to kill them.',
+      revealText: 'Deep red hunger stains the dark. Feed beside Dracula until your bloodline is all that remains.',
+      abilities: [
+        {
+          name: 'Bite',
+          type: 'Night',
+          description: 'Bite a player to kill them.',
+        },
+      ],
+    },
     Jester: {
       faction: 'Neutral',
       subfaction: 'Evil',
@@ -1647,6 +1676,8 @@
     if (normalizedRole === 'prophet') return 'prophet';
     if (normalizedRole === 'wither') return 'wither';
     if (normalizedRole === 'pestilence' || normalizedRole === 'the pestilence') return 'pestilence';
+    if (normalizedRole === 'dracula') return 'dracula';
+    if (normalizedRole === 'vampire') return 'vampire';
     if (normalizedRole === 'alturist') return 'alturist';
     if (normalizedRole === 'the vessel') return 'vessel';
     if (normalizedRole === 'narcissist') return 'narcissist';
@@ -1713,6 +1744,14 @@
         textClass: 'nobody-text',
       };
     }
+    if (normalizedWinner === 'Bloodlust') {
+      return {
+        label: 'Bloodlust Victory',
+        glowClass: 'bloodlust-win',
+        textClass: 'bloodlust-text',
+        isSoloWin: true,
+      };
+    }
 
     const roleInfo = getRoleGuideDefinition(normalizedWinner);
     const themeClass = getRoleThemeClass(normalizedWinner, roleInfo?.faction || 'Neutral');
@@ -1747,6 +1786,13 @@
         glowBackground: 'rgba(190, 202, 220, 0.46)',
         titleColor: 'hsl(214, 24%, 84%)',
         titleShadow: '0 0 28px rgba(190, 202, 220, 0.22)',
+      };
+    }
+    if (normalizedWinner === 'Bloodlust') {
+      return {
+        glowBackground: 'linear-gradient(135deg, rgba(120, 0, 8, 0.96), rgba(18, 2, 4, 0.92))',
+        titleColor: 'hsl(356, 94%, 72%)',
+        titleShadow: '0 0 34px rgba(154, 12, 24, 0.34)',
       };
     }
 
@@ -1792,6 +1838,8 @@
       overload: { glowBackground: 'var(--overload)', titleColor: 'var(--overload)', titleShadow: '0 0 30px rgba(99, 255, 76, 0.24)' },
       arsonist: { glowBackground: 'var(--arsonist)', titleColor: 'var(--arsonist)', titleShadow: '0 0 30px rgba(255, 114, 52, 0.28)' },
       wither: { glowBackground: 'var(--wither)', titleColor: 'var(--wither)', titleShadow: '0 0 30px rgba(162, 24, 38, 0.3)' },
+      dracula: { glowBackground: 'linear-gradient(135deg, rgba(148, 10, 24, 0.96), rgba(16, 4, 6, 0.92))', titleColor: 'hsl(356, 100%, 78%)', titleShadow: '0 0 32px rgba(154, 16, 28, 0.34)' },
+      vampire: { glowBackground: 'linear-gradient(135deg, rgba(112, 8, 18, 0.96), rgba(12, 2, 4, 0.92))', titleColor: 'hsl(356, 100%, 76%)', titleShadow: '0 0 30px rgba(132, 12, 22, 0.32)' },
       pestilence: { glowBackground: 'var(--pestilence)', titleColor: 'var(--pestilence)', titleShadow: '0 0 30px rgba(122, 62, 214, 0.34)' },
       blackout: { glowBackground: 'var(--blackout)', titleColor: 'var(--blackout)', titleShadow: '0 0 28px rgba(112, 120, 136, 0.22)' },
       blackmailer: { glowBackground: 'var(--blackmailer)', titleColor: 'var(--blackmailer)', titleShadow: '0 0 30px rgba(226, 180, 76, 0.24)' },
@@ -1806,6 +1854,7 @@
     if (winningSide === 'Crew' && player.faction === 'Crew') return 'winner-crew';
     if (winningSide === 'Assassin' && player.faction === 'Assassin') return 'winner-assassin';
     if (winningSide === 'Nobody') return '';
+    if (winningSide === 'Bloodlust' && (player.role === 'Dracula' || player.role === 'Vampire')) return 'winner-dracula';
     if (winningSide === player.role) return `winner-${getRoleThemeClass(player.role, player.faction)}`;
     return '';
   }
@@ -1933,6 +1982,10 @@
       .replace(
         'at least 6 players',
         '<span class="roles-guide-ability-highlight">at least 6 players</span>'
+      )
+      .replace(
+        'Maximum 3 kills at once.',
+        '<span class="roles-guide-ability-highlight">Maximum 3 kills at once.</span>'
       )
       .replace(
         'get voted out.',
@@ -2424,6 +2477,8 @@
     if (/The Manipulator has played with the results\./i.test(text)) return 'summary-manipulator';
     if (/The Psychopath is plotting\./i.test(text)) return 'summary-psychopath';
     if (/The Devastator has strapped a player with dynamites\./i.test(text)) return 'summary-devastator';
+    if (/The Dracula is thirsty for blood\.?$/i.test(text)) return 'summary-dracula';
+    if (/A Vampire was hungry\./i.test(text)) return 'summary-vampire';
     if (/Pestilence became all powerful\./i.test(text)) return 'summary-pestilence';
     if (/had their places swapped by the Swapper\./i.test(text)) return 'summary-swapper';
     if (/used their gun/i.test(text)) return 'summary-shoot';
@@ -2599,6 +2654,12 @@
     }
     if (/The Devastator has strapped a player with dynamites\./i.test(text) && String(message.source || '').trim() === 'Devastator') {
       return ' system-result-devastator';
+    }
+    if ((/The Dracula is thirsty for blood\.?$/i.test(text) || /Your fangs have grown\.?$/i.test(text)) && String(message.source || '').trim() === 'Dracula') {
+      return ' system-result-dracula';
+    }
+    if (/A Vampire was hungry\./i.test(text) && String(message.source || '').trim() === 'Vampire') {
+      return ' system-result-vampire';
     }
     if (/Pestilence became all powerful\./i.test(text) && String(message.source || '').trim() === 'Pestilence') {
       return ' system-result-pestilence';
@@ -3321,6 +3382,7 @@
     const desc = document.getElementById('role-description');
     const teammates = document.getElementById('role-teammates');
     const teammatesList = document.getElementById('teammates-list');
+    const teammatesLabel = teammates?.querySelector('.teammates-label');
 
     if (isDead) {
       card.className = 'role-card dead';
@@ -3354,8 +3416,15 @@
       desc.textContent = getInGameRoleDescription(roleInfo);
     }
 
-    if (player.faction === 'Assassin' && player.teammates && player.teammates.length > 0) {
+    if ((player.faction === 'Assassin' || player.role === 'Dracula' || player.role === 'Vampire') && player.teammates && player.teammates.length > 0) {
       teammates.style.display = 'block';
+      if (teammatesLabel) {
+        teammatesLabel.textContent = player.role === 'Vampire'
+          ? 'Your Dracula:'
+          : player.role === 'Dracula'
+            ? 'Your Vampire:'
+            : 'Fellow Assassins:';
+      }
       teammatesList.innerHTML = player.teammates.map(t => `<span class="teammate-tag">${t.name} ${t.alive ? '' : '(Dead)'}</span>`).join('');
     } else {
       teammates.style.display = 'none';
@@ -3499,6 +3568,14 @@
         const isTeammate = state.playerData.teammates?.some(t => t.id === p.id);
         if (isTeammate) return false;
       }
+      if (activeRole === 'Dracula') {
+        const isBloodline = state.playerData.teammates?.some((t) => t.id === p.id);
+        if (isBloodline) return false;
+      }
+      if (activeRole === 'Vampire') {
+        const isBloodline = p.id === state.playerData.draculaMasterId || state.playerData.teammates?.some((t) => t.id === p.id);
+        if (isBloodline) return false;
+      }
       return true;
     }).map(p => ({ id: p.id, name: p.name, avatarIndex: p.avatarIndex, isJailed: !!p.isJailed }));
   }
@@ -3553,7 +3630,7 @@
     }
 
     playersList.innerHTML = players.map((p, index) => `
-      <div class="gameover-player ${(winningSide !== 'Nobody' && (narcissistWinnerIds.has(p.id) || survivalistWinnerIds.has(p.id) || guardianAngelWinnerIds.has(p.id) || (winningSide === 'Crew' && p.faction === 'Crew') || (winningSide === 'Assassin' && p.faction === 'Assassin') || winningSide === p.role)) ? 'won' : 'lost'}" style="--gameover-delay:${320 + (index * 60)}ms;">
+      <div class="gameover-player ${(winningSide !== 'Nobody' && (narcissistWinnerIds.has(p.id) || survivalistWinnerIds.has(p.id) || guardianAngelWinnerIds.has(p.id) || (winningSide === 'Crew' && p.faction === 'Crew') || (winningSide === 'Assassin' && p.faction === 'Assassin') || (winningSide === 'Bloodlust' && (p.role === 'Dracula' || p.role === 'Vampire')) || winningSide === p.role)) ? 'won' : 'lost'}" style="--gameover-delay:${320 + (index * 60)}ms;">
         <span class="gameover-player-name" style="${getPlayerChatStyle({ type: 'player', senderId: p.id, senderName: p.name, colorHex: p.colorHex || p.colorHue })}">${p.name}</span>
         <span class="gameover-player-role ${getRoleBadgeClass(p.role, p.faction)}">
           ${p.role}
@@ -4643,7 +4720,10 @@
       renderChatBox();
       return;
     }
-    const shouldUseExpandedSelfNightChat = activeRole === 'Veteran' || activeRole === 'Survivalist' || activeRole === 'Guardian Angel';
+    const shouldUseExpandedSelfNightChat = activeRole === 'Veteran'
+      || activeRole === 'Survivalist'
+      || activeRole === 'Guardian Angel'
+      || (activeRole === 'Blackout' && state.selectedAction === 'flash');
 
     if (
       player.role === 'Villager'
@@ -4895,6 +4975,14 @@
       state.selectedAction = 'kill';
     }
 
+    if (activeRole === 'Dracula' && !state.selectedAction) {
+      state.selectedAction = 'sire';
+    }
+
+    if (activeRole === 'Vampire') {
+      state.selectedAction = 'kill';
+    }
+
     if (activeRole === 'Officer') {
       if (officerHasPrisoner) {
         if (!officerVerdictAvailable) {
@@ -5000,6 +5088,11 @@
     } else if (activeRole === 'Alturist') {
       state.selectedAction = 'sacrifice';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="sacrifice">Sacrifice</button></div>';
+    } else if (activeRole === 'Dracula') {
+      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'sire' ? 'selected dracula-action' : ''}" data-action="sire">Sire</button><button class="action-btn ${state.selectedAction === 'kill' ? 'selected assassin-action dracula-kill-action' : ''}" data-action="kill">Kill</button></div>`;
+    } else if (activeRole === 'Vampire') {
+      state.selectedAction = 'kill';
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected vampire-action" data-action="kill">Bite</button></div>';
     } else if (activeRole === 'The Vessel') {
       state.selectedAction = 'kill';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="kill">Kill</button></div>';
@@ -5128,6 +5221,10 @@
     else if (activeRole === 'Psychopath') actionDesc = psychopathStoredKills > 0
       ? `You have ${psychopathStoredKills} stored kill${psychopathStoredKills === 1 ? '' : 's'}. Unleash up to ${psychopathKillsAvailable} kill${psychopathKillsAvailable === 1 ? '' : 's'} tonight, or skip to keep stacking.`
       : 'Skip tonight to stack a future kill, or strike now and stay on schedule.';
+    else if (activeRole === 'Dracula') actionDesc = state.selectedAction === 'sire'
+      ? 'Bite a player tonight. Crew become your Vampire if none is alive. Everyone else dies instead.'
+      : 'Abandon the bite and eliminate a player outright tonight.';
+    else if (activeRole === 'Vampire') actionDesc = 'Bite a player tonight and feed the bloodline beside Dracula.';
     else if (activeRole === 'Wither') actionDesc = 'Infect 1 player tonight. Infected players silently spread infection through future interactions.';
     else if (activeRole === 'Pestilence') actionDesc = 'You are immortal to every kill. Choose a player to eliminate tonight.';
     else if (activeRole === 'Blackmailer') actionDesc = state.selectedAction === 'blackmail'

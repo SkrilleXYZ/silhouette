@@ -18,7 +18,7 @@ class GameLogic {
       Neutral: {
         Evil: ['Jester', 'Executioner'],
         Benign: ['Amnesiac', 'Guardian Angel', 'Survivalist', 'Imitator'],
-        Killing: ['Overload', 'Arsonist', 'Wither'],
+        Killing: ['Overload', 'Arsonist', 'Wither', 'Dracula'],
       },
     };
   }
@@ -188,6 +188,7 @@ class GameLogic {
       psychopathStoredKills: 0,
       aceOfBladesKillsAvailable: 0,
       aceOfBladesRollNightNumber: 0,
+      draculaMasterId: null,
       mayorStoredVotes: 0,
       mediumMediateUsesRemaining: 3,
       alturistReviveTargetId: null,
@@ -251,6 +252,7 @@ class GameLogic {
       psychopathStoredKills: 0,
       aceOfBladesKillsAvailable: 0,
       aceOfBladesRollNightNumber: 0,
+      draculaMasterId: null,
       mayorStoredVotes: 0,
       mediumMediateUsesRemaining: 3,
       alturistReviveTargetId: null,
@@ -350,6 +352,19 @@ class GameLogic {
     if (role === 'Ace of Blades') return playerCount >= 8;
     if (role === 'Sniper') return playerCount >= 6;
     return true;
+  }
+
+  isBloodlustRole(role) {
+    return role === 'Dracula' || role === 'Vampire';
+  }
+
+  getLivingVampireForDracula(room, draculaId) {
+    if (!room || !draculaId) return null;
+    return Array.from(room.players.values()).find((player) => (
+      player?.alive
+      && player.role === 'Vampire'
+      && player.draculaMasterId === draculaId
+    )) || null;
   }
 
   getRolePoolForRoom(room, faction, subfaction) {
@@ -828,6 +843,7 @@ class GameLogic {
     player.psychopathStoredKills = target.role === 'Psychopath' ? Math.max(0, target.psychopathStoredKills ?? 0) : 0;
     player.aceOfBladesKillsAvailable = target.role === 'Ace of Blades' ? Math.max(0, target.aceOfBladesKillsAvailable ?? 0) : 0;
     player.aceOfBladesRollNightNumber = target.role === 'Ace of Blades' ? (target.aceOfBladesRollNightNumber || 0) : 0;
+    player.draculaMasterId = target.role === 'Vampire' ? (target.draculaMasterId || null) : null;
     player.arsonistDousedTargetIds = target.role === 'Arsonist' ? (Array.isArray(target.arsonistDousedTargetIds) ? [...target.arsonistDousedTargetIds] : []) : [];
 
     return { success: true, player };
@@ -867,6 +883,7 @@ class GameLogic {
       psychopathStoredKills: Math.max(0, player.psychopathStoredKills ?? 0),
       aceOfBladesKillsAvailable: Math.max(0, player.aceOfBladesKillsAvailable ?? 0),
       aceOfBladesRollNightNumber: player.aceOfBladesRollNightNumber || 0,
+      draculaMasterId: player.draculaMasterId || null,
       alturistReviveTargetId: player.alturistReviveTargetId || null,
       scientistExperimentUsesRemaining: player.scientistExperimentUsesRemaining ?? 1,
       scientistSwapTargetIds: Array.isArray(player.scientistSwapTargetIds) ? [...player.scientistSwapTargetIds] : [],
@@ -913,6 +930,7 @@ class GameLogic {
       psychopathStoredKills: Math.max(0, roleState.psychopathStoredKills ?? 0),
       aceOfBladesKillsAvailable: Math.max(0, roleState.aceOfBladesKillsAvailable ?? 0),
       aceOfBladesRollNightNumber: roleState.aceOfBladesRollNightNumber || 0,
+      draculaMasterId: roleState.draculaMasterId || null,
       alturistReviveTargetId: roleState.alturistReviveTargetId,
       scientistExperimentUsesRemaining: roleState.scientistExperimentUsesRemaining,
       scientistSwapTargetIds: Array.isArray(roleState.scientistSwapTargetIds) ? [...roleState.scientistSwapTargetIds] : [],
@@ -1152,6 +1170,7 @@ class GameLogic {
       player.psychopathStoredKills = 0;
       player.aceOfBladesKillsAvailable = 0;
       player.aceOfBladesRollNightNumber = 0;
+      player.draculaMasterId = null;
       player.mayorStoredVotes = 0;
       player.mediumMediateUsesRemaining = 3;
       player.alturistReviveTargetId = null;
@@ -1606,6 +1625,29 @@ class GameLogic {
       if (existingAction.action === 'kill' && existingAction.targetId === targetId) {
         return { error: 'You already chose that kill target tonight' };
       }
+    } else if (activeRole === 'Dracula') {
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
+      if (action !== 'sire' && action !== 'kill') return { error: 'Invalid action for Dracula' };
+      if (targetId === playerId) return { error: 'Cannot target yourself' };
+      if (target.role === 'Vampire' && target.draculaMasterId === playerId) {
+        return { error: 'Cannot target your Vampire' };
+      }
+      if (action === 'kill' && target.role === 'Vampire') {
+        return { error: 'Cannot target your bloodline' };
+      }
+      if (action === 'sire' && target.role === 'Vampire') {
+        return { error: 'Cannot sire your bloodline' };
+      }
+    } else if (activeRole === 'Vampire') {
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
+      if (action !== 'kill') return { error: 'Invalid action for Vampire' };
+      if (targetId === playerId) return { error: 'Cannot target yourself' };
+      if (target.id === player.draculaMasterId) return { error: 'Cannot target Dracula' };
+      if (target.role === 'Vampire' && target.draculaMasterId === player.draculaMasterId) {
+        return { error: 'Cannot target your bloodline' };
+      }
     } else if (activeRole === 'Blackout') {
       const existingAction = room.nightActions[playerId] || {};
       if (action === 'flash') {
@@ -1715,6 +1757,13 @@ class GameLogic {
         queuedTargetId: null,
       };
     } else if (activeRole === 'Pestilence') {
+      room.nightActions[playerId] = {
+        action,
+        targetId,
+        submittedAt: Date.now(),
+        queuedTargetId: null,
+      };
+    } else if (activeRole === 'Dracula' || activeRole === 'Vampire') {
       room.nightActions[playerId] = {
         action,
         targetId,
@@ -2111,6 +2160,24 @@ class GameLogic {
       if (!actorId || veteranCounterKilledActors.has(actorId)) return;
       veteranCounterKilledActors.add(actorId);
       killed.add(actorId);
+    };
+    const convertToVampire = (targetPlayer, draculaId) => {
+      if (!targetPlayer || !draculaId) return false;
+      targetPlayer.role = 'Vampire';
+      targetPlayer.faction = 'Neutral';
+      targetPlayer.draculaMasterId = draculaId;
+      targetPlayer.executionerTargetId = null;
+      targetPlayer.guardianAngelTargetId = null;
+      targetPlayer.officerJailedTargetId = null;
+      targetPlayer.officerJailNightNumber = 0;
+      targetPlayer.inquisitorExiledTargetId = null;
+      targetPlayer.inquisitorExileUsed = false;
+      targetPlayer.alturistReviveTargetId = null;
+      targetPlayer.witherInfected = false;
+      targetPlayer.imitatorCopiedRole = null;
+      targetPlayer.imitatorCopiedSourceId = null;
+      targetPlayer.imitatorCycleTargetIds = [];
+      return true;
     };
     const pushWardenBlockedMessage = (actorId) => {
       if (!actorId || wardenBlockedActors.has(actorId)) return;
@@ -2735,6 +2802,40 @@ class GameLogic {
       }
     }
 
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      const activeRole = this.getEffectiveNightRole(player);
+      if (!player || activeRole !== 'Dracula') continue;
+      if (isSuppressedByPurge(player)) continue;
+      if (disabledAbilityTargets.has(playerId) || veteranCounterKilledActors.has(playerId)) continue;
+      if (action.action !== 'sire' || !action.targetId) continue;
+
+      const target = room.players.get(action.targetId);
+      if (!target || !target.alive || target.id === playerId) continue;
+      if (target.role === 'Vampire' && target.draculaMasterId === playerId) continue;
+      if (veteranAlertIds.has(target.id)) {
+        killed.add(playerId);
+        continue;
+      }
+      if (protected_.has(target.id) || blessedTargets.has(target.id) || lifeguardedTargets.has(target.id) || mirroredTargets.has(target.id)) {
+        continue;
+      }
+
+      const livingVampire = this.getLivingVampireForDracula(room, playerId);
+      if (target.faction === 'Crew' && !livingVampire) {
+        if (convertToVampire(target, playerId)) {
+          if (!privateMessages[target.id]) privateMessages[target.id] = [];
+          privateMessages[target.id].push(
+            this.createPrivateSystemMessage(code, 'Your fangs have grown', 'Dracula')
+          );
+        }
+      } else {
+        killed.add(target.id);
+        killersThisNight.add(playerId);
+        registerKillAttribution(target.id, playerId);
+      }
+    }
+
     const strappedTargets = new Map();
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
@@ -2996,7 +3097,7 @@ class GameLogic {
       if (isSuppressedByPurge(player)) continue;
       if (disabledAbilityTargets.has(playerId)) continue;
 
-      if (action.action === 'kill' && (activeRole === 'Assassin' || activeRole === 'Traitor') && action.targetId) {
+      if (action.action === 'kill' && (activeRole === 'Assassin' || activeRole === 'Traitor' || activeRole === 'Dracula' || activeRole === 'Vampire') && action.targetId) {
         if (veteranAlertIds.has(action.targetId)) {
           killed.add(playerId);
         } else if (mirroredTargets.has(action.targetId)) {
@@ -4802,6 +4903,7 @@ class GameLogic {
     let aliveNeutralEvilCount = 0;
     let aliveNeutralKillingCount = 0;
     let aliveNeutralKillingRoles = [];
+    let aliveBloodlustCount = 0;
     let totalAliveCount = 0;
 
     for (const [, player] of room.players) {
@@ -4810,6 +4912,7 @@ class GameLogic {
       if (player.faction === 'Crew') aliveCrewCount++;
       else if (player.faction === 'Assassin') aliveAssassinCount++;
       else if (player.faction === 'Neutral' && this.roleCatalog?.Neutral?.Evil?.includes(player.role)) aliveNeutralEvilCount++;
+      else if (this.isBloodlustRole(player.role)) aliveBloodlustCount++;
       else if (player.faction === 'Neutral' && (this.roleCatalog?.Neutral?.Killing?.includes(player.role) || player.role === 'Pestilence')) {
         aliveNeutralKillingCount++;
         aliveNeutralKillingRoles.push(player.role);
@@ -4824,6 +4927,9 @@ class GameLogic {
       if (soleSurvivor?.role === 'Wither') {
         return { winner: 'Nobody', reason: 'Wither outlived everyone, but never became Pestilence.' };
       }
+      if (this.isBloodlustRole(soleSurvivor?.role)) {
+        return { winner: 'Bloodlust', reason: 'The bloodline is the last one standing.' };
+      }
     }
 
     // If the last remaining real contenders wipe each other out at once,
@@ -4834,7 +4940,11 @@ class GameLogic {
 
     // Neutral killers still win even if a living Guardian Angel is tied to them.
     // That Guardian Angel is treated as a co-winner, not a blocker the killer has to eliminate.
-    if (aliveNeutralKillingCount > 0 && aliveCrewCount === 0 && aliveAssassinCount === 0 && aliveNeutralEvilCount === 0) {
+    if (aliveBloodlustCount > 0 && aliveCrewCount === 0 && aliveAssassinCount === 0 && aliveNeutralEvilCount === 0 && aliveNeutralKillingCount === 0) {
+      return this.withNarcissistCoWinners(room, this.withNeutralBenignCoWinners(room, this.withGuardianAngelCoWinners(room, { winner: 'Bloodlust', reason: 'Dracula and the Vampire have drowned the town in blood.' })));
+    }
+
+    if (aliveNeutralKillingCount > 0 && aliveCrewCount === 0 && aliveAssassinCount === 0 && aliveNeutralEvilCount === 0 && aliveBloodlustCount === 0) {
       if (aliveNeutralKillingRoles.every((role) => role === 'Wither')) {
         return { winner: 'Nobody', reason: 'Wither never became Pestilence before everyone else fell.' };
       }
@@ -4842,11 +4952,11 @@ class GameLogic {
       return this.withNarcissistCoWinners(room, this.withNeutralBenignCoWinners(room, this.withGuardianAngelCoWinners(room, { winner: neutralKillingWinner, reason: `${neutralKillingWinner} has outlived everyone else!` })));
     }
 
-    if (aliveAssassinCount === 0 && aliveNeutralKillingCount === 0) {
+    if (aliveAssassinCount === 0 && aliveNeutralKillingCount === 0 && aliveBloodlustCount === 0) {
       return this.withNarcissistCoWinners(room, this.withNeutralBenignCoWinners(room, this.withGuardianAngelCoWinners(room, { winner: 'Crew', reason: 'All hostile factions have been eliminated!' })));
     }
 
-    if (aliveAssassinCount >= aliveCrewCount) {
+    if (aliveAssassinCount >= aliveCrewCount && aliveBloodlustCount === 0) {
       return this.withNarcissistCoWinners(room, this.withNeutralBenignCoWinners(room, this.withGuardianAngelCoWinners(room, { winner: 'Assassin', reason: 'Assassins have taken control!' })));
     }
 
@@ -4866,6 +4976,7 @@ class GameLogic {
         if (!target || !target.alive) return false;
         if (baseWinner === 'Crew') return target.faction === 'Crew';
         if (baseWinner === 'Assassin') return target.faction === 'Assassin';
+        if (baseWinner === 'Bloodlust') return this.isBloodlustRole(target.role);
         return target.role === baseWinner;
       })
       .map((player) => player.id);
@@ -5005,6 +5116,7 @@ class GameLogic {
     if (action === 'detain') return 'The Officer has arrested someone.';
     if (action === 'mediate') return 'The Medium is hearing things.';
     if (action === 'demolish') return 'The Devastator has strapped a player with dynamites.';
+    if (action === 'sire') return 'The Dracula is thirsty for blood';
     if (action === 'sacrifice') return 'The Alturist has sacrificed themselves.';
     if (action === 'mimic') return 'Imitator has shifted abilities.';
     if (action === 'inherit') return 'Amnesiac has claimed a forgotten role.';
@@ -5027,6 +5139,7 @@ class GameLogic {
     if (action === 'interlinked') return 'Tetherhex has forged a lethal bond.';
     if (action === 'kill') {
       if (activeRole === 'Psychopath') return 'The Psychopath is plotting.';
+      if (activeRole === 'Vampire') return 'A Vampire was hungry.';
       if (activeRole === 'The Vessel') return 'The Vessel has taken revenge.';
       return 'An Assassin has moved through the shadows.';
     }
@@ -5299,6 +5412,17 @@ class GameLogic {
           teammates.push({ id, name: p.name, alive: p.alive });
         }
       }
+    } else if (room.state !== 'lobby' && player.role === 'Dracula') {
+      for (const [id, p] of room.players) {
+        if (id !== playerId && p.role === 'Vampire' && p.draculaMasterId === playerId) {
+          teammates.push({ id, name: p.name, alive: p.alive });
+        }
+      }
+    } else if (room.state !== 'lobby' && player.role === 'Vampire' && player.draculaMasterId) {
+      const dracula = room.players.get(player.draculaMasterId);
+      if (dracula) {
+        teammates.push({ id: dracula.id, name: dracula.name, alive: dracula.alive });
+      }
     }
 
     const activeRole = this.getEffectiveNightRole(player);
@@ -5334,6 +5458,7 @@ class GameLogic {
         : (player.role === 'Mayor' && typeof room.votes[playerId] === 'string' && room.votes[playerId] !== 'skip' ? 1 : 0),
       lawyerStoredVotes: player.role === 'Lawyer' ? Math.max(0, player.lawyerStoredVotes ?? 0) : 0,
       mediumMediateUsesRemaining: activeRole === 'Medium' ? (player.mediumMediateUsesRemaining ?? 3) : null,
+      draculaMasterId: player.role === 'Vampire' ? (player.draculaMasterId || null) : null,
       abyssAvailable: this.canUseAbyssChat(room, playerId),
       lawyerObjectionUsesRemaining: player.role === 'Lawyer' ? (player.lawyerObjectionUsesRemaining ?? 2) : null,
       lawyerProtectedTargetId: player.role === 'Lawyer' ? (player.lawyerProtectedTargetId || null) : null,
