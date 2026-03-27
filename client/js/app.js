@@ -195,6 +195,8 @@
     Medium: {
       faction: 'Crew',
       subfaction: 'Unbound',
+      hiddenFromGuide: false,
+      hiddenFromReveal: false,
       description: 'Allows you to talk to the dead by switching dimensions. Can be used 3 times.',
       revealText: 'Lavender and magenta drift across the veil. Slip into the Abyss and speak with the dead before dawn closes it again.',
       abilities: [
