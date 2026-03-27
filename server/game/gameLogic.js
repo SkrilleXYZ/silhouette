@@ -11,7 +11,7 @@ class GameLogic {
         Unbound: ['Narcissist', 'Inquisitor', 'Alturist', 'The Vessel', 'Karma', 'Mayor', 'Medium'],
       },
       Assassin: {
-        Power: ['Assassin', 'Psychopath', 'Ace of Blades', 'Sniper', 'Tetherhex'],
+        Power: ['Assassin', 'Psychopath', 'Devastator', 'Ace of Blades', 'Sniper', 'Tetherhex'],
         Concealing: ['Hypnotic', 'Blackout', 'Blackmailer', 'The Purge'],
         Support: ['Disruptor', 'Manipulator', 'Prophet'],
       },
@@ -346,6 +346,7 @@ class GameLogic {
   isRoleAvailableForPlayerCount(room, role) {
     const playerCount = room?.players?.size || 0;
     if (role === 'Psychopath') return playerCount >= 6;
+    if (role === 'Devastator') return playerCount >= 6;
     if (role === 'Ace of Blades') return playerCount >= 8;
     if (role === 'Sniper') return playerCount >= 6;
     return true;
@@ -1447,6 +1448,15 @@ class GameLogic {
       if (this.hasSubmittedAssassinKill(room, playerId)) return { error: 'Another assassin has already chosen the kill tonight' };
       if (player.faction === 'Assassin' && target.faction === 'Assassin') return { error: 'Cannot kill teammates' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
+    } else if (activeRole === 'Devastator') {
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
+      if (action !== 'kill' && action !== 'demolish') return { error: 'Invalid action for Devastator' };
+      if (targetId === playerId) return { error: 'Cannot target yourself' };
+      if (target.faction === 'Assassin') return { error: 'Cannot target teammates' };
+      if (action === 'kill') {
+        if (this.hasSubmittedAssassinKill(room, playerId)) return { error: 'Another assassin has already chosen the kill tonight' };
+      }
     } else if (activeRole === 'Psychopath') {
       const availableKillCount = Math.max(1, Math.min(3, 1 + Math.max(0, Number(player.psychopathStoredKills) || 0)));
       const normalizedTargetIds = Array.isArray(targetIds)
@@ -1770,6 +1780,13 @@ class GameLogic {
       if (action === 'detain' && targetId) {
         return { success: true, room, immediateJailTargetId: targetId };
       }
+    } else if (activeRole === 'Devastator') {
+      room.nightActions[playerId] = {
+        action,
+        targetId,
+        submittedAt: Date.now(),
+        queuedTargetId: null,
+      };
     } else if (activeRole === 'Psychopath') {
       const normalizedTargetIds = Array.isArray(targetIds)
         ? [...new Set(targetIds.map((id) => String(id || '').trim()).filter(Boolean))]
@@ -2715,6 +2732,61 @@ class GameLogic {
           targetId: action.queuedTargetId,
           roundsRemaining: 2,
         });
+      }
+    }
+
+    const strappedTargets = new Map();
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      const activeRole = this.getEffectiveNightRole(player);
+      if (!player || activeRole !== 'Devastator') continue;
+      if (isSuppressedByPurge(player)) continue;
+      if (disabledAbilityTargets.has(playerId) || veteranCounterKilledActors.has(playerId)) continue;
+      if (action.action !== 'demolish' || !action.targetId) continue;
+      if (protected_.has(action.targetId) || blessedTargets.has(action.targetId) || mirroredTargets.has(action.targetId)) {
+        continue;
+      }
+      strappedTargets.set(action.targetId, playerId);
+    }
+
+    const demolitionVisitorsByTarget = new Map();
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      const activeRole = this.getEffectiveNightRole(player);
+      if (!player || !player.alive) continue;
+      if (isSuppressedByPurge(player)) continue;
+      if (disabledAbilityTargets.has(playerId) || veteranCounterKilledActors.has(playerId)) continue;
+      if (activeRole === 'Devastator' && action.action === 'demolish') continue;
+
+      const interactionTargetIds = getInteractionTargetIds(action);
+      if (action.action === 'longshot' && action.queuedTargetId) {
+        interactionTargetIds.push(action.queuedTargetId);
+      }
+      const guardianTargetId = this.getGuardianBlessTargetId(room, player);
+      if (activeRole === 'Guardian Angel' && action.action === 'bless' && guardianTargetId && !action.blessBlockedByWarden && !action.blessBlockedBySpoof) {
+        interactionTargetIds.push(remapTeleportedTargetId(guardianTargetId));
+      }
+
+      for (const targetId of [...new Set(interactionTargetIds.filter(Boolean))]) {
+        if (!strappedTargets.has(targetId)) continue;
+        if (!demolitionVisitorsByTarget.has(targetId)) demolitionVisitorsByTarget.set(targetId, new Set());
+        demolitionVisitorsByTarget.get(targetId).add(playerId);
+      }
+    }
+
+    for (const [targetId, visitorIds] of demolitionVisitorsByTarget.entries()) {
+      if (!visitorIds?.size) continue;
+      const devastatorId = strappedTargets.get(targetId);
+      killed.add(targetId);
+      if (devastatorId) {
+        killersThisNight.add(devastatorId);
+        killAttributions.set(targetId, devastatorId);
+      }
+      for (const visitorId of visitorIds) {
+        killed.add(visitorId);
+        if (devastatorId) {
+          killAttributions.set(visitorId, devastatorId);
+        }
       }
     }
 
@@ -4916,7 +4988,7 @@ class GameLogic {
     const actor = playerId ? room.players.get(playerId) : null;
     const activeRole = actor ? this.getEffectiveNightRole(actor) : null;
 
-    if (room.hiddenRoleList) {
+    if (room.hiddenRoleList && room.state === 'night') {
       if (action === 'skip') return null;
       return 'A player used their ability.';
     }
@@ -4932,6 +5004,7 @@ class GameLogic {
     if (action === 'guard') return 'Warden has guarded someone.';
     if (action === 'detain') return 'The Officer has arrested someone.';
     if (action === 'mediate') return 'The Medium is hearing things.';
+    if (action === 'demolish') return 'The Devastator has strapped a player with dynamites.';
     if (action === 'sacrifice') return 'The Alturist has sacrificed themselves.';
     if (action === 'mimic') return 'Imitator has shifted abilities.';
     if (action === 'inherit') return 'Amnesiac has claimed a forgotten role.';

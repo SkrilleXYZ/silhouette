@@ -121,6 +121,9 @@
   --psychopath: hsl(0, 100%, 66%);
   --psychopath-dim: hsl(0, 64%, 16%);
   --psychopath-glow: hsla(0, 100%, 60%, 0.4);
+  --devastator: hsl(24, 100%, 64%);
+  --devastator-dim: hsl(10, 68%, 16%);
+  --devastator-glow: hsla(16, 100%, 58%, 0.38);
   --sniper: hsl(0, 62%, 44%);
   --sniper-dim: hsl(0, 44%, 16%);
   --sniper-glow: hsla(0, 62%, 44%, 0.28);
@@ -3011,6 +3014,7 @@ body {
 .role-card.assassin.role-theme-disruptor .role-faction { color: var(--disruptor); }
 .role-card.assassin.role-theme-manipulator .role-faction { color: var(--manipulator); }
 .role-card.assassin.role-theme-psychopath .role-faction { color: var(--psychopath); }
+.role-card.assassin.role-theme-devastator .role-faction { color: var(--devastator); }
 .role-card.assassin.role-theme-sniper .role-faction { color: var(--sniper); }
 .role-card.assassin.role-theme-tetherhex .role-faction { color: var(--tetherhex); }
 .role-card.assassin.role-theme-hypnotic .role-faction { color: var(--hypnotic); }
@@ -4878,6 +4882,18 @@ body {
 
 .action-btn.psychopath-action.selected::before {
   background: linear-gradient(115deg, transparent, rgba(255, 188, 188, 0.34), transparent);
+  animation: searchSweep 1.1s linear infinite;
+}
+
+.action-btn[data-action="demolish"].selected {
+  border-color: var(--devastator);
+  color: hsl(24, 100%, 92%);
+  background: linear-gradient(135deg, rgba(104, 36, 10, 0.98), rgba(56, 12, 8, 0.98) 54%, rgba(138, 24, 18, 0.96));
+  box-shadow: 0 0 18px var(--devastator-glow), inset 0 0 0 1px rgba(255, 214, 180, 0.06);
+}
+
+.action-btn[data-action="demolish"].selected::before {
+  background: linear-gradient(115deg, transparent, rgba(255, 212, 170, 0.32), transparent);
   animation: searchSweep 1.1s linear infinite;
 }
 
@@ -7160,6 +7176,29 @@ body {
   text-shadow: 0 1px 8px rgba(255, 176, 186, 0.12);
 }
 
+.chat-message.system.system-result-devastator {
+  border-color: rgba(255, 118, 68, 0.46);
+  background:
+    radial-gradient(circle at 84% 18%, rgba(255, 232, 208, 0.14), transparent 16%),
+    radial-gradient(circle at 18% 110%, rgba(154, 28, 16, 0.24), transparent 42%),
+    linear-gradient(135deg, rgba(52, 16, 6, 0.98), rgba(110, 36, 8, 0.95) 42%, rgba(114, 18, 14, 0.94) 100%);
+  box-shadow: 0 0 18px rgba(182, 58, 22, 0.2);
+}
+
+.chat-message.system.system-result-devastator::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(255, 206, 162, 0.08), rgba(255, 94, 56, 0.12) 46%, transparent 82%);
+  pointer-events: none;
+}
+
+.chat-message.system.system-result-devastator .chat-message-meta,
+.chat-message.system.system-result-devastator .chat-message-text {
+  color: hsl(24, 100%, 94%);
+  text-shadow: 0 1px 8px rgba(255, 204, 166, 0.12);
+}
+
 .chat-message.system.system-result-pestilence {
   border-color: rgba(162, 92, 255, 0.48);
   background:
@@ -7577,6 +7616,15 @@ body {
   border-color: rgba(255, 82, 96, 0.44);
   color: hsl(0, 100%, 96%);
   box-shadow: inset 0 1px 0 rgba(255, 198, 204, 0.08), 0 0 0 1px rgba(255, 82, 96, 0.08);
+}
+
+.chat-summary-line.summary-devastator {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(255, 226, 194, 0.16), transparent 18%),
+    linear-gradient(135deg, rgba(50, 14, 6, 0.96), rgba(112, 34, 8, 0.94) 38%, rgba(124, 18, 14, 0.9));
+  border-color: rgba(255, 118, 68, 0.44);
+  color: hsl(24, 100%, 95%);
+  box-shadow: inset 0 1px 0 rgba(255, 214, 186, 0.08), 0 0 0 1px rgba(255, 118, 68, 0.08);
 }
 
 .chat-summary-line.summary-swapper {
@@ -9997,6 +10045,17 @@ body {
   text-shadow: 0 0 18px rgba(255, 82, 96, 0.18);
 }
 
+.role-card.role-theme-devastator .role-card-glow { background: radial-gradient(circle, rgba(255, 146, 82, 0.86) 0%, rgba(176, 42, 16, 0.42) 42%, transparent 76%); }
+.role-card.role-theme-devastator .role-card-inner { border-color: rgba(255, 122, 74, 0.42); box-shadow: inset 0 0 0 1px rgba(255, 220, 188, 0.08), 0 0 24px rgba(142, 34, 18, 0.2); }
+.role-card.role-theme-devastator .role-faction { color: var(--devastator); }
+.role-card.role-theme-devastator .role-divider { background: linear-gradient(90deg, rgba(255, 230, 196, 0.98), rgba(255, 152, 74, 0.94) 42%, rgba(214, 42, 24, 0.96) 100%); }
+.role-card.role-theme-devastator .role-name {
+  background: linear-gradient(90deg, hsl(34, 100%, 90%), hsl(22, 100%, 66%) 46%, hsl(4, 84%, 56%) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 18px rgba(255, 132, 62, 0.2);
+}
+
 .role-reveal-panel.role-theme-medium {
   border-color: rgba(212, 118, 255, 0.44);
   background:
@@ -10011,6 +10070,13 @@ body {
     linear-gradient(180deg, rgba(42, 6, 12, 0.96), rgba(12, 6, 10, 0.98));
 }
 
+.role-reveal-panel.role-theme-devastator {
+  border-color: rgba(255, 122, 74, 0.44);
+  background:
+    radial-gradient(circle at top, rgba(255, 156, 86, 0.18), transparent 36%),
+    linear-gradient(180deg, rgba(46, 14, 8, 0.96), rgba(14, 8, 8, 0.98));
+}
+
 .role-reveal-panel.role-theme-medium.settled {
   box-shadow:
     0 0 0 1px rgba(212, 118, 255, 0.08),
@@ -10023,6 +10089,12 @@ body {
     0 28px 70px -36px rgba(124, 8, 24, 0.38);
 }
 
+.role-reveal-panel.role-theme-devastator.settled {
+  box-shadow:
+    0 0 0 1px rgba(255, 122, 74, 0.08),
+    0 28px 70px -36px rgba(146, 32, 18, 0.38);
+}
+
 .role-reveal-item.role-theme-medium.is-selected {
   border-color: rgba(228, 136, 255, 0.64);
   box-shadow: 0 0 18px rgba(212, 118, 255, 0.22);
@@ -10031,6 +10103,11 @@ body {
 .role-reveal-item.role-theme-psychopath.is-selected {
   border-color: rgba(255, 104, 116, 0.64);
   box-shadow: 0 0 18px rgba(182, 12, 32, 0.24);
+}
+
+.role-reveal-item.role-theme-devastator.is-selected {
+  border-color: rgba(255, 144, 82, 0.64);
+  box-shadow: 0 0 18px rgba(198, 62, 24, 0.24);
 }
 
 .role-reveal-item.role-theme-medium .role-reveal-name,
@@ -10043,6 +10120,11 @@ body {
   color: var(--psychopath);
 }
 
+.role-reveal-item.role-theme-devastator .role-reveal-name,
+.role-reveal-item.role-theme-devastator .role-reveal-faction {
+  color: var(--devastator);
+}
+
 .role-reveal-result.role-theme-medium strong {
   color: var(--medium);
   text-shadow: 0 0 18px rgba(212, 118, 255, 0.2);
@@ -10051,6 +10133,11 @@ body {
 .role-reveal-result.role-theme-psychopath strong {
   color: var(--psychopath);
   text-shadow: 0 0 18px rgba(182, 12, 32, 0.22);
+}
+
+.role-reveal-result.role-theme-devastator strong {
+  color: var(--devastator);
+  text-shadow: 0 0 18px rgba(198, 62, 24, 0.22);
 }
 
 .role-card.role-theme-officer .role-card-glow { background: radial-gradient(circle, rgba(112, 190, 255, 0.82) 0%, rgba(42, 92, 176, 0.24) 42%, transparent 76%); }
@@ -10138,6 +10225,12 @@ body {
   box-shadow: 0 0 16px rgba(188, 18, 38, 0.18);
 }
 
+.gpl-role.role-theme-devastator {
+  background: linear-gradient(135deg, rgba(56, 18, 8, 0.96), rgba(124, 42, 14, 0.92));
+  color: hsl(24, 100%, 86%);
+  box-shadow: 0 0 16px rgba(198, 62, 24, 0.18);
+}
+
 #screen-roles .roles-guide-card.role-theme-aceofblades,
 #screen-roles .roles-guide-card.role-theme-aceofblades .roles-guide-card-icon {
   border-color: rgba(222, 148, 82, 0.72);
@@ -10195,12 +10288,33 @@ body {
   color: hsl(0, 100%, 78%);
 }
 
+#screen-roles .roles-guide-card.role-theme-devastator,
+#screen-roles .roles-guide-card.role-theme-devastator .roles-guide-card-icon {
+  border-color: rgba(255, 122, 74, 0.72);
+  color: var(--devastator);
+}
+
+#screen-roles .roles-guide-card.role-theme-devastator {
+  --roles-guide-tint-a: rgba(255, 156, 86, 0.11);
+  --roles-guide-tint-b: rgba(132, 24, 12, 0.1);
+}
+
+#screen-roles .roles-guide-card.role-theme-devastator:hover {
+  box-shadow: 0 0 20px -10px rgba(198, 62, 24, 0.44);
+}
+
+#screen-roles .roles-guide-card.role-theme-devastator .roles-guide-ability-highlight {
+  color: hsl(24, 100%, 78%);
+}
+
 .search-target-role.role-theme-aceofblades { color: hsl(42, 100%, 78%); text-shadow: 0 0 12px rgba(228, 134, 78, 0.2); }
 .gameover-player-role.role-theme-aceofblades { color: hsl(42, 100%, 78%); }
 .search-target-role.role-theme-medium { color: var(--medium); text-shadow: 0 0 12px rgba(212, 118, 255, 0.18); }
 .gameover-player-role.role-theme-medium { color: var(--medium); }
 .search-target-role.role-theme-psychopath { color: hsl(0, 100%, 78%); text-shadow: 0 0 12px rgba(188, 18, 38, 0.22); }
 .gameover-player-role.role-theme-psychopath { color: hsl(0, 100%, 78%); }
+.search-target-role.role-theme-devastator { color: hsl(24, 100%, 78%); text-shadow: 0 0 12px rgba(198, 62, 24, 0.22); }
+.gameover-player-role.role-theme-devastator { color: hsl(24, 100%, 78%); }
 
 .ace-wheel-panel {
   margin-top: 14px;

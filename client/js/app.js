@@ -464,6 +464,24 @@
         },
       ],
     },
+    Devastator: {
+      faction: 'Assassin',
+      subfaction: 'Power',
+      description: 'Strap a player with dynamites that explodes and kills whoever interacts with them that night along with the victim, or eliminate a player.',
+      revealText: 'Orange heat bleeds into red ruin. Strap the room with buried dynamite, then wait for one careless touch to blow the night open.',
+      abilities: [
+        {
+          name: 'Demolish',
+          type: 'Night',
+          description: 'Strap a player with dynamites that explodes and kills whoever interacts with them that night along with the victim.',
+        },
+        {
+          name: 'Kill',
+          type: 'Night',
+          description: 'Eliminate a player.',
+        },
+      ],
+    },
     'Ace of Blades': {
       faction: 'Assassin',
       subfaction: 'Power',
@@ -1644,6 +1662,7 @@
     if (normalizedRole === 'silencer') return 'silencer';
     if (normalizedRole === 'assassin') return 'assassin';
     if (normalizedRole === 'psychopath') return 'psychopath';
+    if (normalizedRole === 'devastator') return 'devastator';
     if (normalizedRole === 'ace of blades') return 'aceofblades';
     if (normalizedRole === 'traitor') return 'traitor';
     if (normalizedRole === 'sniper') return 'sniper';
@@ -2026,6 +2045,7 @@
     const roles = Object.entries(ROLE_DEFINITIONS)
       .filter(([role]) => !(state.roomData?.disableVillagerRole && role === 'Villager'))
       .filter(([role]) => role !== 'Psychopath' || roomPlayerCount >= 6)
+      .filter(([role]) => role !== 'Devastator' || roomPlayerCount >= 6)
       .filter(([role]) => role !== 'Ace of Blades' || roomPlayerCount >= 8)
       .filter(([role]) => role !== 'Sniper' || roomPlayerCount >= 6)
       .filter(([, roleInfo]) => !roleInfo.hiddenFromReveal)
@@ -2403,6 +2423,7 @@
     if (/The Disruptor has veto'd the voting\./i.test(text)) return 'summary-disruptor';
     if (/The Manipulator has played with the results\./i.test(text)) return 'summary-manipulator';
     if (/The Psychopath is plotting\./i.test(text)) return 'summary-psychopath';
+    if (/The Devastator has strapped a player with dynamites\./i.test(text)) return 'summary-devastator';
     if (/Pestilence became all powerful\./i.test(text)) return 'summary-pestilence';
     if (/had their places swapped by the Swapper\./i.test(text)) return 'summary-swapper';
     if (/used their gun/i.test(text)) return 'summary-shoot';
@@ -2575,6 +2596,9 @@
     }
     if (/The Psychopath is plotting\./i.test(text) && String(message.source || '').trim() === 'Psychopath') {
       return ' system-result-psychopath';
+    }
+    if (/The Devastator has strapped a player with dynamites\./i.test(text) && String(message.source || '').trim() === 'Devastator') {
+      return ' system-result-devastator';
     }
     if (/Pestilence became all powerful\./i.test(text) && String(message.source || '').trim() === 'Pestilence') {
       return ' system-result-pestilence';
@@ -4867,6 +4891,10 @@
       }
     }
 
+    if (activeRole === 'Devastator' && !state.selectedAction) {
+      state.selectedAction = 'kill';
+    }
+
     if (activeRole === 'Officer') {
       if (officerHasPrisoner) {
         if (!officerVerdictAvailable) {
@@ -5007,6 +5035,8 @@
         : '<div class="action-buttons"><button class="action-btn selected" data-action="detain">Detain</button></div>';
     } else if (activeRole === 'Ace of Blades') {
       actionsHTML = `<div class="action-buttons"><button class="action-btn selected assassin-action" data-action="${aceOfBladesNeedsRoll ? 'threefold' : 'kill'}">${aceOfBladesNeedsRoll ? '3Fold' : 'Kill'}</button></div>${aceWheelHTML}`;
+    } else if (activeRole === 'Devastator') {
+      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'kill' ? 'selected assassin-action' : ''}" data-action="kill">Kill</button><button class="action-btn ${state.selectedAction === 'demolish' ? 'selected' : ''}" data-action="demolish">Demolish</button></div>`;
     } else if (activeRole === 'Psychopath') {
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected assassin-action psychopath-action" data-action="kill">Bloodbath</button></div>';
     } else if (activeRole === 'Oracle') {
@@ -5092,6 +5122,9 @@
       : aceOfBladesRollAnimating
         ? 'Chance is spinning. Hold steady while the wheel decides your kill count.'
         : `Your roll gave you ${aceOfBladesKillsAvailable} kill${aceOfBladesKillsAvailable === 1 ? '' : 's'} tonight. Choose exactly ${aceOfBladesKillsAvailable} target${aceOfBladesKillsAvailable === 1 ? '' : 's'}.`;
+    else if (activeRole === 'Devastator') actionDesc = state.selectedAction === 'demolish'
+      ? 'Strap a player with dynamites. If anyone interacts with them tonight, both the target and the visitor die.'
+      : 'Eliminate a player before the blast ever starts.';
     else if (activeRole === 'Psychopath') actionDesc = psychopathStoredKills > 0
       ? `You have ${psychopathStoredKills} stored kill${psychopathStoredKills === 1 ? '' : 's'}. Unleash up to ${psychopathKillsAvailable} kill${psychopathKillsAvailable === 1 ? '' : 's'} tonight, or skip to keep stacking.`
       : 'Skip tonight to stack a future kill, or strike now and stay on schedule.';
