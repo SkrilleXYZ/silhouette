@@ -1582,11 +1582,21 @@ class GameLogic {
         queuedTargetId: null,
       };
     } else if (activeRole === 'Officer') {
+      if (action === 'detain' && targetId) {
+        this.clearOfficerJail(room);
+        room.jailedPlayerId = targetId;
+        room.jailedOfficerId = playerId;
+        player.officerJailedTargetId = targetId;
+        player.officerJailNightNumber = room.nightCount;
+      }
       room.nightActions[playerId] = {
         action,
         targetId: action === 'detain' ? targetId : null,
         queuedTargetId: null,
       };
+      if (action === 'detain' && targetId) {
+        return { success: true, room, immediateJailTargetId: targetId };
+      }
     } else if (activeRole === 'Blackmailer') {
       const existingAction = room.nightActions[playerId] || {};
       const submittedAt = Date.now();

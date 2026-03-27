@@ -230,6 +230,16 @@ io.on('connection', (socket) => {
       assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, mapping.playerId),
       jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, mapping.playerId),
     });
+    if (result.immediateJailTargetId) {
+      const publicData = game.getRoomPublicData(mapping.code);
+      io.to(mapping.code).emit('room-updated', publicData);
+      const jailedPlayerData = game.getPlayerData(mapping.code, result.immediateJailTargetId);
+      io.to(getPlayerChannel(result.immediateJailTargetId)).emit('player-updated', {
+        player: jailedPlayerData,
+        assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, result.immediateJailTargetId),
+        jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, result.immediateJailTargetId),
+      });
+    }
     if (result.immediateAlturistRevive) {
       const publicData = game.getRoomPublicData(mapping.code);
       io.to(mapping.code).emit('room-updated', publicData);
