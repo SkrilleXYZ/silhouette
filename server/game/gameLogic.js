@@ -169,7 +169,7 @@ class GameLogic {
       lawyerObjectionUsesRemaining: 2,
       lawyerProtectedTargetId: null,
       lawyerStoredVotes: 0,
-      lawyerReducedTargetId: null,
+      lawyerReductionTargetIds: [],
       inquisitorExiledTargetId: null,
       inquisitorExileUsed: false,
       disruptorVetoUsesRemaining: 1,
@@ -198,7 +198,7 @@ class GameLogic {
     const room = this.rooms.get(code);
     if (!room) return { error: 'Room not found' };
     if (room.state !== 'lobby') return { error: 'Game already in progress' };
-    if (room.players.size >= 16) return { error: 'Room is full' };
+    if (room.players.size >= 15) return { error: 'Room is full' };
     const resolvedName = this.resolveUniquePlayerName(room, playerName);
     if (resolvedName.length < 2) return { error: 'Name must be at least 2 characters' };
 
@@ -226,7 +226,7 @@ class GameLogic {
       lawyerObjectionUsesRemaining: 2,
       lawyerProtectedTargetId: null,
       lawyerStoredVotes: 0,
-      lawyerReducedTargetId: null,
+      lawyerReductionTargetIds: [],
       inquisitorExiledTargetId: null,
       inquisitorExileUsed: false,
       disruptorVetoUsesRemaining: 1,
@@ -549,7 +549,7 @@ class GameLogic {
     player.lawyerObjectionUsesRemaining = target.role === 'Lawyer' ? (target.lawyerObjectionUsesRemaining ?? 2) : 2;
     player.lawyerProtectedTargetId = target.role === 'Lawyer' ? (target.lawyerProtectedTargetId || null) : null;
     player.lawyerStoredVotes = target.role === 'Lawyer' ? Math.max(0, target.lawyerStoredVotes ?? 0) : 0;
-    player.lawyerReducedTargetId = target.role === 'Lawyer' ? (target.lawyerReducedTargetId || null) : null;
+    player.lawyerReductionTargetIds = target.role === 'Lawyer' ? (Array.isArray(target.lawyerReductionTargetIds) ? [...target.lawyerReductionTargetIds] : []) : [];
     player.manipulatorSurpriseUsesRemaining = target.role === 'Manipulator' ? (target.manipulatorSurpriseUsesRemaining ?? 2) : 2;
     player.manipulatorSurpriseUsed = target.role === 'Manipulator' ? !!target.manipulatorSurpriseUsed : false;
     player.arsonistDousedTargetIds = target.role === 'Arsonist' ? (Array.isArray(target.arsonistDousedTargetIds) ? [...target.arsonistDousedTargetIds] : []) : [];
@@ -579,7 +579,7 @@ class GameLogic {
       lawyerObjectionUsesRemaining: player.lawyerObjectionUsesRemaining ?? 2,
       lawyerProtectedTargetId: player.lawyerProtectedTargetId || null,
       lawyerStoredVotes: Math.max(0, player.lawyerStoredVotes ?? 0),
-      lawyerReducedTargetId: player.lawyerReducedTargetId || null,
+      lawyerReductionTargetIds: Array.isArray(player.lawyerReductionTargetIds) ? [...player.lawyerReductionTargetIds] : [],
       inquisitorExiledTargetId: player.inquisitorExiledTargetId || null,
       inquisitorExileUsed: !!player.inquisitorExileUsed,
       disruptorVetoUsesRemaining: player.disruptorVetoUsesRemaining ?? 1,
@@ -620,7 +620,7 @@ class GameLogic {
       lawyerObjectionUsesRemaining: roleState.lawyerObjectionUsesRemaining,
       lawyerProtectedTargetId: roleState.lawyerProtectedTargetId,
       lawyerStoredVotes: Math.max(0, roleState.lawyerStoredVotes ?? 0),
-      lawyerReducedTargetId: roleState.lawyerReducedTargetId,
+      lawyerReductionTargetIds: Array.isArray(roleState.lawyerReductionTargetIds) ? [...roleState.lawyerReductionTargetIds] : [],
       inquisitorExiledTargetId: roleState.inquisitorExiledTargetId,
       inquisitorExileUsed: !!roleState.inquisitorExileUsed,
       disruptorVetoUsesRemaining: roleState.disruptorVetoUsesRemaining,
@@ -696,7 +696,7 @@ class GameLogic {
     let assassinCount;
     if (count <= 6) assassinCount = 1;
     else if (count <= 9) assassinCount = 2;
-    else if (count <= 12) assassinCount = 3;
+    else if (count <= 15) assassinCount = 3;
     else assassinCount = 4;
 
     const shuffled = [...playerIds];
@@ -977,7 +977,7 @@ class GameLogic {
       player.lawyerObjectionUsesRemaining = 2;
       player.lawyerProtectedTargetId = null;
       player.lawyerStoredVotes = 0;
-      player.lawyerReducedTargetId = null;
+      player.lawyerReductionTargetIds = [];
       player.inquisitorExiledTargetId = null;
       player.inquisitorExileUsed = false;
       player.disruptorVetoUsesRemaining = 1;
@@ -3557,8 +3557,10 @@ class GameLogic {
       }
       if (action === 'hearsay') {
         if (Math.max(0, player.lawyerStoredVotes ?? 0) <= 0) return { error: 'You have no stored votes for Hearsay' };
-        if (player.lawyerReducedTargetId) return { error: 'You already used Hearsay this phase' };
-        player.lawyerReducedTargetId = targetId;
+        const reductionTargetIds = Array.isArray(player.lawyerReductionTargetIds) ? player.lawyerReductionTargetIds : [];
+        reductionTargetIds.push(targetId);
+        player.lawyerReductionTargetIds = reductionTargetIds;
+        player.lawyerStoredVotes = Math.max(0, (player.lawyerStoredVotes ?? 0) - 1);
         return { success: true, room };
       }
       return { error: 'Invalid action for Lawyer' };
@@ -3962,17 +3964,17 @@ class GameLogic {
     const lawyerReductions = new Map();
     for (const [, candidate] of room.players) {
       if (candidate.role !== 'Lawyer' || !candidate.alive) continue;
-      const storedVotes = Math.max(0, candidate.lawyerStoredVotes ?? 0);
-      const reducedTargetId = candidate.lawyerReducedTargetId ? remapVoteTargetId(candidate.lawyerReducedTargetId) : null;
-      if (storedVotes > 0 && reducedTargetId) {
-        lawyerReductions.set(reducedTargetId, (lawyerReductions.get(reducedTargetId) || 0) + storedVotes);
+      const reductionTargetIds = Array.isArray(candidate.lawyerReductionTargetIds) ? candidate.lawyerReductionTargetIds : [];
+      for (const reductionTargetId of reductionTargetIds) {
+        const remappedTargetId = remapVoteTargetId(reductionTargetId);
+        lawyerReductions.set(remappedTargetId, (lawyerReductions.get(remappedTargetId) || 0) + 1);
       }
       const rawVoteState = room.votes[candidate.id];
       const castTargets = rawVoteState && typeof rawVoteState === 'object'
         ? (Array.isArray(rawVoteState.targets) ? rawVoteState.targets.filter(Boolean) : [])
         : (typeof rawVoteState === 'string' && rawVoteState !== 'skip' ? [rawVoteState] : []);
       const skippedVoteCount = castTargets.length === 0 ? 1 : 0;
-      candidate.lawyerStoredVotes = Math.max(0, storedVotes - (reducedTargetId ? storedVotes : 0)) + skippedVoteCount;
+      candidate.lawyerStoredVotes = Math.max(0, candidate.lawyerStoredVotes ?? 0) + skippedVoteCount;
     }
 
     for (const [targetId, reductionAmount] of lawyerReductions.entries()) {
@@ -4065,7 +4067,7 @@ class GameLogic {
       } else if (lawyerProtector) {
         message = {
           type: 'protected',
-          text: 'The exiled player was protected by the Lawyer.',
+          text: 'Lawyer has objected this decision.',
           playerId: eliminated,
           source: 'Lawyer',
           public: true
@@ -4136,7 +4138,7 @@ class GameLogic {
     for (const [, candidate] of room.players) {
       candidate.oraclePurifiedTargetId = null;
       candidate.lawyerProtectedTargetId = null;
-      candidate.lawyerReducedTargetId = null;
+      candidate.lawyerReductionTargetIds = [];
       candidate.inquisitorExiledTargetId = null;
       candidate.disruptorVetoUsed = false;
       candidate.manipulatorSurpriseUsed = false;
@@ -4191,7 +4193,7 @@ class GameLogic {
     for (const [, player] of room.players) {
       player.manipulatorSurpriseUsed = false;
       player.lawyerProtectedTargetId = null;
-      player.lawyerReducedTargetId = null;
+      player.lawyerReductionTargetIds = [];
     }
     this.beginPhaseSummary(code, 'Voting has started.');
     return room;
@@ -4682,10 +4684,13 @@ class GameLogic {
       lawyerProtectedTargetName: player.role === 'Lawyer' && player.lawyerProtectedTargetId
         ? (room.players.get(player.lawyerProtectedTargetId)?.name || null)
         : null,
-      lawyerReducedTargetId: player.role === 'Lawyer' ? (player.lawyerReducedTargetId || null) : null,
-      lawyerReducedTargetName: player.role === 'Lawyer' && player.lawyerReducedTargetId
-        ? (room.players.get(player.lawyerReducedTargetId)?.name || null)
-        : null,
+      lawyerReductionTargetIds: player.role === 'Lawyer' ? (Array.isArray(player.lawyerReductionTargetIds) ? [...player.lawyerReductionTargetIds] : []) : [],
+      lawyerReductionTargetsThisPhase: player.role === 'Lawyer'
+        ? (Array.isArray(player.lawyerReductionTargetIds) ? player.lawyerReductionTargetIds.map((targetId) => ({
+            id: targetId,
+            name: room.players.get(targetId)?.name || null,
+          })) : [])
+        : [],
       isBlackmailed: !!room.blackmailedPlayers?.[playerId],
       isSilenced: !!room.silencedPlayers?.[playerId],
       executionerTargetId: player.role === 'Executioner' ? (player.executionerTargetId || null) : null,

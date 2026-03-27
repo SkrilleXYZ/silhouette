@@ -56,7 +56,7 @@
     selectedVotingAbilityAction: null,
   };
 
-  const MAX_ROOM_PLAYERS = 16;
+  const MAX_ROOM_PLAYERS = 15;
   const PROFILE_STORAGE_KEY = 'silhouette.profile';
   const PLAYER_SESSION_STORAGE_KEY = 'silhouette.playerSessionId';
   const ROLE_REVEAL_ITEM_HEIGHT = 72;
@@ -479,7 +479,7 @@
     Blackout: {
       faction: 'Assassin',
       subfaction: 'Concealing',
-      description: 'Blind every information role for the night, or eliminate a player. Flash cannot be used twice in a row and can be used 3 times.',
+      description: 'Blind every information role for the night, or eliminate a player.',
       revealText: 'Dark metal swallows the room. Blind every watcher, then strike through the silence.',
       abilities: [
         {
@@ -2294,7 +2294,7 @@
     if (/The Vessel has taken revenge\./i.test(text)) return 'summary-vessel';
     if (/An Assassin has moved through the shadows\./i.test(text)) return 'summary-kill';
     if (/The exiled player was protected by the Oracle\./i.test(text)) return 'summary-oracle-protect';
-    if (/The exiled player was protected by the Lawyer\./i.test(text)) return 'summary-lawyer-protect';
+    if (/Lawyer has objected this decision\./i.test(text)) return 'summary-lawyer-protect';
     if (/protected someone/i.test(text)) return 'summary-protect';
     if (/moved through the shadows/i.test(text)) return 'summary-kill';
     return '';
@@ -2409,7 +2409,7 @@
     if (/The exiled player was protected by the Oracle\./i.test(text) && String(message.source || '').trim() === 'Oracle') {
       return ' system-result-oracle-protect';
     }
-    if (/The exiled player was protected by the Lawyer\./i.test(text) && String(message.source || '').trim() === 'Lawyer') {
+    if (/Lawyer has objected this decision\./i.test(text) && String(message.source || '').trim() === 'Lawyer') {
       return ' system-result-lawyer-protect';
     }
     if (/.* was exiled by the Inquisitor\./i.test(text) && String(message.source || '').trim() === 'Inquisitor') {
@@ -4978,7 +4978,7 @@
     const player = state.playerData;
     const canPurify = player?.role === 'Oracle' && (player.oraclePurifyUsesRemaining ?? 2) > 0 && !player.oraclePurifiedTargetId;
     const canObjection = player?.role === 'Lawyer' && (player.lawyerObjectionUsesRemaining ?? 2) > 0 && !player.lawyerProtectedTargetId;
-    const canHearsay = player?.role === 'Lawyer' && (player.lawyerStoredVotes ?? 0) > 0 && !player.lawyerReducedTargetId;
+    const canHearsay = player?.role === 'Lawyer' && (player.lawyerStoredVotes ?? 0) > 0;
     const canExile = player?.role === 'Inquisitor'
       && !player.inquisitorExileUsed
       && !player.inquisitorExiledTargetId;
@@ -5053,7 +5053,7 @@
               ? 'Each assassin vote will count as double for this voting phase.'
               : player.role === 'Lawyer'
                 ? lawyerUsingHearsay
-                  ? `Spend all ${lawyerStoredVotes} stored vote${lawyerStoredVotes === 1 ? '' : 's'} to reduce one player's total this phase.`
+                  ? `Spend your stored reductions one by one. ${lawyerStoredVotes} reduction${lawyerStoredVotes === 1 ? '' : 's'} left this phase.`
                   : 'Protect a player so they cannot be voted out this phase.'
                 : 'Purify a player so they cannot be voted out this phase.';
     const votingAbilityTargetLabel = player.role === 'Inquisitor'
@@ -5075,7 +5075,7 @@
           ${targets.filter((target) => target.id !== state.playerId).map((t) => `<div class="target-item ${((isScientistAbility || isSwapperAbility) ? selectedVotingAbilityTargets.includes(t.id) : state.selectedOracleTarget === t.id) ? 'selected' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`).join('')}
         </div>`}
         <div class="chat-local-actions">
-          <button class="btn ${player?.faction === 'Assassin' ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-voting-ability" ${isTargetlessVotingAbility ? '' : (isScientistAbility || isSwapperAbility) ? selectedVotingAbilityTargets.length !== 2 ? 'disabled' : '' : !state.selectedOracleTarget ? 'disabled' : ''}>${player.role === 'Inquisitor' ? 'Confirm Exile' : (player.role === 'Scientist' || player.role === 'Swapper') ? `Confirm ${selectedVotingAbilityTargets.length}/2` : player.role === 'Disruptor' ? `Confirm ${player.disruptorVetoUsesRemaining ?? 1}/1` : player.role === 'Manipulator' ? `Confirm ${player.manipulatorSurpriseUsesRemaining ?? 2}/2` : player.role === 'Lawyer' ? (lawyerUsingHearsay ? `Use ${lawyerStoredVotes}` : `Confirm ${player.lawyerObjectionUsesRemaining ?? 2}/2`) : `Confirm ${player.oraclePurifyUsesRemaining ?? 2}/2`}</button>
+          <button class="btn ${player?.faction === 'Assassin' ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-voting-ability" ${isTargetlessVotingAbility ? '' : (isScientistAbility || isSwapperAbility) ? selectedVotingAbilityTargets.length !== 2 ? 'disabled' : '' : !state.selectedOracleTarget ? 'disabled' : ''}>${player.role === 'Inquisitor' ? 'Confirm Exile' : (player.role === 'Scientist' || player.role === 'Swapper') ? `Confirm ${selectedVotingAbilityTargets.length}/2` : player.role === 'Disruptor' ? `Confirm ${player.disruptorVetoUsesRemaining ?? 1}/1` : player.role === 'Manipulator' ? `Confirm ${player.manipulatorSurpriseUsesRemaining ?? 2}/2` : player.role === 'Lawyer' ? (lawyerUsingHearsay ? `Use 1 • ${lawyerStoredVotes} left` : `Confirm ${player.lawyerObjectionUsesRemaining ?? 2}/2`) : `Confirm ${player.oraclePurifyUsesRemaining ?? 2}/2`}</button>
           <button class="btn btn-ghost chat-local-skip" id="btn-skip-voting-ability">Skip</button>
         </div>
       </div>` : '';
@@ -5084,7 +5084,7 @@
       ${votingAbilityPanel}
       <div class="voting-panel${showAbilityTab ? ' hidden' : ''}">
         <div class="action-title">CAST YOUR VOTE</div>
-        <div class="action-subtitle">${player?.role === 'Mayor' ? `${state.votesCast} / ${aliveCount} votes cast • ${mayorVotesRemaining} vote${mayorVotesRemaining === 1 ? '' : 's'} left • ${mayorStoredVotes} stored` : player?.role === 'Lawyer' ? `${state.votesCast} / ${aliveCount} votes cast • ${lawyerStoredVotes} stored reduction${lawyerStoredVotes === 1 ? '' : 's'}` : `${state.votesCast} / ${aliveCount} votes cast`}</div>
+        <div class="action-subtitle">${player?.role === 'Mayor' ? `${state.votesCast} / ${aliveCount} votes cast • ${mayorVotesRemaining} vote${mayorVotesRemaining === 1 ? '' : 's'} left • ${mayorStoredVotes} stored` : player?.role === 'Lawyer' ? `${state.votesCast} / ${aliveCount} votes cast • ${lawyerStoredVotes} stored reduction${lawyerStoredVotes === 1 ? '' : 's'} left` : `${state.votesCast} / ${aliveCount} votes cast`}</div>
         <div class="target-label">SELECT PLAYER</div>
         <div class="target-list chat-target-list" id="vote-target-list">
           ${targets.map(t => `<div class="target-item ${state.selectedTarget === t.id ? 'selected' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`).join('')}
@@ -5133,9 +5133,11 @@
             state.roomData = response.room || state.roomData;
             state.selectedOracleTarget = null;
             state.selectedVotingAbilityTargets = [];
-            state.oracleVotingTab = 'vote';
+            state.oracleVotingTab = player.role === 'Lawyer' && action === 'hearsay' && ((response.player?.lawyerStoredVotes ?? 0) > 0)
+              ? 'ability'
+              : 'vote';
             renderVotingPhase(container);
-            showToast(player.role === 'Inquisitor' ? 'Exile used' : player.role === 'Scientist' ? 'Experiment used' : player.role === 'Swapper' ? 'Swap used' : player.role === 'Disruptor' ? 'Veto used' : player.role === 'Manipulator' ? 'Surprise used' : player.role === 'Lawyer' ? (action === 'hearsay' ? 'Hearsay used' : 'Objection used') : 'Purify used', 'success');
+            showToast(player.role === 'Inquisitor' ? 'Exile used' : player.role === 'Scientist' ? 'Experiment used' : player.role === 'Swapper' ? 'Swap used' : player.role === 'Disruptor' ? 'Veto used' : player.role === 'Manipulator' ? 'Surprise used' : player.role === 'Lawyer' ? (action === 'hearsay' ? '1 reduction used' : 'Objection used') : 'Purify used', 'success');
           } else {
             showToast(response.error || 'Action failed', 'error');
           }
