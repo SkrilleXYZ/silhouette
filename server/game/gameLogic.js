@@ -6,7 +6,7 @@ class GameLogic {
       Crew: {
         Info: ['Villager', 'Investigator', 'Tracker', 'Stalker', 'Redflag', 'Traplord'],
         Protection: ['Vitalist', 'Mirror Caster', 'Warden', 'Oracle', 'Lawyer'],
-        Killing: ['Sheriff', 'Veteran'],
+        Killing: ['Sheriff', 'Veteran', 'Officer'],
         Chaos: ['Teleporter', 'Swapper', 'Magician', 'Scientist', 'Silencer'],
         Unbound: ['Narcissist', 'Inquisitor', 'Alturist', 'The Vessel', 'Karma', 'Mayor'],
       },
@@ -111,9 +111,11 @@ class GameLogic {
       morningMessages: [],
       chatMessages: [],
       assassinChatMessages: [],
+      jailChatMessages: [],
       currentPhaseSummaryId: null,
       anonymousVotes: false,
       anonymousEjects: false,
+      anonymousKills: false,
       hiddenRoleList: false,
       disableVillagerRole: false,
       enableTraitor: false,
@@ -121,6 +123,9 @@ class GameLogic {
       useClassicFivePlayerSetup: false,
       sheriffKillsCrewTarget: false,
       sheriffKillsNeutralEvil: false,
+      officerKillsNeutralEvil: false,
+      jailedPlayerId: null,
+      jailedOfficerId: null,
       playerOrder: [],
       lastAction: Date.now(),
       lastMedicTarget: null,
@@ -170,6 +175,8 @@ class GameLogic {
       lawyerProtectedTargetId: null,
       lawyerStoredVotes: 0,
       lawyerReductionTargetIds: [],
+      officerJailedTargetId: null,
+      officerJailNightNumber: 0,
       inquisitorExiledTargetId: null,
       inquisitorExileUsed: false,
       disruptorVetoUsesRemaining: 1,
@@ -227,6 +234,8 @@ class GameLogic {
       lawyerProtectedTargetId: null,
       lawyerStoredVotes: 0,
       lawyerReductionTargetIds: [],
+      officerJailedTargetId: null,
+      officerJailNightNumber: 0,
       inquisitorExiledTargetId: null,
       inquisitorExileUsed: false,
       disruptorVetoUsesRemaining: 1,
@@ -470,6 +479,45 @@ class GameLogic {
     return this.getEffectiveNightRole(player) === 'Inquisitor';
   }
 
+  isPlayerJailed(room, playerId) {
+    if (!room || !playerId) return false;
+    return room.jailedPlayerId === playerId;
+  }
+
+  canUseJailChat(room, playerId) {
+    if (!room || !playerId) return false;
+    if (!room.jailedPlayerId || !room.jailedOfficerId) return false;
+    const player = room.players.get(playerId);
+    if (!player || !player.alive) return false;
+    return playerId === room.jailedPlayerId || playerId === room.jailedOfficerId;
+  }
+
+  clearOfficerJail(room) {
+    if (!room) return;
+    const officer = room.jailedOfficerId ? room.players.get(room.jailedOfficerId) : null;
+    if (officer) {
+      officer.officerJailedTargetId = null;
+      officer.officerJailNightNumber = 0;
+    }
+    room.jailedPlayerId = null;
+    room.jailedOfficerId = null;
+  }
+
+  convertOfficerToAmnesiac(room, playerId) {
+    const player = room?.players?.get(playerId);
+    if (!player || player.role !== 'Officer') return false;
+
+    player.role = 'Amnesiac';
+    player.faction = 'Neutral';
+    player.officerJailedTargetId = null;
+    player.officerJailNightNumber = 0;
+    if (room?.jailedOfficerId === playerId) {
+      room.jailedOfficerId = null;
+      room.jailedPlayerId = null;
+    }
+    return true;
+  }
+
   hasSubmittedAssassinKill(room, excludePlayerId = null) {
     if (!room?.nightActions) return false;
     return Object.entries(room.nightActions).some(([actorId, actionState]) => {
@@ -550,6 +598,8 @@ class GameLogic {
     player.lawyerProtectedTargetId = target.role === 'Lawyer' ? (target.lawyerProtectedTargetId || null) : null;
     player.lawyerStoredVotes = target.role === 'Lawyer' ? Math.max(0, target.lawyerStoredVotes ?? 0) : 0;
     player.lawyerReductionTargetIds = target.role === 'Lawyer' ? (Array.isArray(target.lawyerReductionTargetIds) ? [...target.lawyerReductionTargetIds] : []) : [];
+    player.officerJailedTargetId = target.role === 'Officer' ? (target.officerJailedTargetId || null) : null;
+    player.officerJailNightNumber = target.role === 'Officer' ? (target.officerJailNightNumber || 0) : 0;
     player.manipulatorSurpriseUsesRemaining = target.role === 'Manipulator' ? (target.manipulatorSurpriseUsesRemaining ?? 2) : 2;
     player.manipulatorSurpriseUsed = target.role === 'Manipulator' ? !!target.manipulatorSurpriseUsed : false;
     player.arsonistDousedTargetIds = target.role === 'Arsonist' ? (Array.isArray(target.arsonistDousedTargetIds) ? [...target.arsonistDousedTargetIds] : []) : [];
@@ -580,6 +630,8 @@ class GameLogic {
       lawyerProtectedTargetId: player.lawyerProtectedTargetId || null,
       lawyerStoredVotes: Math.max(0, player.lawyerStoredVotes ?? 0),
       lawyerReductionTargetIds: Array.isArray(player.lawyerReductionTargetIds) ? [...player.lawyerReductionTargetIds] : [],
+      officerJailedTargetId: player.officerJailedTargetId || null,
+      officerJailNightNumber: player.officerJailNightNumber || 0,
       inquisitorExiledTargetId: player.inquisitorExiledTargetId || null,
       inquisitorExileUsed: !!player.inquisitorExileUsed,
       disruptorVetoUsesRemaining: player.disruptorVetoUsesRemaining ?? 1,
@@ -621,6 +673,8 @@ class GameLogic {
       lawyerProtectedTargetId: roleState.lawyerProtectedTargetId,
       lawyerStoredVotes: Math.max(0, roleState.lawyerStoredVotes ?? 0),
       lawyerReductionTargetIds: Array.isArray(roleState.lawyerReductionTargetIds) ? [...roleState.lawyerReductionTargetIds] : [],
+      officerJailedTargetId: roleState.officerJailedTargetId,
+      officerJailNightNumber: roleState.officerJailNightNumber,
       inquisitorExiledTargetId: roleState.inquisitorExiledTargetId,
       inquisitorExileUsed: !!roleState.inquisitorExileUsed,
       disruptorVetoUsesRemaining: roleState.disruptorVetoUsesRemaining,
@@ -978,6 +1032,8 @@ class GameLogic {
       player.lawyerProtectedTargetId = null;
       player.lawyerStoredVotes = 0;
       player.lawyerReductionTargetIds = [];
+      player.officerJailedTargetId = null;
+      player.officerJailNightNumber = 0;
       player.inquisitorExiledTargetId = null;
       player.inquisitorExileUsed = false;
       player.disruptorVetoUsesRemaining = 1;
@@ -1008,8 +1064,12 @@ class GameLogic {
     room.morningMessages = [];
     room.chatMessages = [];
     room.assassinChatMessages = [];
+    room.jailChatMessages = [];
+    room.jailChatMessages = [];
     room.currentPhaseSummaryId = null;
     room.traitorActivated = false;
+    room.jailedPlayerId = null;
+    room.jailedOfficerId = null;
     room.playerOrder = [];
     room.lastAction = Date.now();
     room.lastMedicTarget = null;
@@ -1026,6 +1086,8 @@ class GameLogic {
     room.lastBlackoutFlashNight = {};
     room.blackmailedPlayers = {};
     room.silencedPlayers = {};
+    room.jailedPlayerId = null;
+    room.jailedOfficerId = null;
     room.recentKillers = [];
     room.pendingLongshots = [];
     room.roleRevealEndsAt = 0;
@@ -1069,6 +1131,7 @@ class GameLogic {
 
     const player = room.players.get(playerId);
     if (!player || !player.alive) return { error: 'Invalid player' };
+    if (this.isPlayerJailed(room, playerId)) return { error: 'You are jailed and cannot act tonight' };
     const activeRole = this.getEffectiveNightRole(player);
 
     if (player.role === 'Imitator' && !player.imitatorCopiedRole) {
@@ -1223,6 +1286,25 @@ class GameLogic {
     } else if (activeRole === 'Survivalist') {
       if (action !== 'lifeguard') return { error: 'Invalid action for Survivalist' };
       if ((player.survivalistUsesRemaining ?? 4) <= 0) return { error: 'You have no Lifeguard uses remaining' };
+    } else if (activeRole === 'Officer') {
+      const jailedTargetId = player.officerJailedTargetId || null;
+      const verdictAvailable = !!jailedTargetId && (room.nightCount > (player.officerJailNightNumber || 0));
+      if (jailedTargetId) {
+        const jailedTarget = room.players.get(jailedTargetId);
+        if (!jailedTarget || !jailedTarget.alive) {
+          this.clearOfficerJail(room);
+        }
+      }
+      if (player.officerJailedTargetId) {
+        if (!verdictAvailable) return { error: 'You cannot decide the verdict on the same night you detained someone' };
+        if (action !== 'release' && action !== 'execute') return { error: 'Invalid action for Officer' };
+      } else {
+        const target = room.players.get(targetId);
+        if (!target || !target.alive) return { error: 'Invalid target' };
+        if (action !== 'detain') return { error: 'Invalid action for Officer' };
+        if (room.jailedPlayerId) return { error: 'Someone is already detained' };
+        if (targetId === playerId) return { error: 'Cannot target yourself' };
+      }
     } else if (activeRole === 'Amnesiac') {
       const target = room.players.get(targetId);
       if (!target || target.alive) return { error: 'Invalid target' };
@@ -1499,6 +1581,12 @@ class GameLogic {
         targetId,
         queuedTargetId: null,
       };
+    } else if (activeRole === 'Officer') {
+      room.nightActions[playerId] = {
+        action,
+        targetId: action === 'detain' ? targetId : null,
+        queuedTargetId: null,
+      };
     } else if (activeRole === 'Blackmailer') {
       const existingAction = room.nightActions[playerId] || {};
       const submittedAt = Date.now();
@@ -1574,6 +1662,7 @@ class GameLogic {
 
     const player = room.players.get(playerId);
     if (!player || !player.alive) return { error: 'Invalid player' };
+    if (this.isPlayerJailed(room, playerId)) return { error: 'You are jailed and cannot act tonight' };
     const activeRole = this.getEffectiveNightRole(player);
 
     if (activeRole === 'Tetherhex') {
@@ -1648,6 +1737,7 @@ class GameLogic {
         if (availableTargetIds.length === 0) continue;
         return false;
       }
+      if (this.isPlayerJailed(room, id)) continue;
       if (activeRole === 'Villager') continue;
       if (activeRole === 'Jester') continue;
       if (activeRole === 'Executioner') continue;
@@ -1713,6 +1803,16 @@ class GameLogic {
       }
       if (activeRole === 'Guardian Angel' && (player.guardianAngelUsesRemaining ?? 4) <= 0) continue;
       if (activeRole === 'Oracle' && (player.oracleEvilEyeUsesRemaining ?? 3) <= 0) continue;
+      if (activeRole === 'Officer') {
+        const jailedTargetId = player.officerJailedTargetId || null;
+        if (!jailedTargetId) {
+          if (!room.nightActions[id]) return false;
+          continue;
+        }
+        const jailedTarget = room.players.get(jailedTargetId);
+        if (!jailedTarget || !jailedTarget.alive) continue;
+        if ((player.officerJailNightNumber || 0) >= room.nightCount) continue;
+      }
       if (activeRole === 'Survivalist' && (player.survivalistUsesRemaining ?? 4) <= 0) continue;
       if (activeRole === 'Amnesiac') {
         const hasDeadTargets = Array.from(room.players.values()).some((candidate) => !candidate.alive && candidate.id !== id);
@@ -1750,6 +1850,8 @@ class GameLogic {
     const tetheredVictims = new Set();
     const guardedTargets = new Set();
     const spoofedTargets = new Set();
+    const jailedTargets = new Set(room.jailedPlayerId ? [room.jailedPlayerId] : []);
+    const officerExecutedTargets = new Set();
     const nextPendingLongshots = [];
     const resolvingLongshots = [];
     const wardenBlockedActors = new Set();
@@ -1905,6 +2007,48 @@ class GameLogic {
       }
       if (Array.isArray(action.igniteTargetIds)) {
         action.igniteTargetIds = action.igniteTargetIds.map((targetId) => remapTeleportedTargetId(targetId));
+      }
+    }
+
+    for (const [playerId, action] of Object.entries(room.nightActions)) {
+      const player = room.players.get(playerId);
+      const activeRole = this.getEffectiveNightRole(player);
+      if (!player || activeRole !== 'Officer') continue;
+      if (isSuppressedByPurge(player)) continue;
+
+      if (action.action === 'detain' && action.targetId) {
+        const target = room.players.get(action.targetId);
+        if (!target || !target.alive) continue;
+        this.clearOfficerJail(room);
+        room.jailedPlayerId = target.id;
+        room.jailedOfficerId = playerId;
+        player.officerJailedTargetId = target.id;
+        player.officerJailNightNumber = room.nightCount;
+        jailedTargets.add(target.id);
+      } else if ((action.action === 'release' || action.action === 'execute') && player.officerJailedTargetId) {
+        const targetId = player.officerJailedTargetId;
+        const target = room.players.get(targetId);
+        jailedTargets.add(targetId);
+        if (action.action === 'execute' && target && target.alive) {
+          killed.add(targetId);
+          killersThisNight.add(playerId);
+          registerKillAttribution(targetId, playerId);
+          officerExecutedTargets.add(targetId);
+          const isCrewTarget = target.faction === 'Crew';
+          const isNeutralBenignTarget = target.faction === 'Neutral' && (this.roleCatalog?.Neutral?.Benign || []).includes(target.role);
+          const isNeutralEvilTarget = target.faction === 'Neutral' && (this.roleCatalog?.Neutral?.Evil || []).includes(target.role);
+          if (isCrewTarget || isNeutralBenignTarget || (isNeutralEvilTarget && !room.officerKillsNeutralEvil)) {
+            this.convertOfficerToAmnesiac(room, playerId);
+            if (!privateMessages[playerId]) privateMessages[playerId] = [];
+            privateMessages[playerId].push(
+              this.createPrivateSystemMessage(code, 'You executed the wrong player. You have become an Amnesiac.', 'Officer')
+            );
+          } else {
+            this.clearOfficerJail(room);
+          }
+        } else {
+          this.clearOfficerJail(room);
+        }
       }
     }
 
@@ -2088,7 +2232,7 @@ class GameLogic {
       }
     }
 
-    const disabledByAbilityTargets = new Set([...hypnotizedTargets, ...overloadedTargets, ...silencedTargets, ...spoofedTargets]);
+    const disabledByAbilityTargets = new Set([...hypnotizedTargets, ...overloadedTargets, ...silencedTargets, ...spoofedTargets, ...jailedTargets]);
 
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
@@ -3321,26 +3465,33 @@ class GameLogic {
           privateMessages[deadId].push(
             this.createPrivateSystemMessage(
               code,
-              this.getEffectiveNightRole(killer) === 'Arsonist'
-                ? 'You have been burnt to crisp by the Arsonist.'
-                : `You have been killed by ${killer.name}.`,
+              room.anonymousKills
+                ? 'You have been killed.'
+                : this.getEffectiveNightRole(killer) === 'Arsonist'
+                  ? 'You have been burnt to crisp by the Arsonist.'
+                  : `You have been killed by ${killer.name}.`,
               'Death'
             )
           );
         }
         deadPlayer.alive = false;
+        const wasOfficerExecution = officerExecutedTargets.has(deadId);
         const deathText = tetheredVictims.has(deadId)
           ? `${deadPlayer.name} has been Tethered.`
-          : room.anonymousEjects
-            ? `${deadPlayer.name} was found dead.`
-            : `${deadPlayer.name} was found dead. They were a ${deadPlayer.role}.`;
+          : wasOfficerExecution
+            ? (room.anonymousEjects
+              ? `${deadPlayer.name} was executed by the Officer.`
+              : `${deadPlayer.name} was executed by the Officer, they were a ${deadPlayer.role}.`)
+            : room.anonymousEjects
+              ? `${deadPlayer.name} was found dead.`
+              : `${deadPlayer.name} was found dead. They were a ${deadPlayer.role}.`;
         messages.push({
-          type: tetheredVictims.has(deadId) ? 'tethered' : 'death',
+          type: tetheredVictims.has(deadId) ? 'tethered' : wasOfficerExecution ? 'officer-execute' : 'death',
           text: deathText,
           playerId: deadId,
           role: deadPlayer.role,
           faction: deadPlayer.faction,
-          source: tetheredVictims.has(deadId) ? 'Tetherhex' : null,
+          source: tetheredVictims.has(deadId) ? 'Tetherhex' : wasOfficerExecution ? 'Officer' : null,
           public: true
         });
         if (deadPlayer.role === 'Redflag') {
@@ -3402,6 +3553,14 @@ class GameLogic {
       }
     }
 
+    if (room.jailedOfficerId) {
+      const officer = room.players.get(room.jailedOfficerId);
+      const jailedTarget = room.jailedPlayerId ? room.players.get(room.jailedPlayerId) : null;
+      if (!officer?.alive || officer.role !== 'Officer' || !jailedTarget?.alive) {
+        this.clearOfficerJail(room);
+      }
+    }
+
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       const activeRole = this.getEffectiveNightRole(player);
@@ -3440,6 +3599,19 @@ class GameLogic {
         text: 'The night passed peacefully. No one was harmed.',
         public: true
       });
+    }
+
+    if (room.jailedPlayerId) {
+      const jailedPlayer = room.players.get(room.jailedPlayerId);
+      if (jailedPlayer?.alive) {
+        messages.push({
+          type: 'officer-jail',
+          text: `${jailedPlayer.name} has been jailed by the Officer.`,
+          playerId: jailedPlayer.id,
+          source: 'Officer',
+          public: true
+        });
+      }
     }
 
     for (const [, player] of room.players) {
@@ -3481,6 +3653,7 @@ class GameLogic {
     const voter = room.players.get(voterId);
     if (!voter || !voter.alive) return { error: 'Invalid voter' };
     if (room.blackmailedPlayers?.[voterId]) return { error: 'You have been blackmailed and cannot vote today' };
+    if (this.isPlayerJailed(room, voterId)) return { error: 'You are jailed and cannot vote today' };
 
     const getVoteState = (value) => {
       if (value && typeof value === 'object') {
@@ -3642,6 +3815,9 @@ class GameLogic {
     if (typeof settings.anonymousEjects === 'boolean') {
       room.anonymousEjects = settings.anonymousEjects;
     }
+    if (typeof settings.anonymousKills === 'boolean') {
+      room.anonymousKills = settings.anonymousKills;
+    }
     if (typeof settings.hiddenRoleList === 'boolean') {
       room.hiddenRoleList = settings.hiddenRoleList;
     }
@@ -3660,6 +3836,9 @@ class GameLogic {
     if (typeof settings.sheriffKillsNeutralEvil === 'boolean') {
       room.sheriffKillsNeutralEvil = settings.sheriffKillsNeutralEvil;
     }
+    if (typeof settings.officerKillsNeutralEvil === 'boolean') {
+      room.officerKillsNeutralEvil = settings.officerKillsNeutralEvil;
+    }
 
     room.lastAction = Date.now();
     return { success: true, room };
@@ -3672,6 +3851,7 @@ class GameLogic {
     for (const [id, player] of room.players) {
       if (!player.alive) continue;
       if (room.blackmailedPlayers?.[id]) continue;
+      if (this.isPlayerJailed(room, id)) continue;
       const voteState = room.votes[id];
       const finalized = voteState && typeof voteState === 'object' ? !!voteState.finalized : !!voteState;
       if (!finalized) return false;
@@ -4368,6 +4548,7 @@ class GameLogic {
         isHost: id === room.hostId,
         role: player.role,
         faction: player.faction,
+        isJailed: room.jailedPlayerId === id,
       });
     }
 
@@ -4384,13 +4565,17 @@ class GameLogic {
       chatMessages: room.chatMessages.slice(-150),
       anonymousVotes: room.anonymousVotes,
       anonymousEjects: room.anonymousEjects,
+      anonymousKills: room.anonymousKills,
       hiddenRoleList: room.hiddenRoleList,
       disableVillagerRole: room.disableVillagerRole,
       enableTraitor: room.enableTraitor,
       useClassicFivePlayerSetup: room.useClassicFivePlayerSetup,
       sheriffKillsCrewTarget: room.sheriffKillsCrewTarget,
       sheriffKillsNeutralEvil: room.sheriffKillsNeutralEvil,
-      votingEligibleCount: players.filter((p) => p.alive && !room.blackmailedPlayers?.[p.id]).length,
+      officerKillsNeutralEvil: room.officerKillsNeutralEvil,
+      jailedPlayerId: room.jailedPlayerId || null,
+      jailedOfficerId: room.jailedOfficerId || null,
+      votingEligibleCount: players.filter((p) => p.alive && !room.blackmailedPlayers?.[p.id] && p.id !== room.jailedPlayerId).length,
     };
   }
 
@@ -4426,6 +4611,7 @@ class GameLogic {
     if (action === 'teleport') return 'Teleporter is bending the room.';
     if (action === 'abracadabra') return 'Magician has made a player disappear.';
     if (action === 'guard') return 'Warden has guarded someone.';
+    if (action === 'detain') return 'The Officer has arrested someone.';
     if (action === 'sacrifice') return 'The Alturist has sacrificed themselves.';
     if (action === 'mimic') return 'Imitator has shifted abilities.';
     if (action === 'inherit') return 'Amnesiac has claimed a forgotten role.';
@@ -4564,6 +4750,7 @@ class GameLogic {
     if (!canChatThisPhase) {
       return { error: 'Chat is only available in lobby, morning, and voting' };
     }
+    if (this.isPlayerJailed(room, playerId)) return { error: 'You are jailed and cannot use public chat' };
     if (room.blackmailedPlayers?.[playerId]) return { error: 'You have been blackmailed' };
     if (room.silencedPlayers?.[playerId]) return { error: 'You have been silenced' };
 
@@ -4599,6 +4786,7 @@ class GameLogic {
     const player = room.players.get(playerId);
     if (!player) return { error: 'Player not found' };
     if (!player.alive) return { error: 'Dead players cannot use assassin chat' };
+    if (this.isPlayerJailed(room, playerId)) return { error: 'You are jailed and cannot use assassin chat' };
     if (player.faction !== 'Assassin') return { error: 'Only assassins can use assassin chat' };
     if (room.blackmailedPlayers?.[playerId]) return { error: 'You have been blackmailed' };
     if (room.silencedPlayers?.[playerId]) return { error: 'You have been silenced' };
@@ -4621,6 +4809,35 @@ class GameLogic {
     return { success: true, message };
   }
 
+  addJailChatMessage(code, playerId, text) {
+    const room = this.rooms.get(code);
+    if (!room) return { error: 'Room not found' };
+    if (room.state === 'lobby' || room.state === 'ended') return { error: 'Jail chat is only available during the game' };
+    if (!this.canUseJailChat(room, playerId)) return { error: 'Jail chat is unavailable' };
+
+    const player = room.players.get(playerId);
+    if (!player || !player.alive) return { error: 'Player not found' };
+    const cleanText = String(text || '').trim().replace(/\s+/g, ' ');
+    if (!cleanText) return { error: 'Message cannot be empty' };
+    if (cleanText.length > 280) return { error: 'Message is too long' };
+
+    const message = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      type: 'player',
+      senderId: playerId,
+      senderName: player.name,
+      senderAlive: player.alive,
+      text: cleanText,
+      createdAt: Date.now(),
+      phase: room.state,
+    };
+
+    room.jailChatMessages.push(message);
+    if (room.jailChatMessages.length > 120) room.jailChatMessages = room.jailChatMessages.slice(-120);
+    room.lastAction = Date.now();
+    return { success: true, message };
+  }
+
   getAssassinChatMessagesForPlayer(code, playerId) {
     const room = this.rooms.get(code);
     if (!room) return [];
@@ -4629,6 +4846,13 @@ class GameLogic {
     if (!player || player.faction !== 'Assassin' || !player.alive) return [];
 
     return room.assassinChatMessages.slice(-120);
+  }
+
+  getJailChatMessagesForPlayer(code, playerId) {
+    const room = this.rooms.get(code);
+    if (!room) return [];
+    if (!this.canUseJailChat(room, playerId)) return [];
+    return room.jailChatMessages.slice(-120);
   }
 
   getPlayerData(code, playerId) {
@@ -4691,6 +4915,15 @@ class GameLogic {
             name: room.players.get(targetId)?.name || null,
           })) : [])
         : [],
+      officerJailedTargetId: activeRole === 'Officer' ? (player.officerJailedTargetId || null) : null,
+      officerJailedTargetName: activeRole === 'Officer' && player.officerJailedTargetId
+        ? (room.players.get(player.officerJailedTargetId)?.name || null)
+        : null,
+      officerVerdictAvailable: activeRole === 'Officer'
+        ? (!!player.officerJailedTargetId && room.nightCount > (player.officerJailNightNumber || 0))
+        : false,
+      isJailed: this.isPlayerJailed(room, playerId),
+      jailedOfficerId: this.isPlayerJailed(room, playerId) ? (room.jailedOfficerId || null) : null,
       isBlackmailed: !!room.blackmailedPlayers?.[playerId],
       isSilenced: !!room.silencedPlayers?.[playerId],
       executionerTargetId: player.role === 'Executioner' ? (player.executionerTargetId || null) : null,
@@ -4778,7 +5011,7 @@ class GameLogic {
   getEligibleVoterCount(code) {
     const room = this.rooms.get(code);
     if (!room) return 0;
-    return Array.from(room.players.entries()).filter(([id, player]) => player.alive && !room.blackmailedPlayers?.[id]).length;
+    return Array.from(room.players.entries()).filter(([id, player]) => player.alive && !room.blackmailedPlayers?.[id] && id !== room.jailedPlayerId).length;
   }
 
   getAllPlayersWithRoles(code) {

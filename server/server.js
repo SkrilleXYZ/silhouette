@@ -100,6 +100,7 @@ io.on('connection', (socket) => {
       player: game.getPlayerData(normalizedCode, playerId),
       playerId,
       assassinChatMessages: game.getAssassinChatMessagesForPlayer(normalizedCode, playerId),
+      jailChatMessages: game.getJailChatMessagesForPlayer(normalizedCode, playerId),
       allPlayers: publicData.state === 'ended' ? game.getAllPlayersWithRoles(normalizedCode) : null,
       winner: result.room?.winner || null,
       timer: getActiveTimerState(normalizedCode),
@@ -144,6 +145,7 @@ io.on('connection', (socket) => {
         player: playerData,
         room: game.getRoomPublicData(mapping.code),
         assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, playerId),
+        jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, playerId),
         revealEndsAt,
         revealDurationMs: ROLE_REVEAL_DELAY_MS
       });
@@ -187,14 +189,14 @@ io.on('connection', (socket) => {
     if (callback) callback({ success: true, room: publicData, newHostId: result.newHostId || publicData.hostId });
   });
 
-  socket.on('update-room-settings', ({ anonymousVotes, anonymousEjects, hiddenRoleList, disableVillagerRole, enableTraitor, useClassicFivePlayerSetup, sheriffKillsCrewTarget, sheriffKillsNeutralEvil }, callback) => {
+  socket.on('update-room-settings', ({ anonymousVotes, anonymousEjects, anonymousKills, hiddenRoleList, disableVillagerRole, enableTraitor, useClassicFivePlayerSetup, sheriffKillsCrewTarget, sheriffKillsNeutralEvil, officerKillsNeutralEvil }, callback) => {
     const mapping = socketMap.get(socket.id);
     if (!mapping) {
       if (callback) callback({ success: false, error: 'Not in a room' });
       return;
     }
 
-    const result = game.updateRoomSettings(mapping.code, mapping.playerId, { anonymousVotes, anonymousEjects, hiddenRoleList, disableVillagerRole, enableTraitor, useClassicFivePlayerSetup, sheriffKillsCrewTarget, sheriffKillsNeutralEvil });
+    const result = game.updateRoomSettings(mapping.code, mapping.playerId, { anonymousVotes, anonymousEjects, anonymousKills, hiddenRoleList, disableVillagerRole, enableTraitor, useClassicFivePlayerSetup, sheriffKillsCrewTarget, sheriffKillsNeutralEvil, officerKillsNeutralEvil });
     if (result.error) {
       if (callback) callback({ success: false, error: result.error });
       return;
@@ -223,13 +225,21 @@ io.on('connection', (socket) => {
       if (chatMessage) io.to(mapping.code).emit('chat-message-updated', { message: chatMessage });
     }
     const playerData = game.getPlayerData(mapping.code, mapping.playerId);
-    socket.emit('player-updated', { player: playerData });
+    socket.emit('player-updated', {
+      player: playerData,
+      assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, mapping.playerId),
+      jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, mapping.playerId),
+    });
     if (result.immediateAlturistRevive) {
       const publicData = game.getRoomPublicData(mapping.code);
       io.to(mapping.code).emit('room-updated', publicData);
       if (result.revivedPlayerId) {
         const revivedPlayerData = game.getPlayerData(mapping.code, result.revivedPlayerId);
-        io.to(getPlayerChannel(result.revivedPlayerId)).emit('player-updated', { player: revivedPlayerData });
+        io.to(getPlayerChannel(result.revivedPlayerId)).emit('player-updated', {
+          player: revivedPlayerData,
+          assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, result.revivedPlayerId),
+          jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, result.revivedPlayerId),
+        });
       }
     }
     callback({ success: true, player: playerData });
@@ -250,7 +260,11 @@ io.on('connection', (socket) => {
       return;
     }
     const playerData = game.getPlayerData(mapping.code, mapping.playerId);
-    socket.emit('player-updated', { player: playerData });
+    socket.emit('player-updated', {
+      player: playerData,
+      assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, mapping.playerId),
+      jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, mapping.playerId),
+    });
     callback({ success: true, player: playerData });
     if (game.checkAllNightActionsSubmitted(mapping.code)) {
       resolveNightPhase(mapping.code);
@@ -280,7 +294,11 @@ io.on('connection', (socket) => {
       if (chatMessage) io.to(mapping.code).emit('chat-message-updated', { message: chatMessage });
     }
     const playerData = game.getPlayerData(mapping.code, mapping.playerId);
-    socket.emit('player-updated', { player: playerData });
+    socket.emit('player-updated', {
+      player: playerData,
+      assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, mapping.playerId),
+      jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, mapping.playerId),
+    });
     io.to(mapping.code).emit('vote-update', {
       voterId: mapping.playerId,
       voterName: game.getRoom(mapping.code).players.get(mapping.playerId).name,
@@ -308,7 +326,11 @@ io.on('connection', (socket) => {
 
     const playerData = game.getPlayerData(mapping.code, mapping.playerId);
     const publicData = game.getRoomPublicData(mapping.code);
-    socket.emit('player-updated', { player: playerData });
+    socket.emit('player-updated', {
+      player: playerData,
+      assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, mapping.playerId),
+      jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, mapping.playerId),
+    });
     io.to(mapping.code).emit('room-updated', publicData);
     if (callback) callback({ success: true, player: playerData, room: publicData });
     if (result.resolveNow) {
@@ -363,6 +385,30 @@ io.on('connection', (socket) => {
         if (player.faction !== 'Assassin' || !player.alive) continue;
         io.to(getPlayerChannel(playerId)).emit('assassin-chat-message', { message: result.message });
       }
+    }
+
+    if (callback) callback({ success: true, message: result.message });
+  });
+
+  socket.on('send-jail-chat-message', ({ text }, callback) => {
+    const mapping = socketMap.get(socket.id);
+    if (!mapping) {
+      if (callback) callback({ success: false, error: 'Not in a room' });
+      return;
+    }
+
+    const result = game.addJailChatMessage(mapping.code, mapping.playerId, text);
+    if (result.error) {
+      if (callback) callback({ success: false, error: result.error });
+      return;
+    }
+
+    const room = game.getRoom(mapping.code);
+    if (room?.jailedPlayerId) {
+      io.to(getPlayerChannel(room.jailedPlayerId)).emit('jail-chat-message', { message: result.message });
+    }
+    if (room?.jailedOfficerId) {
+      io.to(getPlayerChannel(room.jailedOfficerId)).emit('jail-chat-message', { message: result.message });
     }
 
     if (callback) callback({ success: true, message: result.message });
@@ -513,7 +559,8 @@ function resolveNightPhase(code) {
     const convertedPlayerId = result.traitorConvertedPlayerId;
     io.to(getPlayerChannel(convertedPlayerId)).emit('player-updated', {
       player: game.getPlayerData(code, convertedPlayerId),
-      assassinChatMessages: game.getAssassinChatMessagesForPlayer(code, convertedPlayerId)
+      assassinChatMessages: game.getAssassinChatMessagesForPlayer(code, convertedPlayerId),
+      jailChatMessages: game.getJailChatMessagesForPlayer(code, convertedPlayerId),
     });
   }
 
@@ -567,7 +614,8 @@ function resolveVotingPhase(code) {
     const convertedPlayerId = result.traitorConvertedPlayerId;
     io.to(getPlayerChannel(convertedPlayerId)).emit('player-updated', {
       player: game.getPlayerData(code, convertedPlayerId),
-      assassinChatMessages: game.getAssassinChatMessagesForPlayer(code, convertedPlayerId)
+      assassinChatMessages: game.getAssassinChatMessagesForPlayer(code, convertedPlayerId),
+      jailChatMessages: game.getJailChatMessagesForPlayer(code, convertedPlayerId),
     });
   }
 

@@ -48,8 +48,11 @@
     chatOverlayDraft: '',
     assassinChatDraft: '',
     assassinChatOverlayDraft: '',
+    jailChatDraft: '',
+    jailChatOverlayDraft: '',
     selectedTargets: [],
     assassinChatMessages: [],
+    jailChatMessages: [],
     currentChatChannel: 'public',
     oracleVotingTab: 'ability',
     selectedVotingAbilityTargets: [],
@@ -252,6 +255,25 @@
         },
       ],
     },
+    Officer: {
+      faction: 'Crew',
+      subfaction: 'Killing',
+      hiddenFromReveal: false,
+      description: 'Detain a player, then release or execute them the following night. If you execute the wrong player, you become an Amnesiac.',
+      revealText: 'A blue verdict hangs in the air. Lock one player away, hear them out in private, and decide their fate when night returns.',
+      abilities: [
+        {
+          name: 'Detain',
+          type: 'Night',
+          description: 'Detain a player. The Jailee is unable to do anything until you set them free the next night.',
+        },
+        {
+          name: 'Verdict',
+          type: 'Night',
+          description: 'Release the Jailee or Execute them. If they happen to be a Crew member or a Neutral Benign, you become an Amnesiac.',
+        },
+      ],
+    },
     Teleporter: {
       faction: 'Crew',
       subfaction: 'Chaos',
@@ -268,13 +290,13 @@
     Swapper: {
       faction: 'Crew',
       subfaction: 'Chaos',
-      description: 'Choose 2 players to swap places before a voting phase.',
+      description: 'Choose 2 players to swap places during a voting phase.',
       revealText: 'Prismatic light folds across the table. Switch two seats before the vote lands and let the wrong fate fall in the wrong place.',
       abilities: [
         {
           name: 'Swap',
           type: 'Voting',
-          description: 'Choose 2 players to swap places before a voting phase.',
+          description: 'Choose 2 players to swap places during a voting phase.',
         },
       ],
     },
@@ -359,13 +381,13 @@
     Scientist: {
       faction: 'Crew',
       subfaction: 'Chaos',
-      description: 'Choose 2 players to switch roles after a voting session. Can only be used once. Cannot target yourself.',
+      description: 'Choose 2 players to switch roles permanently during a voting session. Can only be used once. Cannot target yourself.',
       revealText: 'Teal and violet formulas hum behind the glass. Rewrite two destinies after the town is done voting.',
       abilities: [
         {
           name: 'Experiment',
           type: 'Voting',
-          description: 'Choose 2 players to switch roles after a voting session. Can only be used once. Cannot target yourself.',
+          description: 'Choose 2 players to switch roles permanently during a voting session. Can only be used once. Cannot target yourself.',
         },
       ],
     },
@@ -947,6 +969,7 @@
     state.isHost = !!(response.room && state.playerId === response.room.hostId);
     state.chatMessages = response.room?.chatMessages || [];
     state.assassinChatMessages = response.assassinChatMessages || [];
+    state.jailChatMessages = response.jailChatMessages || [];
     state.gamePhase = response.room?.state || null;
     state.hasActed = !!response.player?.hasSubmittedAction;
     state.hasVoted = !!response.player?.hasVoted;
@@ -955,6 +978,8 @@
     state.chatOverlayDraft = '';
     state.assassinChatDraft = '';
     state.assassinChatOverlayDraft = '';
+    state.jailChatDraft = '';
+    state.jailChatOverlayDraft = '';
     state.currentChatChannel = 'public';
     state.chatOverlayOpen = false;
     state.searchResult = null;
@@ -1224,11 +1249,12 @@
       if (state.currentScreen === 'room') renderRoom();
     });
 
-    state.socket.on('game-started', ({ player, room, assassinChatMessages, revealEndsAt, revealDurationMs }) => {
+    state.socket.on('game-started', ({ player, room, assassinChatMessages, jailChatMessages, revealEndsAt, revealDurationMs }) => {
       state.playerData = player;
       state.roomData = room;
       state.chatMessages = room.chatMessages || [];
       state.assassinChatMessages = assassinChatMessages || [];
+      state.jailChatMessages = jailChatMessages || [];
       state.hasActed = false;
       state.hasVoted = false;
       state.votesCast = 0;
@@ -1239,6 +1265,8 @@
       state.chatOverlayDraft = '';
       state.assassinChatDraft = '';
       state.assassinChatOverlayDraft = '';
+      state.jailChatDraft = '';
+      state.jailChatOverlayDraft = '';
       state.currentChatChannel = 'public';
       state.selectedAction = null;
       state.selectedTarget = null;
@@ -1266,7 +1294,9 @@
       state.selectedTargets = [];
       state.selectedVotingAbilityTargets = [];
       state.oracleVotingTab = phase === 'voting' ? 'ability' : 'vote';
-      if (state.playerData?.faction !== 'Assassin' || state.playerData?.alive === false) {
+      if (state.currentChatChannel === 'jail' && !canUseJailChat()) {
+        state.currentChatChannel = 'public';
+      } else if (state.playerData?.faction !== 'Assassin' || state.playerData?.alive === false) {
         state.currentChatChannel = 'public';
       }
       if (messages) state.morningMessages = messages;
@@ -1279,7 +1309,7 @@
       renderChatBox();
     });
 
-    state.socket.on('player-updated', ({ player, assassinChatMessages }) => {
+    state.socket.on('player-updated', ({ player, assassinChatMessages, jailChatMessages }) => {
       const previousPlayer = state.playerData;
       queueAmnesiacInheritanceTransition(previousPlayer, player);
       queueTraitorTurnTransition(previousPlayer, player);
@@ -1288,7 +1318,12 @@
       if (Array.isArray(assassinChatMessages)) {
         state.assassinChatMessages = assassinChatMessages;
       }
-      if (player.faction !== 'Assassin' || player.alive === false) {
+      if (Array.isArray(jailChatMessages)) {
+        state.jailChatMessages = jailChatMessages;
+      }
+      if (state.currentChatChannel === 'jail' && !player.isJailed && !player.officerJailedTargetId) {
+        state.currentChatChannel = 'public';
+      } else if ((player.faction !== 'Assassin' || player.alive === false) && (!player.isJailed && !player.officerJailedTargetId)) {
         state.currentChatChannel = 'public';
       }
       state.hasActed = player.hasSubmittedAction;
@@ -1312,6 +1347,12 @@
     state.socket.on('assassin-chat-message', ({ message }) => {
       state.assassinChatMessages.push(message);
       if (state.assassinChatMessages.length > 120) state.assassinChatMessages = state.assassinChatMessages.slice(-120);
+      renderChatBox();
+    });
+
+    state.socket.on('jail-chat-message', ({ message }) => {
+      state.jailChatMessages.push(message);
+      if (state.jailChatMessages.length > 120) state.jailChatMessages = state.jailChatMessages.slice(-120);
       renderChatBox();
     });
 
@@ -1378,6 +1419,9 @@
       state.chatOverlayDraft = '';
       state.assassinChatDraft = '';
       state.assassinChatOverlayDraft = '';
+      state.jailChatDraft = '';
+      state.jailChatOverlayDraft = '';
+      state.jailChatMessages = [];
       state.selectedAction = null;
       state.selectedTarget = null;
       state.selectedTargets = [];
@@ -1504,6 +1548,7 @@
     if (normalizedRole === 'warden') return 'warden';
     if (normalizedRole === 'oracle') return 'oracle';
     if (normalizedRole === 'lawyer') return 'lawyer';
+    if (normalizedRole === 'officer') return 'officer';
     if (normalizedRole === 'inquisitor') return 'inquisitor';
     if (normalizedRole === 'disruptor') return 'disruptor';
     if (normalizedRole === 'manipulator') return 'manipulator';
@@ -1620,6 +1665,7 @@
       vitalist: { glowBackground: 'var(--vitalist)', titleColor: 'var(--vitalist)', titleShadow: '0 0 30px rgba(67, 239, 128, 0.24)' },
       warden: { glowBackground: 'var(--warden)', titleColor: 'var(--warden)', titleShadow: '0 0 30px rgba(92, 228, 226, 0.24)' },
       oracle: { glowBackground: 'hsl(324, 100%, 62%)', titleColor: 'hsl(324, 100%, 76%)', titleShadow: '0 0 30px rgba(255, 82, 190, 0.24)' },
+      officer: { glowBackground: 'linear-gradient(135deg, hsl(203, 100%, 72%), hsl(218, 72%, 48%))', titleColor: 'hsl(203, 100%, 82%)', titleShadow: '0 0 30px rgba(84, 170, 255, 0.24)' },
       inquisitor: { glowBackground: 'hsl(176, 94%, 58%)', titleColor: 'hsl(176, 94%, 74%)', titleShadow: '0 0 30px rgba(84, 255, 236, 0.24)' },
       disruptor: { glowBackground: 'hsl(357, 86%, 58%)', titleColor: 'hsl(357, 92%, 70%)', titleShadow: '0 0 30px rgba(222, 58, 66, 0.24)' },
       manipulator: { glowBackground: 'var(--manipulator)', titleColor: 'hsl(286, 100%, 84%)', titleShadow: '0 0 30px rgba(180, 74, 255, 0.26)' },
@@ -1784,6 +1830,10 @@
       .replace(
         'If your target dies, you become an Amnesiac. Can be used 4 times.',
         '<span class="roles-guide-ability-highlight">If your target dies, you become an Amnesiac. Can be used 4 times.</span>'
+      )
+      .replace(
+        'you become an Amnesiac.',
+        '<span class="roles-guide-ability-highlight">you become an Amnesiac.</span>'
       )
       .replace(
         'at least 6 players',
@@ -2070,7 +2120,7 @@
     ul.innerHTML = '';
     players.forEach(p => {
       const row = document.createElement('div');
-      row.className = `gpl-row${p.alive ? '' : ' gpl-dead'}${p.id === state.playerId ? ' gpl-self' : ''}`;
+      row.className = `gpl-row${p.alive ? '' : ' gpl-dead'}${p.id === state.playerId ? ' gpl-self' : ''}${p.isJailed ? ' gpl-jailed' : ''}`;
 
       const colors = ['hsl(195,60%,30%)', 'hsl(220,50%,30%)', 'hsl(260,40%,30%)', 'hsl(340,40%,30%)', 'hsl(160,40%,25%)'];
       const colorIdx = p.name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length;
@@ -2094,7 +2144,7 @@
         <div class="gpl-avatar" style="background:${colors[colorIdx]}">${p.alive ? initial : '💀'}</div>
         <span class="gpl-name">${p.name}${p.id === state.playerId ? ' <span class="player-you">YOU</span>' : ''}</span>
         ${roleTag}
-        <span class="gpl-status">${p.alive ? '● alive' : '○ dead'}</span>
+        <span class="gpl-status">${p.alive ? (p.isJailed ? '● jailed' : '● alive') : '○ dead'}</span>
       `;
       ul.appendChild(row);
     });
@@ -2117,6 +2167,11 @@
     if (anonymousEjectsToggle) {
       anonymousEjectsToggle.checked = !!data.anonymousEjects;
       anonymousEjectsToggle.disabled = !(state.isHost || state.playerId === data.hostId);
+    }
+    const anonymousKillsToggle = document.getElementById('toggle-anonymous-kills');
+    if (anonymousKillsToggle) {
+      anonymousKillsToggle.checked = !!data.anonymousKills;
+      anonymousKillsToggle.disabled = !(state.isHost || state.playerId === data.hostId);
     }
     const hiddenRoleListToggle = document.getElementById('toggle-hidden-role-list');
     if (hiddenRoleListToggle) {
@@ -2147,6 +2202,11 @@
     if (sheriffKillsNeutralEvilToggle) {
       sheriffKillsNeutralEvilToggle.checked = !!data.sheriffKillsNeutralEvil;
       sheriffKillsNeutralEvilToggle.disabled = !(state.isHost || state.playerId === data.hostId);
+    }
+    const officerKillsNeutralEvilToggle = document.getElementById('toggle-officer-kills-neutral-evil');
+    if (officerKillsNeutralEvilToggle) {
+      officerKillsNeutralEvilToggle.checked = !!data.officerKillsNeutralEvil;
+      officerKillsNeutralEvilToggle.disabled = !(state.isHost || state.playerId === data.hostId);
     }
 
     const list = document.getElementById('players-list');
@@ -2273,6 +2333,9 @@
     if (/Teleporter is bending the room\./i.test(text)) return 'summary-teleporter';
     if (/Magician has made a player disappear\./i.test(text)) return 'summary-magician';
     if (/Warden has guarded someone\./i.test(text)) return 'summary-warden';
+    if (/The Officer has arrested someone\./i.test(text)) return 'summary-officer';
+    if (/has been jailed by the Officer\./i.test(text)) return 'summary-officer';
+    if (/was executed by the Officer/i.test(text)) return 'summary-officer';
     if (/The Alturist has sacrificed themselves\./i.test(text)) return 'summary-alturist';
     if (/Imitator has shifted abilities\./i.test(text)) return 'summary-imitator';
     if (/Amnesiac has claimed a forgotten role\./i.test(text)) return 'summary-amnesiac';
@@ -2385,7 +2448,7 @@
     if (/The Magician made you disappear\.$/i.test(text) && String(message.source || '').trim() === 'Magician') {
       return ' system-result-magician';
     }
-    if ((/You have been killed by .*\.$/i.test(text) || /You have been burnt to crisp by the Arsonist\.$/i.test(text)) && String(message.source || '').trim() === 'Death') {
+    if ((/You have been killed by .*\.$/i.test(text) || /You have been killed\.$/i.test(text) || /You have been burnt to crisp by the Arsonist\.$/i.test(text)) && String(message.source || '').trim() === 'Death') {
       return ' system-result-killed';
     }
     if (/It is over when i say it is$/i.test(text) && String(message.source || '').trim() === 'The Vessel') {
@@ -2411,6 +2474,9 @@
     }
     if (/Lawyer has objected this decision\./i.test(text) && String(message.source || '').trim() === 'Lawyer') {
       return ' system-result-lawyer-protect';
+    }
+    if ((/The Officer has arrested someone\./i.test(text) || /has been jailed by the Officer\./i.test(text) || /was executed by the Officer/i.test(text)) && String(message.source || '').trim() === 'Officer') {
+      return ' system-result-officer';
     }
     if (/.* was exiled by the Inquisitor\./i.test(text) && String(message.source || '').trim() === 'Inquisitor') {
       return ' system-result-inquisitor';
@@ -2441,6 +2507,9 @@
     }
     if (/Your target has died\. You have become an Amnesiac\.$/i.test(text) && String(message.source || '').trim() === 'Guardian Angel') {
       return ' system-result-guardian-shift';
+    }
+    if (/You executed the wrong player\. You have become an Amnesiac\.$/i.test(text) && String(message.source || '').trim() === 'Officer') {
+      return ' system-result-officer-shift';
     }
     if (/You were protected by the Vitalist during the night\.$/i.test(text)) {
       return ' system-result-protect';
@@ -2474,6 +2543,9 @@
       const privateKilledByMatch = String(message.text || '').trim().match(/^You have been killed by (.*?)\.$/i);
       if (privateKilledByMatch && String(message.source || '').trim() === 'Death') {
         return `You have been killed by ${formatPlayerNameReference(privateKilledByMatch[1])}.`;
+      }
+      if (/^You have been killed\.$/i.test(String(message.text || '').trim()) && String(message.source || '').trim() === 'Death') {
+        return 'You have been killed.';
       }
     }
 
@@ -2891,6 +2963,11 @@
     const player = state.playerData;
     if (!player) return;
     const activeRole = getActiveNightRole(player);
+    if (player.isJailed) {
+      container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg></div><p class="waiting-text">YOU ARE JAILED</p><p class="waiting-subtext">You cannot act tonight. Convince the Officer through Jail chat.</p></div><div id="phase-chat-panel"></div>';
+      renderChatBox();
+      return;
+    }
     const shouldUseExpandedSelfNightChat = activeRole === 'Veteran' || activeRole === 'Survivalist' || activeRole === 'Guardian Angel';
 
     if (
@@ -3179,7 +3256,7 @@
       && previousPlayer.alive !== false
       && nextPlayer.alive !== false
       && nextPlayer.role === 'Amnesiac'
-      && (previousPlayer.role === 'Executioner' || previousPlayer.role === 'Guardian Angel')
+      && (previousPlayer.role === 'Executioner' || previousPlayer.role === 'Guardian Angel' || previousPlayer.role === 'Officer')
     );
 
     return !!(
@@ -3309,7 +3386,7 @@
         if (isTeammate) return false;
       }
       return true;
-    }).map(p => ({ id: p.id, name: p.name, avatarIndex: p.avatarIndex }));
+    }).map(p => ({ id: p.id, name: p.name, avatarIndex: p.avatarIndex, isJailed: !!p.isJailed }));
   }
 
   function getAmnesiacTargets() {
@@ -3330,7 +3407,7 @@
     if (!state.roomData) return [];
     return state.roomData.players
       .filter(p => p.alive && p.id !== state.playerId)
-      .map(p => ({ id: p.id, name: p.name, avatarIndex: p.avatarIndex }));
+      .map(p => ({ id: p.id, name: p.name, avatarIndex: p.avatarIndex, isJailed: !!p.isJailed }));
   }
 
   function showGameOver(winner, players) {
@@ -3545,6 +3622,15 @@
       });
     });
 
+    document.getElementById('toggle-anonymous-kills').addEventListener('change', (event) => {
+      state.socket.emit('update-room-settings', { anonymousKills: event.target.checked }, (response) => {
+        if (!response.success) {
+          showToast(response.error || 'Could not update room settings', 'error');
+          event.target.checked = !!state.roomData?.anonymousKills;
+        }
+      });
+    });
+
     document.getElementById('toggle-hidden-role-list').addEventListener('change', (event) => {
       state.socket.emit('update-room-settings', { hiddenRoleList: event.target.checked }, (response) => {
         if (!response.success) {
@@ -3595,6 +3681,15 @@
         if (!response.success) {
           showToast(response.error || 'Could not update room settings', 'error');
           event.target.checked = !!state.roomData?.sheriffKillsNeutralEvil;
+        }
+      });
+    });
+
+    document.getElementById('toggle-officer-kills-neutral-evil').addEventListener('change', (event) => {
+      state.socket.emit('update-room-settings', { officerKillsNeutralEvil: event.target.checked }, (response) => {
+        if (!response.success) {
+          showToast(response.error || 'Could not update room settings', 'error');
+          event.target.checked = !!state.roomData?.officerKillsNeutralEvil;
         }
       });
     });
@@ -3983,14 +4078,22 @@
     return state.playerData?.faction === 'Assassin' && state.playerData?.alive !== false;
   }
 
+  function canUseJailChat() {
+    return state.playerData?.alive !== false && (!!state.playerData?.isJailed || !!state.playerData?.officerJailedTargetId);
+  }
+
   function getActiveChatChannel() {
     if (state.currentChatChannel === 'assassin' && canUseAssassinChat()) return 'assassin';
+    if (state.currentChatChannel === 'jail' && canUseJailChat()) return 'jail';
     return 'public';
   }
 
   function getRenderableChatMessages(channel = 'public') {
     if (channel === 'assassin') {
       return [...(state.assassinChatMessages || [])].sort((a, b) => a.createdAt - b.createdAt);
+    }
+    if (channel === 'jail') {
+      return [...(state.jailChatMessages || [])].sort((a, b) => a.createdAt - b.createdAt);
     }
 
     const viewerIsDead = state.playerData?.alive === false;
@@ -4040,6 +4143,9 @@
     if (channel === 'assassin') {
       return isOverlayForm ? (state.assassinChatOverlayDraft || '') : (state.assassinChatDraft || '');
     }
+    if (channel === 'jail') {
+      return isOverlayForm ? (state.jailChatOverlayDraft || '') : (state.jailChatDraft || '');
+    }
     return isOverlayForm ? (state.chatOverlayDraft || '') : (state.chatDraft || '');
   }
 
@@ -4047,6 +4153,11 @@
     if (channel === 'assassin') {
       if (isOverlayForm) state.assassinChatOverlayDraft = value;
       else state.assassinChatDraft = value;
+      return;
+    }
+    if (channel === 'jail') {
+      if (isOverlayForm) state.jailChatOverlayDraft = value;
+      else state.jailChatDraft = value;
       return;
     }
     if (isOverlayForm) state.chatOverlayDraft = value;
@@ -4057,6 +4168,11 @@
     if (channel === 'assassin') {
       state.assassinChatDraft = value;
       state.assassinChatOverlayDraft = value;
+      return;
+    }
+    if (channel === 'jail') {
+      state.jailChatDraft = value;
+      state.jailChatOverlayDraft = value;
       return;
     }
     state.chatDraft = value;
@@ -4092,7 +4208,11 @@
       const text = input ? input.value.trim() : '';
       if (!text) return;
 
-      const eventName = channel === 'assassin' ? 'send-assassin-chat-message' : 'send-chat-message';
+      const eventName = channel === 'assassin'
+        ? 'send-assassin-chat-message'
+        : channel === 'jail'
+          ? 'send-jail-chat-message'
+          : 'send-chat-message';
       const previousText = text;
       if (input) input.value = '';
       setAllChatDraftValues(channel, '');
@@ -4150,14 +4270,16 @@
     const mode = getChatMode();
     const activeChannel = getActiveChatChannel();
     const assassinChatAvailable = canUseAssassinChat();
+    const jailChatAvailable = canUseJailChat();
     const canPublicChat = (
       mode === 'lobby'
       || mode === 'morning'
       || mode === 'voting'
       || (mode === 'night' && (state.playerData?.alive === false || canUseNightPublicChat(state.playerData)))
-    ) && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced;
+    ) && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced && !state.playerData?.isJailed;
     const canAssassinChat = assassinChatAvailable && mode !== 'hidden' && mode !== 'ended' && !state.playerData?.isBlackmailed && !state.playerData?.isSilenced;
-    const canChat = activeChannel === 'assassin' ? canAssassinChat : canPublicChat;
+    const canJailChat = jailChatAvailable && mode !== 'hidden' && mode !== 'ended';
+    const canChat = activeChannel === 'assassin' ? canAssassinChat : activeChannel === 'jail' ? canJailChat : canPublicChat;
     const isDaytimeInline = mode === 'lobby' || mode === 'morning';
     const isDaytimeFullscreen = isDaytimeInline && state.chatOverlayOpen;
     const isForcedExpandedNight = mode === 'night'
@@ -4174,6 +4296,10 @@
           : state.playerData?.isSilenced
             ? 'You have been silenced'
             : 'Assassin chat is unavailable.')
+      : activeChannel === 'jail'
+        ? (canJailChat
+          ? (state.playerData?.isJailed ? 'Speak privately with the Officer.' : 'Speak privately with your prisoner.')
+          : 'Jail chat is unavailable.')
       : (canPublicChat
         ? (mode === 'lobby' ? 'Chat before the game starts.' : 'Chat is open for discussion.')
         : mode === 'readonly'
@@ -4189,7 +4315,7 @@
     const isStandaloneOverlay = isOverlayOpen;
     const isDeadSpectator = state.playerData?.alive === false;
 
-    panel.className = `phase-chat-panel ${isStandaloneOverlay ? 'chat-overlay-anchor' : isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}${mode === 'lobby' ? ' chat-lobby room-chat-panel' : ''}${mode === 'morning' ? ' chat-morning' : ''}${mode === 'night' && isExpandedMode ? ' chat-night-expanded' : ''}`;
+    panel.className = `phase-chat-panel ${isStandaloneOverlay ? 'chat-overlay-anchor' : isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}${activeChannel === 'jail' ? ' chat-channel-jail' : ''}${mode === 'lobby' ? ' chat-lobby room-chat-panel' : ''}${mode === 'morning' ? ' chat-morning' : ''}${mode === 'night' && isExpandedMode ? ' chat-night-expanded' : ''}`;
     if (gameContainer) {
       gameContainer.classList.toggle('chat-overlay-active', isStandaloneOverlay);
     }
@@ -4202,12 +4328,14 @@
       return;
     }
 
-    const tabsMarkup = assassinChatAvailable
-      ? `<div class="chat-channel-tabs">
-          <button class="chat-channel-tab${activeChannel === 'public' ? ' active' : ''}" data-chat-channel="public" type="button">Public</button>
-          <button class="chat-channel-tab${activeChannel === 'assassin' ? ' active' : ''}" data-chat-channel="assassin" type="button">Assassin</button>
-        </div>`
-      : '';
+    const channelTabs = [`<button class="chat-channel-tab${activeChannel === 'public' ? ' active' : ''}" data-chat-channel="public" type="button">Public</button>`];
+    if (assassinChatAvailable) {
+      channelTabs.push(`<button class="chat-channel-tab${activeChannel === 'assassin' ? ' active' : ''}" data-chat-channel="assassin" type="button">Assassin</button>`);
+    }
+    if (jailChatAvailable) {
+      channelTabs.push(`<button class="chat-channel-tab${activeChannel === 'jail' ? ' active' : ''}" data-chat-channel="jail" type="button">Jail</button>`);
+    }
+    const tabsMarkup = channelTabs.length > 1 ? `<div class="chat-channel-tabs">${channelTabs.join('')}</div>` : '';
 
     if (isDockedMode && !isOverlayOpen) {
       overlay.innerHTML = '';
@@ -4219,8 +4347,8 @@
             </svg>
           </span>
           <span class="chat-dock-copy">
-            <span class="chat-dock-title">${activeChannel === 'assassin' ? 'Open Assassin Chat' : 'Open Chat'}</span>
-            <span class="chat-dock-subtitle">${activeChannel === 'assassin' ? (canAssassinChat ? 'Private assassin coordination' : 'Assassin chat unavailable') : canPublicChat ? 'Discussion and actions' : state.playerData?.isBlackmailed ? 'You have been blackmailed' : state.playerData?.isSilenced ? 'You have been silenced' : 'View updates'}</span>
+            <span class="chat-dock-title">${activeChannel === 'assassin' ? 'Open Assassin Chat' : activeChannel === 'jail' ? 'Open Jail Chat' : 'Open Chat'}</span>
+            <span class="chat-dock-subtitle">${activeChannel === 'assassin' ? (canAssassinChat ? 'Private assassin coordination' : 'Assassin chat unavailable') : activeChannel === 'jail' ? (canJailChat ? 'Private jail discussion' : 'Jail chat unavailable') : canPublicChat ? 'Discussion and actions' : state.playerData?.isBlackmailed ? 'You have been blackmailed' : state.playerData?.isSilenced ? 'You have been silenced' : state.playerData?.isJailed ? 'Public chat disabled while jailed' : 'View updates'}</span>
           </span>
         </button>`;
       const openBtn = panel.querySelector('#chat-open-btn');
@@ -4239,11 +4367,11 @@
     if (isStandaloneOverlay) {
       panel.innerHTML = '';
       overlay.innerHTML = `
-        <div class="chat-fullscreen-shell${canChat ? '' : ' chat-locked'}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}${mode === 'lobby' ? ' chat-lobby' : ''}">
+        <div class="chat-fullscreen-shell${canChat ? '' : ' chat-locked'}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}${activeChannel === 'jail' ? ' chat-channel-jail' : ''}${mode === 'lobby' ? ' chat-lobby' : ''}">
           ${localPanel}
           <div class="chat-panel-header">
             <div>
-              <div class="chat-panel-title">${activeChannel === 'assassin' ? 'Assassin Chat' : 'Room Chat'}</div>
+              <div class="chat-panel-title">${activeChannel === 'assassin' ? 'Assassin Chat' : activeChannel === 'jail' ? 'Jail Chat' : 'Room Chat'}</div>
               <div class="chat-panel-subtitle">${subtitle}</div>
             </div>
             <div class="chat-header-actions">
@@ -4259,7 +4387,7 @@
               type="text"
               maxlength="280"
               value="${escapeHtml(getChatDraftValue(true, activeChannel))}"
-              placeholder="${state.playerData?.isBlackmailed ? 'You have been blackmailed' : state.playerData?.isSilenced ? 'You have been silenced' : canChat ? `Message ${activeChannel === 'assassin' ? 'the assassins' : 'the room'}...` : activeChannel === 'assassin' ? 'Assassin chat unavailable' : 'Chat is locked at night'}"
+              placeholder="${state.playerData?.isBlackmailed ? 'You have been blackmailed' : state.playerData?.isSilenced ? 'You have been silenced' : canChat ? `Message ${activeChannel === 'assassin' ? 'the assassins' : activeChannel === 'jail' ? 'the jail' : 'the room'}...` : activeChannel === 'assassin' ? 'Assassin chat unavailable' : activeChannel === 'jail' ? 'Jail chat unavailable' : state.playerData?.isJailed ? 'Public chat disabled while jailed' : 'Chat is locked at night'}"
               ${canChat ? '' : 'disabled'}
             />
             <button class="btn btn-primary chat-send-btn" type="submit" ${canChat ? '' : 'disabled'}>Send</button>
@@ -4288,7 +4416,7 @@
       ${localPanel}
       <div class="chat-panel-header">
         <div>
-          <div class="chat-panel-title">${activeChannel === 'assassin' ? 'Assassin Chat' : 'Room Chat'}</div>
+          <div class="chat-panel-title">${activeChannel === 'assassin' ? 'Assassin Chat' : activeChannel === 'jail' ? 'Jail Chat' : 'Room Chat'}</div>
           <div class="chat-panel-subtitle">${subtitle}</div>
         </div>
         <div class="chat-header-actions">
@@ -4305,7 +4433,7 @@
           type="text"
           maxlength="280"
           value="${escapeHtml(getChatDraftValue(false, activeChannel))}"
-          placeholder="${state.playerData?.isBlackmailed ? 'You have been blackmailed' : state.playerData?.isSilenced ? 'You have been silenced' : canChat ? `Message ${activeChannel === 'assassin' ? 'the assassins' : 'the room'}...` : activeChannel === 'assassin' ? 'Assassin chat unavailable' : 'Chat is locked at night'}"
+          placeholder="${state.playerData?.isBlackmailed ? 'You have been blackmailed' : state.playerData?.isSilenced ? 'You have been silenced' : canChat ? `Message ${activeChannel === 'assassin' ? 'the assassins' : activeChannel === 'jail' ? 'the jail' : 'the room'}...` : activeChannel === 'assassin' ? 'Assassin chat unavailable' : activeChannel === 'jail' ? 'Jail chat unavailable' : state.playerData?.isJailed ? 'Public chat disabled while jailed' : 'Chat is locked at night'}"
           ${canChat ? '' : 'disabled'}
         />
         <button class="btn btn-primary chat-send-btn" type="submit" ${canChat ? '' : 'disabled'}>Send</button>
@@ -4473,6 +4601,8 @@
       ? (Array.isArray(player.witherKnownInfectedIds) ? player.witherKnownInfectedIds : [])
       : [];
     const arsonistCanIgniteTonight = activeRole === 'Arsonist' && arsonistDousedTargetIds.length > 0;
+    const officerHasPrisoner = activeRole === 'Officer' && !!player.officerJailedTargetId;
+    const officerVerdictAvailable = activeRole === 'Officer' && !!player.officerVerdictAvailable;
     let multiSelectedTargets = [];
     const guardianAngelFixedTargetId = activeRole === 'Guardian Angel'
       ? (player.guardianAngelTargetId || null)
@@ -4560,6 +4690,19 @@
         state.selectedAction = 'douse';
       } else if (!state.selectedAction) {
         state.selectedAction = arsonistCanIgniteTonight ? 'ignite' : 'douse';
+      }
+    }
+
+    if (activeRole === 'Officer') {
+      if (officerHasPrisoner) {
+        if (!officerVerdictAvailable) {
+          state.selectedAction = null;
+        } else if (state.selectedAction !== 'release' && state.selectedAction !== 'execute') {
+          state.selectedAction = 'release';
+        }
+        state.selectedTarget = null;
+      } else {
+        state.selectedAction = 'detain';
       }
     }
 
@@ -4653,6 +4796,10 @@
     } else if (activeRole === 'Warden') {
       state.selectedAction = 'guard';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="guard">Guard</button></div>';
+    } else if (activeRole === 'Officer') {
+      actionsHTML = officerHasPrisoner
+        ? `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'release' ? 'selected' : ''}" data-action="release" ${officerVerdictAvailable ? '' : 'disabled'}>Release</button><button class="action-btn ${state.selectedAction === 'execute' ? 'selected' : ''}" data-action="execute" ${officerVerdictAvailable ? '' : 'disabled'}>Execute</button></div>`
+        : '<div class="action-buttons"><button class="action-btn selected" data-action="detain">Detain</button></div>';
     } else if (activeRole === 'Oracle') {
       state.selectedAction = 'evil-eye';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="evil-eye">Evil Eye</button></div>';
@@ -4755,6 +4902,13 @@
     else if (activeRole === 'Veteran') actionDesc = 'Stand watch tonight.';
     else if (activeRole === 'Mirror Caster') actionDesc = 'Choose a player to mirror tonight';
     else if (activeRole === 'Warden') actionDesc = 'Choose a player to block all night interactions on.';
+    else if (activeRole === 'Officer') actionDesc = officerHasPrisoner
+      ? (player.officerJailedTargetName
+        ? officerVerdictAvailable
+          ? `Decide the fate of <span class="chat-player-ref">${escapeHtml(player.officerJailedTargetName)}</span>. Release them or execute them tonight.`
+          : `<span class="chat-player-ref">${escapeHtml(player.officerJailedTargetName)}</span> is jailed. You cannot execute them on the same night you detained them.`
+        : 'Your prisoner is waiting for your verdict.')
+      : 'Choose a player to detain. They will lose their abilities, public chat, and vote until you release them or execute them.';
     else if (activeRole === 'Oracle') actionDesc = 'Choose a player. If they die tonight, the killer will confess. Purify becomes available during voting.';
     else if (activeRole === 'Vitalist') actionDesc = 'Choose a player to protect tonight';
     else if (activeRole === 'Sniper') actionDesc = 'Mark a player with a distant shot. The bullet lands 2 rounds later.';
@@ -4767,6 +4921,7 @@
     const isTargetlessRole = activeRole === 'Veteran'
       || activeRole === 'Guardian Angel'
       || activeRole === 'Survivalist'
+      || (activeRole === 'Officer' && officerHasPrisoner)
       || (activeRole === 'Arsonist' && state.selectedAction === 'ignite')
       || (activeRole === 'Blackout' && state.selectedAction === 'flash')
       || (activeRole === 'The Purge' && state.selectedAction === 'fascism');
@@ -4810,12 +4965,12 @@
             const isSelected = isMultiTargetRole
               ? multiSelectedTargets.includes(t.id)
               : state.selectedTarget === t.id;
-            return `<div class="target-item ${isSelected ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''} ${activeRole === 'Arsonist' && arsonistDousedTargetIds.includes(t.id) ? 'target-doused' : ''} ${activeRole === 'Wither' && witherKnownInfectedIds.includes(t.id) ? 'target-infected' : ''} ${activeRole === 'Arsonist' && state.selectedAction === 'ignite' ? 'target-static' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span>${activeRole === 'Arsonist' && arsonistDousedTargetIds.includes(t.id) ? '<span class="target-status target-status-doused">Doused</span>' : ''}${activeRole === 'Wither' && witherKnownInfectedIds.includes(t.id) ? '<span class="target-status target-status-infected">Infected</span>' : ''}</div>`;
+            return `<div class="target-item ${isSelected ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''} ${activeRole === 'Arsonist' && arsonistDousedTargetIds.includes(t.id) ? 'target-doused' : ''} ${activeRole === 'Wither' && witherKnownInfectedIds.includes(t.id) ? 'target-infected' : ''} ${t.isJailed ? 'target-jailed' : ''} ${activeRole === 'Arsonist' && state.selectedAction === 'ignite' ? 'target-static' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span>${activeRole === 'Arsonist' && arsonistDousedTargetIds.includes(t.id) ? '<span class="target-status target-status-doused">Doused</span>' : ''}${activeRole === 'Wither' && witherKnownInfectedIds.includes(t.id) ? '<span class="target-status target-status-infected">Infected</span>' : ''}${t.isJailed ? '<span class="target-status target-status-jailed">Jailed</span>' : ''}</div>`;
           }).join('')}
         </div>` : ''}
         <div class="chat-local-actions">
-          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) || (isMultiTargetRole && multiSelectedTargets.length < requiredMultiTargetCount) || (activeRole === 'Arsonist' && state.selectedAction === 'ignite' && !arsonistCanIgniteTonight) || (activeRole === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) || (activeRole === 'The Purge' && state.selectedAction === 'fascism' && !purgeCanUseFascismTonight) ? 'disabled' : ''}>${activeRole === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : activeRole === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : activeRole === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : activeRole === 'Oracle' ? `Confirm ${player.oracleEvilEyeUsesRemaining ?? 3}/3` : activeRole === 'Prophet' && state.selectedAction === 'gospel' ? `Confirm ${player.prophetGospelUsesRemaining ?? 2}/2` : activeRole === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 4}/4` : activeRole === 'Arsonist' && state.selectedAction === 'ignite' ? `Ignite ${arsonistDousedTargetIds.length}` : activeRole === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : activeRole === 'The Purge' && state.selectedAction === 'fascism' ? `Confirm ${player.purgeFascismUsesRemaining ?? 1}/1` : activeRole === 'Teleporter' ? `Confirm ${multiSelectedTargets.length}/2` : isMultiTargetRole ? `Confirm ${multiSelectedTargets.length}/3+` : 'Confirm'}</button>
-          <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">Skip</button>
+          <button class="btn ${isAssassin ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-action" ${!state.selectedAction || (!isTargetlessRole && !isMultiTargetRole && !state.selectedTarget) || (isMultiTargetRole && multiSelectedTargets.length < requiredMultiTargetCount) || (activeRole === 'Arsonist' && state.selectedAction === 'ignite' && !arsonistCanIgniteTonight) || (activeRole === 'Blackout' && state.selectedAction === 'flash' && !blackoutCanFlashTonight) || (activeRole === 'The Purge' && state.selectedAction === 'fascism' && !purgeCanUseFascismTonight) || (activeRole === 'Officer' && officerHasPrisoner && !officerVerdictAvailable) ? 'disabled' : ''}>${activeRole === 'Veteran' ? `Confirm ${player.veteranUsesRemaining ?? 4}/4` : activeRole === 'Mirror Caster' ? `Confirm ${player.mirrorUsesRemaining ?? 4}/4` : activeRole === 'Guardian Angel' ? `Confirm ${player.guardianAngelUsesRemaining ?? 4}/4` : activeRole === 'Oracle' ? `Confirm ${player.oracleEvilEyeUsesRemaining ?? 3}/3` : activeRole === 'Prophet' && state.selectedAction === 'gospel' ? `Confirm ${player.prophetGospelUsesRemaining ?? 2}/2` : activeRole === 'Survivalist' ? `Confirm ${player.survivalistUsesRemaining ?? 4}/4` : activeRole === 'Officer' && officerHasPrisoner ? (state.selectedAction === 'execute' ? 'Yes' : 'Confirm Release') : activeRole === 'Arsonist' && state.selectedAction === 'ignite' ? `Ignite ${arsonistDousedTargetIds.length}` : activeRole === 'Blackout' && state.selectedAction === 'flash' ? `Confirm ${player.blackoutFlashUsesRemaining ?? 3}/3` : activeRole === 'The Purge' && state.selectedAction === 'fascism' ? `Confirm ${player.purgeFascismUsesRemaining ?? 1}/1` : activeRole === 'Teleporter' ? `Confirm ${multiSelectedTargets.length}/2` : isMultiTargetRole ? `Confirm ${multiSelectedTargets.length}/3+` : 'Confirm'}</button>
+          <button class="btn btn-ghost chat-local-skip" id="btn-skip-night">${activeRole === 'Officer' && officerHasPrisoner && state.selectedAction === 'execute' ? 'No' : 'Skip'}</button>
         </div>
       </div>
       <div id="phase-chat-panel"></div>`;
@@ -4976,6 +5131,11 @@
 
   function renderVotingPhase(container) {
     const player = state.playerData;
+    if (player?.isJailed) {
+      container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg></div><p class="waiting-text">YOU ARE JAILED</p><p class="waiting-subtext">You cannot vote or use public chat while detained. Use Jail chat instead.</p></div><div id="phase-chat-panel"></div>';
+      renderChatBox();
+      return;
+    }
     const canPurify = player?.role === 'Oracle' && (player.oraclePurifyUsesRemaining ?? 2) > 0 && !player.oraclePurifiedTargetId;
     const canObjection = player?.role === 'Lawyer' && (player.lawyerObjectionUsesRemaining ?? 2) > 0 && !player.lawyerProtectedTargetId;
     const canHearsay = player?.role === 'Lawyer' && (player.lawyerStoredVotes ?? 0) > 0;
@@ -5072,7 +5232,7 @@
         ${isLawyerAbility ? `<div class="action-buttons"><button class="action-btn ${state.selectedVotingAbilityAction === 'objection' ? 'selected' : ''}" data-voting-ability-action="objection" ${canObjection ? '' : 'disabled'}>Objection</button><button class="action-btn ${state.selectedVotingAbilityAction === 'hearsay' ? 'selected' : ''}" data-voting-ability-action="hearsay" ${canHearsay ? '' : 'disabled'}>Hearsay</button></div>` : ''}
         ${isTargetlessVotingAbility ? '' : `<div class="target-label">${votingAbilityTargetLabel}</div>
         <div class="target-list chat-target-list" id="voting-ability-target-list">
-          ${targets.filter((target) => target.id !== state.playerId).map((t) => `<div class="target-item ${((isScientistAbility || isSwapperAbility) ? selectedVotingAbilityTargets.includes(t.id) : state.selectedOracleTarget === t.id) ? 'selected' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`).join('')}
+          ${targets.filter((target) => target.id !== state.playerId).map((t) => `<div class="target-item ${((isScientistAbility || isSwapperAbility) ? selectedVotingAbilityTargets.includes(t.id) : state.selectedOracleTarget === t.id) ? 'selected' : ''} ${t.isJailed ? 'target-jailed' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span>${t.isJailed ? '<span class="target-status target-status-jailed">Jailed</span>' : ''}</div>`).join('')}
         </div>`}
         <div class="chat-local-actions">
           <button class="btn ${player?.faction === 'Assassin' ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-voting-ability" ${isTargetlessVotingAbility ? '' : (isScientistAbility || isSwapperAbility) ? selectedVotingAbilityTargets.length !== 2 ? 'disabled' : '' : !state.selectedOracleTarget ? 'disabled' : ''}>${player.role === 'Inquisitor' ? 'Confirm Exile' : (player.role === 'Scientist' || player.role === 'Swapper') ? `Confirm ${selectedVotingAbilityTargets.length}/2` : player.role === 'Disruptor' ? `Confirm ${player.disruptorVetoUsesRemaining ?? 1}/1` : player.role === 'Manipulator' ? `Confirm ${player.manipulatorSurpriseUsesRemaining ?? 2}/2` : player.role === 'Lawyer' ? (lawyerUsingHearsay ? `Use 1 • ${lawyerStoredVotes} left` : `Confirm ${player.lawyerObjectionUsesRemaining ?? 2}/2`) : `Confirm ${player.oraclePurifyUsesRemaining ?? 2}/2`}</button>
@@ -5087,7 +5247,7 @@
         <div class="action-subtitle">${player?.role === 'Mayor' ? `${state.votesCast} / ${aliveCount} votes cast • ${mayorVotesRemaining} vote${mayorVotesRemaining === 1 ? '' : 's'} left • ${mayorStoredVotes} stored` : player?.role === 'Lawyer' ? `${state.votesCast} / ${aliveCount} votes cast • ${lawyerStoredVotes} stored reduction${lawyerStoredVotes === 1 ? '' : 's'} left` : `${state.votesCast} / ${aliveCount} votes cast`}</div>
         <div class="target-label">SELECT PLAYER</div>
         <div class="target-list chat-target-list" id="vote-target-list">
-          ${targets.map(t => `<div class="target-item ${state.selectedTarget === t.id ? 'selected' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`).join('')}
+          ${targets.map(t => `<div class="target-item ${state.selectedTarget === t.id ? 'selected' : ''} ${t.isJailed ? 'target-jailed' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span>${t.isJailed ? '<span class="target-status target-status-jailed">Jailed</span>' : ''}</div>`).join('')}
         </div>
         <div class="chat-local-actions">
           <button class="skip-vote-btn ${state.selectedTarget === 'skip' ? 'selected' : ''}" id="btn-vote-skip">Skip Vote</button>
