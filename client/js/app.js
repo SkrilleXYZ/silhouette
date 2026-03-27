@@ -1417,6 +1417,7 @@
       queueAmnesiacInheritanceTransition(previousPlayer, player);
       queueTraitorTurnTransition(previousPlayer, player);
       queueVampireTurnTransition(previousPlayer, player);
+      queuePestilenceTurnTransition(previousPlayer, player);
       queueLifeTransition(previousPlayer, player);
       state.playerData = player;
       if (Array.isArray(assassinChatMessages)) {
@@ -2481,6 +2482,7 @@
     if (/The Dracula is thirsty for blood\.?$/i.test(text)) return 'summary-dracula';
     if (/A Vampie was thirsty\.?$/i.test(text)) return 'summary-vampire';
     if (/Pestilence became all powerful\./i.test(text)) return 'summary-pestilence';
+    if (/The Plague is spreading\./i.test(text)) return 'summary-wither';
     if (/had their places swapped by the Swapper\./i.test(text)) return 'summary-swapper';
     if (/used their gun/i.test(text)) return 'summary-shoot';
     if (/Sheriff is investigating someone/i.test(text)) return 'summary-search';
@@ -3512,6 +3514,27 @@
     };
   }
 
+  function shouldAnimatePestilenceTurn(previousPlayer, nextPlayer) {
+    return !!(
+      previousPlayer
+      && nextPlayer
+      && previousPlayer.id === nextPlayer.id
+      && previousPlayer.alive !== false
+      && nextPlayer.alive !== false
+      && previousPlayer.role === 'Wither'
+      && nextPlayer.role === 'Pestilence'
+    );
+  }
+
+  function queuePestilenceTurnTransition(previousPlayer, nextPlayer) {
+    if (!shouldAnimatePestilenceTurn(previousPlayer, nextPlayer)) return;
+    state.pendingRoleInheritance = {
+      role: nextPlayer.role,
+      type: 'pestilence',
+      timestamp: Date.now(),
+    };
+  }
+
   function playPendingRoleInheritanceTransition() {
     if (!state.pendingRoleInheritance) return;
     const roleCard = document.getElementById('role-card');
@@ -3526,31 +3549,37 @@
       ? 'role-traitor-turn-enter'
       : transition.type === 'vampire'
         ? 'role-vampire-turn-enter'
+        : transition.type === 'pestilence'
+          ? 'role-pestilence-turn-enter'
         : 'role-inheritance-enter';
     const panelClass = transition.type === 'traitor'
       ? 'role-traitor-turn-panel-enter'
       : transition.type === 'vampire'
         ? 'role-vampire-turn-panel-enter'
+        : transition.type === 'pestilence'
+          ? 'role-pestilence-turn-panel-enter'
         : 'role-inheritance-panel-enter';
 
     if (roleCard) {
-      roleCard.classList.remove('role-inheritance-enter', 'role-traitor-turn-enter', 'role-vampire-turn-enter');
+      roleCard.classList.remove('role-inheritance-enter', 'role-traitor-turn-enter', 'role-vampire-turn-enter', 'role-pestilence-turn-enter');
       void roleCard.offsetWidth;
       roleCard.classList.add(cardClass);
-      window.setTimeout(() => roleCard.classList.remove(cardClass), transition.type === 'traitor' ? 1180 : transition.type === 'vampire' ? 1120 : 820);
+      window.setTimeout(() => roleCard.classList.remove(cardClass), transition.type === 'traitor' ? 1180 : transition.type === 'vampire' ? 1120 : transition.type === 'pestilence' ? 1220 : 820);
     }
 
     if (activePanel) {
-      activePanel.classList.remove('role-inheritance-panel-enter', 'role-traitor-turn-panel-enter', 'role-vampire-turn-panel-enter');
+      activePanel.classList.remove('role-inheritance-panel-enter', 'role-traitor-turn-panel-enter', 'role-vampire-turn-panel-enter', 'role-pestilence-turn-panel-enter');
       void activePanel.offsetWidth;
       activePanel.classList.add(panelClass);
-      window.setTimeout(() => activePanel.classList.remove(panelClass), transition.type === 'traitor' ? 980 : transition.type === 'vampire' ? 920 : 700);
+      window.setTimeout(() => activePanel.classList.remove(panelClass), transition.type === 'traitor' ? 980 : transition.type === 'vampire' ? 920 : transition.type === 'pestilence' ? 980 : 700);
     }
 
     if (transition.type === 'traitor') {
       showToast('You have become the Traitor', 'info');
     } else if (transition.type === 'vampire') {
       showToast('Your fangs have grown', 'info');
+    } else if (transition.type === 'pestilence') {
+      showToast('The plague has crowned you Pestilence', 'info');
     }
   }
 
@@ -4333,7 +4362,6 @@
   }
 
   function getActiveChatChannel() {
-    if (state.currentChatChannel === 'public' && state.playerData?.isJailed && canUseJailChat()) return 'jail';
     if (state.currentChatChannel === 'assassin' && canUseAssassinChat()) return 'assassin';
     if (state.currentChatChannel === 'jail' && canUseJailChat()) return 'jail';
     if (state.currentChatChannel === 'abyss' && canUseAbyssChat()) return 'abyss';
@@ -5371,7 +5399,8 @@
               || (activeRole === 'Hypnotic' && t.id === hypnoticLockedTargetId)
               || (activeRole === 'Overload' && t.id === overloadLockedTargetId)
               || (activeRole === 'Arsonist' && arsonistDousedTargetIds.includes(t.id))
-              || (activeRole === 'Wither' && witherKnownInfectedIds.includes(t.id));
+              || (activeRole === 'Wither' && witherKnownInfectedIds.includes(t.id))
+              || t.isJailed;
             const isSelected = isMultiTargetRole
               ? multiSelectedTargets.includes(t.id)
               : state.selectedTarget === t.id;
@@ -5404,7 +5433,9 @@
           return;
         }
         if (item.dataset.restricted === 'true') {
-          if (activeRole === 'Investigator') {
+          if (item.classList.contains('target-jailed')) {
+            showToast('Jailed players cannot be targeted at night', 'error');
+          } else if (activeRole === 'Investigator') {
             showToast('You cannot target the same player 3 times in a row', 'error');
           } else if (activeRole === 'Tracker') {
             showToast('You cannot target the same player twice in a row', 'error');

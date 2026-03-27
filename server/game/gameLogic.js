@@ -147,6 +147,7 @@ class GameLogic {
       recentKillers: [],
       pendingLongshots: [],
       roleRevealEndsAt: 0,
+      plagueHalfAnnounced: false,
     };
 
     const normalizedHostName = this.normalizePlayerName(hostName);
@@ -694,6 +695,11 @@ class GameLogic {
   isPlayerJailed(room, playerId) {
     if (!room || !playerId) return false;
     return room.jailedPlayerId === playerId;
+  }
+
+  isJailedTargetImmuneAtNight(room, targetId) {
+    if (!room || !targetId) return false;
+    return room.jailedPlayerId === targetId;
   }
 
   canUseJailChat(room, playerId) {
@@ -1285,6 +1291,17 @@ class GameLogic {
     if (!player || !player.alive) return { error: 'Invalid player' };
     if (this.isPlayerJailed(room, playerId)) return { error: 'You are jailed and cannot act tonight' };
     const activeRole = this.getEffectiveNightRole(player);
+    const normalizedTargetId = String(targetId || '').trim() || null;
+    const normalizedTargetIds = Array.isArray(targetIds)
+      ? [...new Set(targetIds.map((id) => String(id || '').trim()).filter(Boolean))]
+      : [];
+
+    if (normalizedTargetId && this.isJailedTargetImmuneAtNight(room, normalizedTargetId)) {
+      return { error: 'Jailed players cannot be targeted at night' };
+    }
+    if (normalizedTargetIds.some((selectedTargetId) => this.isJailedTargetImmuneAtNight(room, selectedTargetId))) {
+      return { error: 'Jailed players cannot be targeted at night' };
+    }
 
     if (player.role === 'Imitator' && !player.imitatorCopiedRole) {
       const target = room.players.get(targetId);
@@ -1436,6 +1453,7 @@ class GameLogic {
     } else if (activeRole === 'Guardian Angel') {
       const target = room.players.get(this.getGuardianBlessTargetId(room, player));
       if (!target || !target.alive) return { error: 'Your target is no longer alive' };
+      if (this.isJailedTargetImmuneAtNight(room, target.id)) return { error: 'Jailed players cannot be targeted at night' };
       if (action !== 'bless') return { error: 'Invalid action for Guardian Angel' };
       if ((player.guardianAngelUsesRemaining ?? 4) <= 0) return { error: 'You have no Blessing uses remaining' };
     } else if (activeRole === 'Survivalist') {
@@ -2658,6 +2676,11 @@ class GameLogic {
         .filter(([, player]) => player?.alive && player.witherInfected)
         .map(([playerId]) => playerId)
     );
+    const alivePlayerIds = Array.from(room.players.entries())
+      .filter(([, player]) => player?.alive)
+      .map(([playerId]) => playerId);
+    const plagueHalfThreshold = alivePlayerIds.length > 0 ? Math.ceil(alivePlayerIds.length / 2) : Infinity;
+    const infectedBeforeSpread = alivePlayerIds.filter((playerId) => infectedAlivePlayerIds.has(playerId)).length;
     const infectionGraph = new Map();
     const addInfectionEdge = (firstPlayerId, secondPlayerId) => {
       if (!firstPlayerId || !secondPlayerId || firstPlayerId === secondPlayerId) return;
@@ -2720,6 +2743,21 @@ class GameLogic {
       if (!player?.alive) continue;
       if (!infectedAlivePlayerIds.has(playerId)) continue;
       player.witherInfected = true;
+    }
+
+    const infectedAfterSpread = alivePlayerIds.filter((playerId) => infectedAlivePlayerIds.has(playerId)).length;
+    if (
+      !room.plagueHalfAnnounced
+      && infectedBeforeSpread < plagueHalfThreshold
+      && infectedAfterSpread >= plagueHalfThreshold
+    ) {
+      room.plagueHalfAnnounced = true;
+      messages.push({
+        type: 'system',
+        text: 'The Plague is spreading.',
+        source: 'Wither',
+        public: true,
+      });
     }
 
     for (const [, player] of room.players) {

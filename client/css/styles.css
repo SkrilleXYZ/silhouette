@@ -2778,6 +2778,10 @@ body {
   animation: roleVampireTurnCardEnter 1.12s cubic-bezier(0.16, 0.88, 0.2, 1);
 }
 
+.role-card.role-pestilence-turn-enter {
+  animation: rolePestilenceTurnCardEnter 1.22s cubic-bezier(0.16, 0.88, 0.2, 1);
+}
+
 .role-card.role-life-revive-enter {
   animation: roleLifeReviveCardEnter 0.88s cubic-bezier(0.2, 0.88, 0.2, 1);
 }
@@ -2836,6 +2840,17 @@ body {
   background: linear-gradient(180deg, transparent, rgba(255, 210, 214, 0.16), rgba(168, 12, 28, 0.28), rgba(14, 2, 4, 0.18), transparent);
   transform: rotate(18deg);
   animation: roleVampireTurnSweep 1s ease;
+  pointer-events: none;
+}
+
+.role-card.role-pestilence-turn-enter .role-card-inner::after {
+  content: '';
+  position: absolute;
+  inset: -38% auto -38% -48%;
+  width: 48%;
+  background: linear-gradient(180deg, transparent, rgba(236, 214, 255, 0.16), rgba(154, 88, 255, 0.28), rgba(28, 8, 36, 0.18), transparent);
+  transform: rotate(18deg);
+  animation: rolePestilenceTurnSweep 1.08s ease;
   pointer-events: none;
 }
 
@@ -3571,6 +3586,13 @@ body {
     linear-gradient(180deg, rgba(24, 24, 12, 0.98), rgba(10, 10, 6, 0.98));
 }
 
+.role-reveal-panel.role-theme-karma {
+  background:
+    radial-gradient(circle at top, rgba(123, 18, 34, 0.24), transparent 34%),
+    radial-gradient(circle at 72% 16%, rgba(112, 52, 168, 0.22), transparent 30%),
+    linear-gradient(135deg, rgba(20, 10, 16, 0.98), rgba(56, 18, 28, 0.96) 46%, rgba(44, 18, 74, 0.94) 100%);
+}
+
 .role-reveal-panel.role-theme-mirrorcaster {
   background:
     radial-gradient(circle at top, rgba(172, 210, 238, 0.22), transparent 48%),
@@ -3612,6 +3634,12 @@ body {
   background:
     radial-gradient(circle at top, rgba(168, 42, 48, 0.26), transparent 44%),
     linear-gradient(180deg, rgba(22, 8, 10, 0.98), rgba(10, 4, 6, 0.98));
+}
+
+.role-reveal-panel.role-theme-oracle {
+  background:
+    radial-gradient(circle at top, rgba(255, 82, 190, 0.24), transparent 44%),
+    linear-gradient(180deg, rgba(28, 8, 22, 0.98), rgba(12, 4, 10, 0.98));
 }
 
 .role-reveal-panel.role-theme-alturist {
@@ -4054,6 +4082,12 @@ body {
   box-shadow: inset 0 0 0 1px rgba(188, 192, 139, 0.12), 0 0 14px rgba(188, 192, 139, 0.12);
 }
 
+.role-reveal-item.role-theme-karma.is-selected {
+  border-color: rgba(160, 82, 126, 0.55);
+  background: linear-gradient(180deg, rgba(176, 72, 114, 0.08), rgba(112, 79, 208, 0.04));
+  box-shadow: inset 0 0 0 1px rgba(176, 98, 134, 0.12), 0 0 14px rgba(123, 18, 34, 0.16);
+}
+
 .role-reveal-item.role-theme-mirrorcaster.is-selected {
   border-color: rgba(162, 202, 232, 0.55);
   background: linear-gradient(180deg, rgba(162, 202, 232, 0.08), rgba(162, 202, 232, 0.02));
@@ -4094,6 +4128,12 @@ body {
   border-color: rgba(168, 42, 48, 0.58);
   background: linear-gradient(180deg, rgba(168, 42, 48, 0.1), rgba(168, 42, 48, 0.03));
   box-shadow: inset 0 0 0 1px rgba(168, 42, 48, 0.14), 0 0 14px rgba(168, 42, 48, 0.18);
+}
+
+.role-reveal-item.role-theme-oracle.is-selected {
+  border-color: rgba(255, 82, 190, 0.55);
+  background: linear-gradient(180deg, rgba(255, 82, 190, 0.1), rgba(255, 82, 190, 0.03));
+  box-shadow: inset 0 0 0 1px rgba(255, 82, 190, 0.14), 0 0 14px rgba(255, 82, 190, 0.18);
 }
 
 .role-reveal-item.role-theme-alturist.is-selected {
@@ -4326,6 +4366,11 @@ body {
   color: var(--veteran);
 }
 
+.role-reveal-item.role-theme-karma .role-reveal-name,
+.role-reveal-item.role-theme-karma .role-reveal-faction {
+  color: hsl(338, 62%, 72%);
+}
+
 .role-reveal-item.role-theme-mirrorcaster .role-reveal-name,
 .role-reveal-item.role-theme-mirrorcaster .role-reveal-faction {
   color: var(--mirrorcaster);
@@ -4379,6 +4424,11 @@ body {
 .role-reveal-item.role-theme-prophet .role-reveal-name,
 .role-reveal-item.role-theme-prophet .role-reveal-faction {
   color: var(--prophet);
+}
+
+.role-reveal-item.role-theme-oracle .role-reveal-name,
+.role-reveal-item.role-theme-oracle .role-reveal-faction {
+  color: hsl(324, 100%, 84%);
 }
 
 .role-reveal-item.role-theme-teleporter .role-reveal-name,
@@ -4584,6 +4634,11 @@ body {
   text-shadow: 0 0 18px rgba(188, 78, 255, 0.3);
 }
 
+.role-reveal-result.role-theme-karma strong {
+  color: hsl(338, 62%, 72%);
+  text-shadow: 0 0 18px rgba(123, 18, 34, 0.24);
+}
+
 .role-reveal-result.role-theme-prophet strong {
   color: var(--prophet);
   text-shadow: 0 0 18px rgba(168, 42, 48, 0.28);
@@ -4607,6 +4662,11 @@ body {
 .role-reveal-result.role-theme-inquisitor strong {
   color: hsl(176, 94%, 74%);
   text-shadow: 0 0 18px rgba(84, 255, 236, 0.24);
+}
+
+.role-reveal-result.role-theme-oracle strong {
+  color: hsl(324, 100%, 76%);
+  text-shadow: 0 0 18px rgba(255, 82, 190, 0.24);
 }
 
 .role-reveal-result.role-theme-teleporter strong {
@@ -4761,6 +4821,10 @@ body {
 
 .role-vampire-turn-panel-enter {
   animation: roleVampireTurnPanelEnter 0.92s cubic-bezier(0.16, 0.88, 0.2, 1);
+}
+
+.role-pestilence-turn-panel-enter {
+  animation: rolePestilenceTurnPanelEnter 0.98s cubic-bezier(0.16, 0.88, 0.2, 1);
 }
 
 .role-life-revive-panel-enter {
@@ -5351,9 +5415,10 @@ body {
 }
 
 .target-status-infected {
-  color: hsl(352, 100%, 84%);
-  background: linear-gradient(135deg, rgba(72, 10, 18, 0.84), rgba(108, 16, 28, 0.74));
-  border-color: rgba(168, 22, 38, 0.34);
+  color: hsl(352, 100%, 92%);
+  background: linear-gradient(135deg, rgba(44, 8, 14, 0.96), rgba(96, 14, 26, 0.92) 54%, rgba(132, 20, 34, 0.88));
+  border-color: rgba(168, 22, 38, 0.42);
+  box-shadow: inset 0 1px 0 rgba(255, 194, 202, 0.06), 0 0 12px rgba(122, 10, 20, 0.14);
 }
 
 .target-status-jailed {
@@ -5376,6 +5441,11 @@ body {
 
 .target-item.target-jailed {
   box-shadow: inset 0 0 0 1px rgba(116, 188, 255, 0.2);
+}
+
+.target-item.target-jailed.target-restricted {
+  opacity: 0.42;
+  filter: saturate(0.74);
 }
 
 .target-item.target-static {
@@ -5575,6 +5645,67 @@ body {
     opacity: 1;
     transform: translateY(-3px) scale(1.01);
     filter: blur(0) saturate(1.14);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0) saturate(1);
+  }
+}
+
+@keyframes rolePestilenceTurnCardEnter {
+  0% {
+    opacity: 0.16;
+    transform: scale(0.962);
+    filter: saturate(0.68) brightness(0.74) hue-rotate(14deg);
+    box-shadow: 0 0 0 rgba(154, 88, 255, 0);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.02);
+    filter: saturate(1.28) brightness(1.06) hue-rotate(6deg);
+    box-shadow: 0 0 28px rgba(154, 88, 255, 0.2);
+  }
+  54% {
+    transform: scale(1.014);
+    filter: saturate(1.22) brightness(1.04);
+    box-shadow: 0 0 42px rgba(122, 62, 214, 0.28);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: saturate(1) brightness(1);
+    box-shadow: 0 0 0 rgba(122, 62, 214, 0);
+  }
+}
+
+@keyframes rolePestilenceTurnSweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-30%) rotate(18deg);
+  }
+  16% {
+    opacity: 0.98;
+  }
+  58% {
+    opacity: 0.92;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(332%) rotate(18deg);
+  }
+}
+
+@keyframes rolePestilenceTurnPanelEnter {
+  0% {
+    opacity: 0.16;
+    transform: translateY(20px) scale(0.982);
+    filter: blur(5px) saturate(0.76);
+  }
+  42% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.012);
+    filter: blur(0) saturate(1.16);
   }
   100% {
     opacity: 1;
@@ -6055,6 +6186,12 @@ body {
   overflow: hidden;
   text-wrap: balance;
   max-width: 100%;
+}
+
+.action-panel .target-status,
+.voting-panel .target-status {
+  margin-left: 0;
+  align-self: center;
 }
 
 .chat-local-panel .target-item {
@@ -7818,6 +7955,15 @@ body {
   border-color: rgba(162, 92, 255, 0.44);
   color: hsl(282, 100%, 96%);
   box-shadow: inset 0 1px 0 rgba(230, 206, 255, 0.08), 0 0 0 1px rgba(162, 92, 255, 0.08);
+}
+
+.chat-summary-line.summary-wither {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(255, 196, 204, 0.14), transparent 18%),
+    linear-gradient(135deg, rgba(40, 8, 14, 0.96), rgba(84, 12, 22, 0.92) 38%, rgba(112, 18, 30, 0.88));
+  border-color: rgba(168, 22, 38, 0.44);
+  color: hsl(352, 100%, 95%);
+  box-shadow: inset 0 1px 0 rgba(255, 194, 202, 0.08), 0 0 0 1px rgba(168, 22, 38, 0.08);
 }
 
 .chat-summary-line.summary-medium {
