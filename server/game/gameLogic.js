@@ -5,7 +5,7 @@ class GameLogic {
     this.roleCatalog = {
       Crew: {
         Info: ['Villager', 'Investigator', 'Tracker', 'Stalker', 'Redflag', 'Traplord'],
-        Protection: ['Vitalist', 'Mirror Caster', 'Warden', 'Oracle'],
+        Protection: ['Vitalist', 'Mirror Caster', 'Warden', 'Oracle', 'Lawyer'],
         Killing: ['Sheriff', 'Veteran'],
         Chaos: ['Teleporter', 'Swapper', 'Magician', 'Scientist', 'Silencer'],
         Unbound: ['Narcissist', 'Inquisitor', 'Alturist', 'The Vessel', 'Karma', 'Mayor'],
@@ -166,6 +166,10 @@ class GameLogic {
       oraclePurifyUsesRemaining: 2,
       oracleMarkedTargetId: null,
       oraclePurifiedTargetId: null,
+      lawyerObjectionUsesRemaining: 2,
+      lawyerProtectedTargetId: null,
+      lawyerStoredVotes: 0,
+      lawyerReducedTargetId: null,
       inquisitorExiledTargetId: null,
       inquisitorExileUsed: false,
       disruptorVetoUsesRemaining: 1,
@@ -219,6 +223,10 @@ class GameLogic {
       oraclePurifyUsesRemaining: 2,
       oracleMarkedTargetId: null,
       oraclePurifiedTargetId: null,
+      lawyerObjectionUsesRemaining: 2,
+      lawyerProtectedTargetId: null,
+      lawyerStoredVotes: 0,
+      lawyerReducedTargetId: null,
       inquisitorExiledTargetId: null,
       inquisitorExileUsed: false,
       disruptorVetoUsesRemaining: 1,
@@ -538,6 +546,10 @@ class GameLogic {
     player.purgeFascismUsesRemaining = target.role === 'The Purge' ? (target.purgeFascismUsesRemaining ?? 1) : 1;
     player.prophetGospelUsesRemaining = target.role === 'Prophet' ? (target.prophetGospelUsesRemaining ?? 2) : 2;
     player.inquisitorExileUsed = target.role === 'Inquisitor' ? !!target.inquisitorExileUsed : false;
+    player.lawyerObjectionUsesRemaining = target.role === 'Lawyer' ? (target.lawyerObjectionUsesRemaining ?? 2) : 2;
+    player.lawyerProtectedTargetId = target.role === 'Lawyer' ? (target.lawyerProtectedTargetId || null) : null;
+    player.lawyerStoredVotes = target.role === 'Lawyer' ? Math.max(0, target.lawyerStoredVotes ?? 0) : 0;
+    player.lawyerReducedTargetId = target.role === 'Lawyer' ? (target.lawyerReducedTargetId || null) : null;
     player.manipulatorSurpriseUsesRemaining = target.role === 'Manipulator' ? (target.manipulatorSurpriseUsesRemaining ?? 2) : 2;
     player.manipulatorSurpriseUsed = target.role === 'Manipulator' ? !!target.manipulatorSurpriseUsed : false;
     player.arsonistDousedTargetIds = target.role === 'Arsonist' ? (Array.isArray(target.arsonistDousedTargetIds) ? [...target.arsonistDousedTargetIds] : []) : [];
@@ -564,6 +576,10 @@ class GameLogic {
       oraclePurifyUsesRemaining: player.oraclePurifyUsesRemaining ?? 2,
       oracleMarkedTargetId: player.oracleMarkedTargetId || null,
       oraclePurifiedTargetId: player.oraclePurifiedTargetId || null,
+      lawyerObjectionUsesRemaining: player.lawyerObjectionUsesRemaining ?? 2,
+      lawyerProtectedTargetId: player.lawyerProtectedTargetId || null,
+      lawyerStoredVotes: Math.max(0, player.lawyerStoredVotes ?? 0),
+      lawyerReducedTargetId: player.lawyerReducedTargetId || null,
       inquisitorExiledTargetId: player.inquisitorExiledTargetId || null,
       inquisitorExileUsed: !!player.inquisitorExileUsed,
       disruptorVetoUsesRemaining: player.disruptorVetoUsesRemaining ?? 1,
@@ -601,6 +617,10 @@ class GameLogic {
       oraclePurifyUsesRemaining: roleState.oraclePurifyUsesRemaining,
       oracleMarkedTargetId: roleState.oracleMarkedTargetId,
       oraclePurifiedTargetId: roleState.oraclePurifiedTargetId,
+      lawyerObjectionUsesRemaining: roleState.lawyerObjectionUsesRemaining,
+      lawyerProtectedTargetId: roleState.lawyerProtectedTargetId,
+      lawyerStoredVotes: Math.max(0, roleState.lawyerStoredVotes ?? 0),
+      lawyerReducedTargetId: roleState.lawyerReducedTargetId,
       inquisitorExiledTargetId: roleState.inquisitorExiledTargetId,
       inquisitorExileUsed: !!roleState.inquisitorExileUsed,
       disruptorVetoUsesRemaining: roleState.disruptorVetoUsesRemaining,
@@ -954,6 +974,10 @@ class GameLogic {
       player.oraclePurifyUsesRemaining = 2;
       player.oracleMarkedTargetId = null;
       player.oraclePurifiedTargetId = null;
+      player.lawyerObjectionUsesRemaining = 2;
+      player.lawyerProtectedTargetId = null;
+      player.lawyerStoredVotes = 0;
+      player.lawyerReducedTargetId = null;
       player.inquisitorExiledTargetId = null;
       player.inquisitorExileUsed = false;
       player.disruptorVetoUsesRemaining = 1;
@@ -1067,7 +1091,7 @@ class GameLogic {
         ? []
         : cycleTargetIds;
 
-      const passiveRoles = new Set(['Villager', 'Jester', 'Executioner', 'Amnesiac', 'Redflag', 'Imitator', 'Karma', 'Narcissist', 'Inquisitor', 'Alturist', 'The Vessel']);
+      const passiveRoles = new Set(['Villager', 'Jester', 'Executioner', 'Amnesiac', 'Redflag', 'Imitator', 'Karma', 'Narcissist', 'Inquisitor', 'Lawyer', 'Alturist', 'The Vessel']);
       if (passiveRoles.has(player.imitatorCopiedRole)) {
         room.nightActions[playerId] = { action: 'skip', targetId: null };
       } else {
@@ -1207,7 +1231,7 @@ class GameLogic {
       const inheritResult = this.inheritDeadRole(room, playerId, targetId);
       if (inheritResult.error) return inheritResult;
 
-      const passiveRoles = new Set(['Villager', 'Jester', 'Executioner', 'Amnesiac', 'Redflag', 'Karma', 'Narcissist', 'Inquisitor', 'Alturist', 'The Vessel']);
+      const passiveRoles = new Set(['Villager', 'Jester', 'Executioner', 'Amnesiac', 'Redflag', 'Karma', 'Narcissist', 'Inquisitor', 'Lawyer', 'Alturist', 'The Vessel']);
       if (passiveRoles.has(inheritResult.player.role)) {
         room.nightActions[playerId] = { action: 'skip', targetId: null };
       } else {
@@ -1630,6 +1654,7 @@ class GameLogic {
       if (activeRole === 'Redflag') continue;
       if (activeRole === 'Karma') continue;
       if (activeRole === 'Inquisitor') continue;
+      if (activeRole === 'Lawyer') continue;
       if (activeRole === 'Scientist') continue;
       if (activeRole === 'Swapper') continue;
       if (activeRole === 'Narcissist') continue;
@@ -3519,6 +3544,26 @@ class GameLogic {
       return { success: true, room };
     }
 
+    if (player.role === 'Lawyer') {
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
+      if (targetId === playerId) return { error: 'Cannot target yourself' };
+      if (action === 'objection') {
+        if ((player.lawyerObjectionUsesRemaining ?? 2) <= 0) return { error: 'You have no Objection uses remaining' };
+        if (player.lawyerProtectedTargetId) return { error: 'You already used Objection this phase' };
+        player.lawyerProtectedTargetId = targetId;
+        player.lawyerObjectionUsesRemaining = Math.max(0, (player.lawyerObjectionUsesRemaining ?? 2) - 1);
+        return { success: true, room };
+      }
+      if (action === 'hearsay') {
+        if (Math.max(0, player.lawyerStoredVotes ?? 0) <= 0) return { error: 'You have no stored votes for Hearsay' };
+        if (player.lawyerReducedTargetId) return { error: 'You already used Hearsay this phase' };
+        player.lawyerReducedTargetId = targetId;
+        return { success: true, room };
+      }
+      return { error: 'Invalid action for Lawyer' };
+    }
+
     if (player.role === 'Inquisitor') {
       const target = room.players.get(targetId);
       if (!target || !target.alive) return { error: 'Invalid target' };
@@ -3914,6 +3959,26 @@ class GameLogic {
       }
     }
 
+    const lawyerReductions = new Map();
+    for (const [, candidate] of room.players) {
+      if (candidate.role !== 'Lawyer' || !candidate.alive) continue;
+      const storedVotes = Math.max(0, candidate.lawyerStoredVotes ?? 0);
+      const reducedTargetId = candidate.lawyerReducedTargetId ? remapVoteTargetId(candidate.lawyerReducedTargetId) : null;
+      if (storedVotes > 0 && reducedTargetId) {
+        lawyerReductions.set(reducedTargetId, (lawyerReductions.get(reducedTargetId) || 0) + storedVotes);
+      }
+      const rawVoteState = room.votes[candidate.id];
+      const castTargets = rawVoteState && typeof rawVoteState === 'object'
+        ? (Array.isArray(rawVoteState.targets) ? rawVoteState.targets.filter(Boolean) : [])
+        : (typeof rawVoteState === 'string' && rawVoteState !== 'skip' ? [rawVoteState] : []);
+      const skippedVoteCount = castTargets.length === 0 ? 1 : 0;
+      candidate.lawyerStoredVotes = Math.max(0, storedVotes - (reducedTargetId ? storedVotes : 0)) + skippedVoteCount;
+    }
+
+    for (const [targetId, reductionAmount] of lawyerReductions.entries()) {
+      voteCounts[targetId] = Math.max(0, (voteCounts[targetId] || 0) - reductionAmount);
+    }
+
     for (const [playerId, action] of Object.entries(room.nightActions)) {
       const player = room.players.get(playerId);
       const activeRole = this.getEffectiveNightRole(player);
@@ -3982,6 +4047,11 @@ class GameLogic {
         && candidate.alive
         && remapVoteTargetId(candidate.oraclePurifiedTargetId) === eliminated
       ));
+      const lawyerProtector = Array.from(room.players.values()).find((candidate) => (
+        candidate.role === 'Lawyer'
+        && candidate.alive
+        && remapVoteTargetId(candidate.lawyerProtectedTargetId) === eliminated
+      ));
 
       if (oracleProtector) {
         message = {
@@ -3989,6 +4059,15 @@ class GameLogic {
           text: 'The exiled player was protected by the Oracle.',
           playerId: eliminated,
           source: 'Oracle',
+          public: true
+        };
+        eliminated = null;
+      } else if (lawyerProtector) {
+        message = {
+          type: 'protected',
+          text: 'The exiled player was protected by the Lawyer.',
+          playerId: eliminated,
+          source: 'Lawyer',
           public: true
         };
         eliminated = null;
@@ -4056,6 +4135,8 @@ class GameLogic {
     appendVotingPreResolutionLines();
     for (const [, candidate] of room.players) {
       candidate.oraclePurifiedTargetId = null;
+      candidate.lawyerProtectedTargetId = null;
+      candidate.lawyerReducedTargetId = null;
       candidate.inquisitorExiledTargetId = null;
       candidate.disruptorVetoUsed = false;
       candidate.manipulatorSurpriseUsed = false;
@@ -4109,6 +4190,8 @@ class GameLogic {
     room.votes = {};
     for (const [, player] of room.players) {
       player.manipulatorSurpriseUsed = false;
+      player.lawyerProtectedTargetId = null;
+      player.lawyerReducedTargetId = null;
     }
     this.beginPhaseSummary(code, 'Voting has started.');
     return room;
@@ -4593,6 +4676,16 @@ class GameLogic {
       mayorVotesCastThisPhase: player.role === 'Mayor' && room.votes[playerId] && typeof room.votes[playerId] === 'object'
         ? ((Array.isArray(room.votes[playerId].targets) ? room.votes[playerId].targets.length : 0))
         : (player.role === 'Mayor' && typeof room.votes[playerId] === 'string' && room.votes[playerId] !== 'skip' ? 1 : 0),
+      lawyerStoredVotes: player.role === 'Lawyer' ? Math.max(0, player.lawyerStoredVotes ?? 0) : 0,
+      lawyerObjectionUsesRemaining: player.role === 'Lawyer' ? (player.lawyerObjectionUsesRemaining ?? 2) : null,
+      lawyerProtectedTargetId: player.role === 'Lawyer' ? (player.lawyerProtectedTargetId || null) : null,
+      lawyerProtectedTargetName: player.role === 'Lawyer' && player.lawyerProtectedTargetId
+        ? (room.players.get(player.lawyerProtectedTargetId)?.name || null)
+        : null,
+      lawyerReducedTargetId: player.role === 'Lawyer' ? (player.lawyerReducedTargetId || null) : null,
+      lawyerReducedTargetName: player.role === 'Lawyer' && player.lawyerReducedTargetId
+        ? (room.players.get(player.lawyerReducedTargetId)?.name || null)
+        : null,
       isBlackmailed: !!room.blackmailedPlayers?.[playerId],
       isSilenced: !!room.silencedPlayers?.[playerId],
       executionerTargetId: player.role === 'Executioner' ? (player.executionerTargetId || null) : null,

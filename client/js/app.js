@@ -53,6 +53,7 @@
     currentChatChannel: 'public',
     oracleVotingTab: 'ability',
     selectedVotingAbilityTargets: [],
+    selectedVotingAbilityAction: null,
   };
 
   const MAX_ROOM_PLAYERS = 16;
@@ -233,6 +234,24 @@
         },
       ],
     },
+    Lawyer: {
+      faction: 'Crew',
+      subfaction: 'Protection',
+      description: 'Protect a player from getting voted out and turn skipped votes into vote reduction later.',
+      revealText: 'Metallic gold authority settles over the chamber. Spare one player from exile, then cash in your skipped votes to weaken another case later.',
+      abilities: [
+        {
+          name: 'Objection',
+          type: 'Voting',
+          description: 'Protect a player from getting voted out. Can be used 2 times.',
+        },
+        {
+          name: 'Hearsay',
+          type: 'Voting',
+          description: 'Skipped votes during voting are stored to be used as vote reduction later.',
+        },
+      ],
+    },
     Teleporter: {
       faction: 'Crew',
       subfaction: 'Chaos',
@@ -393,7 +412,7 @@
       faction: 'Assassin',
       subfaction: 'Special',
       hiddenFromReveal: true,
-      description: 'If there are no Assassins left while the game has at least 6 players, a random Crew member becomes an Assassin.',
+      description: 'They trusted you and that\'s on them. Eliminate the Crew.',
       revealText: 'Blue loyalty tears open into red betrayal. You were Crew once. Now the knife points the other way.',
       abilities: [
         {
@@ -610,7 +629,7 @@
         {
           name: 'Plague',
           type: 'Night',
-          description: 'Infect a player. Infected players silently spread the infection through their interactions and cannot be infected again.',
+          description: 'Infect a player. Infected players silently spread the infection through their interactions and cannot be infected again. If all players become infected, you become the Pestilence.',
         },
       ],
     },
@@ -1484,6 +1503,7 @@
     if (normalizedRole === 'vitalist') return 'vitalist';
     if (normalizedRole === 'warden') return 'warden';
     if (normalizedRole === 'oracle') return 'oracle';
+    if (normalizedRole === 'lawyer') return 'lawyer';
     if (normalizedRole === 'inquisitor') return 'inquisitor';
     if (normalizedRole === 'disruptor') return 'disruptor';
     if (normalizedRole === 'manipulator') return 'manipulator';
@@ -1738,6 +1758,10 @@
         '<span class="roles-guide-ability-highlight">cannot be infected again.</span>'
       )
       .replace(
+        'you become the Pestilence.',
+        '<span class="roles-guide-ability-highlight">you become the Pestilence.</span>'
+      )
+      .replace(
         'If your target dies, you become an Amnesiac.',
         '<span class="roles-guide-ability-highlight">If your target dies, you become an Amnesiac.</span>'
       )
@@ -1760,6 +1784,14 @@
       .replace(
         'If your target dies, you become an Amnesiac. Can be used 4 times.',
         '<span class="roles-guide-ability-highlight">If your target dies, you become an Amnesiac. Can be used 4 times.</span>'
+      )
+      .replace(
+        'at least 6 players',
+        '<span class="roles-guide-ability-highlight">at least 6 players</span>'
+      )
+      .replace(
+        'get voted out.',
+        '<span class="roles-guide-ability-highlight">get voted out.</span>'
       );
   }
 
@@ -2262,6 +2294,7 @@
     if (/The Vessel has taken revenge\./i.test(text)) return 'summary-vessel';
     if (/An Assassin has moved through the shadows\./i.test(text)) return 'summary-kill';
     if (/The exiled player was protected by the Oracle\./i.test(text)) return 'summary-oracle-protect';
+    if (/The exiled player was protected by the Lawyer\./i.test(text)) return 'summary-lawyer-protect';
     if (/protected someone/i.test(text)) return 'summary-protect';
     if (/moved through the shadows/i.test(text)) return 'summary-kill';
     return '';
@@ -2375,6 +2408,9 @@
     }
     if (/The exiled player was protected by the Oracle\./i.test(text) && String(message.source || '').trim() === 'Oracle') {
       return ' system-result-oracle-protect';
+    }
+    if (/The exiled player was protected by the Lawyer\./i.test(text) && String(message.source || '').trim() === 'Lawyer') {
+      return ' system-result-lawyer-protect';
     }
     if (/.* was exiled by the Inquisitor\./i.test(text) && String(message.source || '').trim() === 'Inquisitor') {
       return ' system-result-inquisitor';
@@ -4332,6 +4368,7 @@
       || player.role === 'Redflag'
       || player.role === 'Karma'
       || player.role === 'Inquisitor'
+      || activeRole === 'Lawyer'
       || player.role === 'Scientist'
       || player.role === 'Swapper'
       || player.role === 'Mayor'
@@ -4355,6 +4392,8 @@
           ? 'No dead players can be remembered yet. Wait for dawn...'
         : player.role === 'Scientist'
           ? 'Your experiment can only be used during voting. Wait for dawn...'
+        : activeRole === 'Lawyer'
+          ? 'Your case is built during voting. Wait for dawn...'
         : player.role === 'Swapper'
             ? 'Your swap can only be used during voting. Wait for dawn...'
           : player.role === 'Mayor'
@@ -4938,6 +4977,8 @@
   function renderVotingPhase(container) {
     const player = state.playerData;
     const canPurify = player?.role === 'Oracle' && (player.oraclePurifyUsesRemaining ?? 2) > 0 && !player.oraclePurifiedTargetId;
+    const canObjection = player?.role === 'Lawyer' && (player.lawyerObjectionUsesRemaining ?? 2) > 0 && !player.lawyerProtectedTargetId;
+    const canHearsay = player?.role === 'Lawyer' && (player.lawyerStoredVotes ?? 0) > 0 && !player.lawyerReducedTargetId;
     const canExile = player?.role === 'Inquisitor'
       && !player.inquisitorExileUsed
       && !player.inquisitorExiledTargetId;
@@ -4945,11 +4986,13 @@
     const canSurprise = player?.role === 'Manipulator' && (player.manipulatorSurpriseUsesRemaining ?? 2) > 0 && !player.manipulatorSurpriseUsed;
     const canExperiment = player?.role === 'Scientist' && (player.scientistExperimentUsesRemaining ?? 1) > 0;
     const canSwapVote = player?.role === 'Swapper';
-    const hasVotingAbility = canPurify || canExile || canVeto || canSurprise || canExperiment || canSwapVote;
+    const hasVotingAbility = canPurify || canObjection || canHearsay || canExile || canVeto || canSurprise || canExperiment || canSwapVote;
     const mayorVotesAvailable = player?.role === 'Mayor' ? Math.max(1, Number(player.mayorVotesAvailable) || 1) : 1;
     const mayorVotesCastThisPhase = player?.role === 'Mayor' ? Math.max(0, Number(player.mayorVotesCastThisPhase) || 0) : 0;
     const mayorVotesRemaining = player?.role === 'Mayor' ? Math.max(0, mayorVotesAvailable - mayorVotesCastThisPhase) : 0;
     const mayorStoredVotes = player?.role === 'Mayor' ? Math.max(0, Number(player.mayorStoredVotes) || 0) : 0;
+    const lawyerStoredVotes = player?.role === 'Lawyer' ? Math.max(0, Number(player.lawyerStoredVotes) || 0) : 0;
+    const lawyerCanUseAbility = canObjection || canHearsay;
     if (hasVotingAbility) {
       if (state.oracleVotingTab !== 'ability' && state.oracleVotingTab !== 'vote') {
         state.oracleVotingTab = 'ability';
@@ -4969,17 +5012,70 @@
     const selectedVotingAbilityTargets = Array.isArray(state.selectedVotingAbilityTargets) ? state.selectedVotingAbilityTargets : [];
     const isScientistAbility = player?.role === 'Scientist';
     const isSwapperAbility = player?.role === 'Swapper';
+    const isLawyerAbility = player?.role === 'Lawyer';
     const isTargetlessVotingAbility = player?.role === 'Disruptor' || player?.role === 'Manipulator';
+    if (isLawyerAbility) {
+      if (!lawyerCanUseAbility) {
+        state.selectedVotingAbilityAction = null;
+      } else if (state.selectedVotingAbilityAction !== 'objection' && state.selectedVotingAbilityAction !== 'hearsay') {
+        state.selectedVotingAbilityAction = canObjection ? 'objection' : 'hearsay';
+      } else if (state.selectedVotingAbilityAction === 'objection' && !canObjection) {
+        state.selectedVotingAbilityAction = canHearsay ? 'hearsay' : null;
+      } else if (state.selectedVotingAbilityAction === 'hearsay' && !canHearsay) {
+        state.selectedVotingAbilityAction = canObjection ? 'objection' : null;
+      }
+    } else {
+      state.selectedVotingAbilityAction = null;
+    }
+    const lawyerUsingHearsay = isLawyerAbility && state.selectedVotingAbilityAction === 'hearsay';
+    const votingAbilityTitle = player.role === 'Inquisitor'
+      ? 'INQUISITOR ABILITY'
+      : player.role === 'Scientist'
+        ? 'SCIENTIST ABILITY'
+        : player.role === 'Swapper'
+          ? 'SWAP'
+          : player.role === 'Disruptor'
+            ? 'VETO'
+            : player.role === 'Manipulator'
+              ? 'SURPRISE'
+              : player.role === 'Lawyer'
+                ? 'LAWYER ABILITY'
+                : 'ORACLE ABILITY';
+    const votingAbilitySubtitle = player.role === 'Inquisitor'
+      ? 'Exile a player instantly and make every other vote useless.'
+      : player.role === 'Scientist'
+        ? 'Choose 2 players. Their roles will be switched after this voting session ends.'
+        : player.role === 'Swapper'
+          ? 'Choose 2 players to swap places before this voting phase resolves.'
+          : player.role === 'Disruptor'
+            ? 'Revoke this vote instantly.'
+            : player.role === 'Manipulator'
+              ? 'Each assassin vote will count as double for this voting phase.'
+              : player.role === 'Lawyer'
+                ? lawyerUsingHearsay
+                  ? `Spend all ${lawyerStoredVotes} stored vote${lawyerStoredVotes === 1 ? '' : 's'} to reduce one player's total this phase.`
+                  : 'Protect a player so they cannot be voted out this phase.'
+                : 'Purify a player so they cannot be voted out this phase.';
+    const votingAbilityTargetLabel = player.role === 'Inquisitor'
+      ? 'SELECT PLAYER TO EXILE'
+      : player.role === 'Scientist'
+        ? `SELECT 2 PLAYERS TO SWITCH${selectedVotingAbilityTargets.length ? ` (${selectedVotingAbilityTargets.length} SELECTED)` : ''}`
+        : player.role === 'Swapper'
+          ? `SELECT 2 PLAYERS TO SWAP${selectedVotingAbilityTargets.length ? ` (${selectedVotingAbilityTargets.length} SELECTED)` : ''}`
+          : player.role === 'Lawyer'
+            ? (lawyerUsingHearsay ? 'SELECT PLAYER TO REDUCE' : 'SELECT PLAYER TO PROTECT')
+            : 'SELECT PLAYER TO PURIFY';
     const votingAbilityPanel = hasVotingAbility ? `
       <div class="action-panel oracle-vote-panel${showAbilityTab ? '' : ' hidden'}">
-        <div class="action-title">${player.role === 'Inquisitor' ? 'INQUISITOR ABILITY' : player.role === 'Scientist' ? 'SCIENTIST ABILITY' : player.role === 'Swapper' ? 'SWAP' : player.role === 'Disruptor' ? 'VETO' : player.role === 'Manipulator' ? 'SURPRISE' : 'ORACLE ABILITY'}</div>
-        <div class="action-subtitle">${player.role === 'Inquisitor' ? 'Exile a player instantly and make every other vote useless.' : player.role === 'Scientist' ? 'Choose 2 players. Their roles will be switched after this voting session ends.' : player.role === 'Swapper' ? 'Choose 2 players to swap places before this voting phase resolves.' : player.role === 'Disruptor' ? 'Revoke this vote instantly.' : player.role === 'Manipulator' ? 'Each assassin vote will count as double for this voting phase.' : 'Purify a player so they cannot be voted out this phase.'}</div>
-        ${isTargetlessVotingAbility ? '' : `<div class="target-label">${player.role === 'Inquisitor' ? 'SELECT PLAYER TO EXILE' : player.role === 'Scientist' ? `SELECT 2 PLAYERS TO SWITCH${selectedVotingAbilityTargets.length ? ` (${selectedVotingAbilityTargets.length} SELECTED)` : ''}` : player.role === 'Swapper' ? `SELECT 2 PLAYERS TO SWAP${selectedVotingAbilityTargets.length ? ` (${selectedVotingAbilityTargets.length} SELECTED)` : ''}` : 'SELECT PLAYER TO PURIFY'}</div>
+        <div class="action-title">${votingAbilityTitle}</div>
+        <div class="action-subtitle">${votingAbilitySubtitle}</div>
+        ${isLawyerAbility ? `<div class="action-buttons"><button class="action-btn ${state.selectedVotingAbilityAction === 'objection' ? 'selected' : ''}" data-voting-ability-action="objection" ${canObjection ? '' : 'disabled'}>Objection</button><button class="action-btn ${state.selectedVotingAbilityAction === 'hearsay' ? 'selected' : ''}" data-voting-ability-action="hearsay" ${canHearsay ? '' : 'disabled'}>Hearsay</button></div>` : ''}
+        ${isTargetlessVotingAbility ? '' : `<div class="target-label">${votingAbilityTargetLabel}</div>
         <div class="target-list chat-target-list" id="voting-ability-target-list">
           ${targets.filter((target) => target.id !== state.playerId).map((t) => `<div class="target-item ${((isScientistAbility || isSwapperAbility) ? selectedVotingAbilityTargets.includes(t.id) : state.selectedOracleTarget === t.id) ? 'selected' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`).join('')}
         </div>`}
         <div class="chat-local-actions">
-          <button class="btn ${player?.faction === 'Assassin' ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-voting-ability" ${isTargetlessVotingAbility ? '' : (isScientistAbility || isSwapperAbility) ? selectedVotingAbilityTargets.length !== 2 ? 'disabled' : '' : !state.selectedOracleTarget ? 'disabled' : ''}>${player.role === 'Inquisitor' ? 'Confirm Exile' : (player.role === 'Scientist' || player.role === 'Swapper') ? `Confirm ${selectedVotingAbilityTargets.length}/2` : player.role === 'Disruptor' ? `Confirm ${player.disruptorVetoUsesRemaining ?? 1}/1` : player.role === 'Manipulator' ? `Confirm ${player.manipulatorSurpriseUsesRemaining ?? 2}/2` : `Confirm ${player.oraclePurifyUsesRemaining ?? 2}/2`}</button>
+          <button class="btn ${player?.faction === 'Assassin' ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-voting-ability" ${isTargetlessVotingAbility ? '' : (isScientistAbility || isSwapperAbility) ? selectedVotingAbilityTargets.length !== 2 ? 'disabled' : '' : !state.selectedOracleTarget ? 'disabled' : ''}>${player.role === 'Inquisitor' ? 'Confirm Exile' : (player.role === 'Scientist' || player.role === 'Swapper') ? `Confirm ${selectedVotingAbilityTargets.length}/2` : player.role === 'Disruptor' ? `Confirm ${player.disruptorVetoUsesRemaining ?? 1}/1` : player.role === 'Manipulator' ? `Confirm ${player.manipulatorSurpriseUsesRemaining ?? 2}/2` : player.role === 'Lawyer' ? (lawyerUsingHearsay ? `Use ${lawyerStoredVotes}` : `Confirm ${player.lawyerObjectionUsesRemaining ?? 2}/2`) : `Confirm ${player.oraclePurifyUsesRemaining ?? 2}/2`}</button>
           <button class="btn btn-ghost chat-local-skip" id="btn-skip-voting-ability">Skip</button>
         </div>
       </div>` : '';
@@ -4988,7 +5084,7 @@
       ${votingAbilityPanel}
       <div class="voting-panel${showAbilityTab ? ' hidden' : ''}">
         <div class="action-title">CAST YOUR VOTE</div>
-        <div class="action-subtitle">${player?.role === 'Mayor' ? `${state.votesCast} / ${aliveCount} votes cast • ${mayorVotesRemaining} vote${mayorVotesRemaining === 1 ? '' : 's'} left • ${mayorStoredVotes} stored` : `${state.votesCast} / ${aliveCount} votes cast`}</div>
+        <div class="action-subtitle">${player?.role === 'Mayor' ? `${state.votesCast} / ${aliveCount} votes cast • ${mayorVotesRemaining} vote${mayorVotesRemaining === 1 ? '' : 's'} left • ${mayorStoredVotes} stored` : player?.role === 'Lawyer' ? `${state.votesCast} / ${aliveCount} votes cast • ${lawyerStoredVotes} stored reduction${lawyerStoredVotes === 1 ? '' : 's'}` : `${state.votesCast} / ${aliveCount} votes cast`}</div>
         <div class="target-label">SELECT PLAYER</div>
         <div class="target-list chat-target-list" id="vote-target-list">
           ${targets.map(t => `<div class="target-item ${state.selectedTarget === t.id ? 'selected' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span></div>`).join('')}
@@ -4999,6 +5095,15 @@
         </div>
       </div>
       <div id="phase-chat-panel"></div>`;
+
+    container.querySelectorAll('[data-voting-ability-action]').forEach((button) => {
+      button.addEventListener('click', () => {
+        if (button.disabled) return;
+        state.selectedVotingAbilityAction = button.dataset.votingAbilityAction;
+        state.selectedOracleTarget = null;
+        renderVotingPhase(container);
+      });
+    });
 
     container.querySelectorAll('#voting-ability-target-list .target-item').forEach((item) => {
       item.addEventListener('click', () => {
@@ -5021,7 +5126,7 @@
       confirmVotingAbilityBtn.addEventListener('click', () => {
         if (!isTargetlessVotingAbility && !isScientistAbility && !isSwapperAbility && !state.selectedOracleTarget) return;
         if ((isScientistAbility || isSwapperAbility) && selectedVotingAbilityTargets.length !== 2) return;
-        const action = player.role === 'Inquisitor' ? 'exile' : player.role === 'Scientist' ? 'experiment' : player.role === 'Swapper' ? 'swap' : player.role === 'Disruptor' ? 'veto' : player.role === 'Manipulator' ? 'surprise' : 'purify';
+        const action = player.role === 'Inquisitor' ? 'exile' : player.role === 'Scientist' ? 'experiment' : player.role === 'Swapper' ? 'swap' : player.role === 'Disruptor' ? 'veto' : player.role === 'Manipulator' ? 'surprise' : player.role === 'Lawyer' ? (state.selectedVotingAbilityAction || 'objection') : 'purify';
         state.socket.emit('voting-action', { action, targetId: (isScientistAbility || isSwapperAbility || isTargetlessVotingAbility) ? null : state.selectedOracleTarget, targetIds: (isScientistAbility || isSwapperAbility) ? selectedVotingAbilityTargets : null }, (response) => {
           if (response.success) {
             state.playerData = response.player || state.playerData;
@@ -5030,7 +5135,7 @@
             state.selectedVotingAbilityTargets = [];
             state.oracleVotingTab = 'vote';
             renderVotingPhase(container);
-            showToast(player.role === 'Inquisitor' ? 'Exile used' : player.role === 'Scientist' ? 'Experiment used' : player.role === 'Swapper' ? 'Swap used' : player.role === 'Disruptor' ? 'Veto used' : player.role === 'Manipulator' ? 'Surprise used' : 'Purify used', 'success');
+            showToast(player.role === 'Inquisitor' ? 'Exile used' : player.role === 'Scientist' ? 'Experiment used' : player.role === 'Swapper' ? 'Swap used' : player.role === 'Disruptor' ? 'Veto used' : player.role === 'Manipulator' ? 'Surprise used' : player.role === 'Lawyer' ? (action === 'hearsay' ? 'Hearsay used' : 'Objection used') : 'Purify used', 'success');
           } else {
             showToast(response.error || 'Action failed', 'error');
           }
@@ -5043,6 +5148,7 @@
       skipVotingAbilityBtn.addEventListener('click', () => {
         state.selectedOracleTarget = null;
         state.selectedVotingAbilityTargets = [];
+        state.selectedVotingAbilityAction = null;
         state.oracleVotingTab = 'vote';
         renderVotingPhase(container);
       });
