@@ -3630,7 +3630,7 @@
     return state.roomData.players.filter(p => {
       if (!p.alive) return false;
       if (p.id === state.playerId) return activeRole === 'Vitalist' || activeRole === 'Mirror Caster' || activeRole === 'Teleporter' || activeRole === 'Warden';
-      if (state.playerData.faction === 'Assassin' && (activeRole === 'Assassin' || activeRole === 'Disruptor' || activeRole === 'Manipulator' || activeRole === 'Ace of Blades')) {
+      if (state.playerData.faction === 'Assassin') {
         const isTeammate = state.playerData.teammates?.some(t => t.id === p.id);
         if (isTeammate) return false;
       }
