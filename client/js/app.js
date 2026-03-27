@@ -2495,7 +2495,7 @@
     if (/Magician has made a player disappear\./i.test(text)) return 'summary-magician';
     if (/Warden has guarded someone\./i.test(text)) return 'summary-warden';
     if (/The Officer has arrested someone\./i.test(text)) return 'summary-officer';
-    if (/The Medium is hearing things\./i.test(text)) return 'summary-medium';
+    if (/The Medium is hearing whispers\./i.test(text)) return 'summary-medium';
     if (/has been jailed by the Officer\./i.test(text)) return 'summary-officer';
     if (/was executed by the Officer/i.test(text)) return 'summary-officer';
     if (/The Alturist has sacrificed themselves\./i.test(text)) return 'summary-alturist';
@@ -2637,7 +2637,7 @@
     if (/Lawyer has objected this decision\./i.test(text) && String(message.source || '').trim() === 'Lawyer') {
       return ' system-result-lawyer-protect';
     }
-    if (/The Medium is hearing things\./i.test(text) && String(message.source || '').trim() === 'Medium') {
+    if (/The Medium is hearing whispers\./i.test(text) && String(message.source || '').trim() === 'Medium') {
       return ' system-result-medium';
     }
     if ((/The Officer has arrested someone\./i.test(text) || /has been jailed by the Officer\./i.test(text) || /was executed by the Officer/i.test(text)) && String(message.source || '').trim() === 'Officer') {
@@ -4534,15 +4534,7 @@
         event.stopPropagation();
         const nextChannel = button.dataset.chatChannel || 'public';
         if (nextChannel === state.currentChatChannel) return;
-        const panel = getActiveChatPanel();
-        const mode = getChatMode();
-        const keepDockedChatOpen = mode !== 'morning'
-          && !!panel
-          && !!panel.querySelector('.chat-panel-header');
         state.currentChatChannel = nextChannel;
-        if (keepDockedChatOpen) {
-          state.chatOverlayOpen = true;
-        }
         renderChatBox();
       });
     });
@@ -4807,6 +4799,7 @@
     const shouldUseExpandedSelfNightChat = activeRole === 'Veteran'
       || activeRole === 'Survivalist'
       || activeRole === 'Guardian Angel'
+      || activeRole === 'Medium'
       || (activeRole === 'Blackout' && state.selectedAction === 'flash')
       || (activeRole === 'The Purge' && state.selectedAction === 'fascism');
 

@@ -5285,7 +5285,7 @@ class GameLogic {
     if (action === 'abracadabra') return 'Magician has made a player disappear.';
     if (action === 'guard') return 'Warden has guarded someone.';
     if (action === 'detain') return 'The Officer has arrested someone.';
-    if (action === 'mediate') return 'The Medium is hearing things.';
+    if (action === 'mediate') return 'The Medium is hearing whispers.';
     if (action === 'demolish') return 'The Devastator has strapped a player with dynamites.';
     if (action === 'sire') return 'The Dracula is thirsty for blood';
     if (action === 'sacrifice') return 'The Alturist has sacrificed themselves.';
