@@ -8862,12 +8862,6 @@ body {
   color: hsl(218, 96%, 74%);
 }
 
-#screen-roles .roles-guide-card.role-theme-traitor {
-  background:
-    linear-gradient(135deg, rgba(14, 36, 82, 0.28) 0%, rgba(16, 28, 52, 0.12) 48%, rgba(98, 18, 20, 0.28) 100%),
-    linear-gradient(180deg, rgba(14, 18, 24, 0.98), rgba(8, 11, 16, 0.98));
-}
-
 #screen-roles .roles-guide-card.role-theme-traitor .roles-guide-card-icon {
   background: linear-gradient(135deg, rgba(42, 104, 255, 0.18), rgba(255, 58, 38, 0.18));
 }
@@ -8977,8 +8971,18 @@ body {
 
 #screen-roles .roles-guide-card.role-theme-survivalist,
 #screen-roles .roles-guide-card.role-theme-survivalist .roles-guide-card-icon {
-  border-color: rgba(210, 102, 28, 0.74);
-  color: var(--survivalist);
+  border-color: rgba(154, 94, 42, 0.76);
+  color: hsl(30, 72%, 62%);
+}
+
+#screen-roles .roles-guide-card.role-theme-survivalist {
+  background:
+    linear-gradient(135deg, rgba(56, 34, 14, 0.28) 0%, rgba(34, 20, 10, 0.16) 100%),
+    linear-gradient(180deg, rgba(10, 10, 10, 0.96), rgba(7, 7, 7, 0.98));
+}
+
+#screen-roles .roles-guide-card.role-theme-survivalist .roles-guide-card-icon {
+  background: linear-gradient(135deg, rgba(160, 104, 56, 0.14), rgba(92, 54, 24, 0.12));
 }
 
 #screen-roles .roles-guide-card.role-theme-imitator,
@@ -9190,7 +9194,7 @@ body {
 }
 
 #screen-roles .roles-guide-card.role-theme-survivalist:hover {
-  box-shadow: 0 0 20px -10px rgba(236, 120, 54, 0.44);
+  box-shadow: 0 0 20px -10px rgba(154, 94, 42, 0.42);
 }
 
 #screen-roles .roles-guide-card.role-theme-imitator:hover {
@@ -9363,7 +9367,7 @@ body {
 }
 
 #screen-roles .roles-guide-card.role-theme-survivalist .roles-guide-ability-highlight {
-  color: var(--survivalist);
+  color: hsl(30, 78%, 60%);
 }
 
 #screen-roles .roles-guide-card.role-theme-imitator .roles-guide-ability-highlight {
