@@ -501,6 +501,7 @@ class GameLogic {
     }
     room.jailedPlayerId = null;
     room.jailedOfficerId = null;
+    room.jailChatMessages = [];
   }
 
   convertOfficerToAmnesiac(room, playerId) {
@@ -1729,6 +1730,14 @@ class GameLogic {
         queuedTargetId: null,
         skippedAfterFascism: !!existingAction.fascismUsedThisNight || existingAction.skippedAfterFascism === true,
       };
+    } else if (activeRole === 'Officer') {
+      const jailedTargetId = player.officerJailedTargetId || null;
+      const verdictAvailable = !!jailedTargetId && (room.nightCount > (player.officerJailNightNumber || 0));
+      room.nightActions[playerId] = { action: 'skip', targetId: null };
+      if (jailedTargetId && verdictAvailable) {
+        this.clearOfficerJail(room);
+        return { success: true, room, immediateReleasedTargetId: jailedTargetId };
+      }
     } else {
       room.nightActions[playerId] = { action: 'skip', targetId: null };
     }

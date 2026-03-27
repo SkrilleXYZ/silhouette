@@ -275,6 +275,16 @@ io.on('connection', (socket) => {
       assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, mapping.playerId),
       jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, mapping.playerId),
     });
+    if (result.immediateReleasedTargetId) {
+      const publicData = game.getRoomPublicData(mapping.code);
+      io.to(mapping.code).emit('room-updated', publicData);
+      const releasedPlayerData = game.getPlayerData(mapping.code, result.immediateReleasedTargetId);
+      io.to(getPlayerChannel(result.immediateReleasedTargetId)).emit('player-updated', {
+        player: releasedPlayerData,
+        assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, result.immediateReleasedTargetId),
+        jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, result.immediateReleasedTargetId),
+      });
+    }
     callback({ success: true, player: playerData });
     if (game.checkAllNightActionsSubmitted(mapping.code)) {
       resolveNightPhase(mapping.code);

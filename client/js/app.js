@@ -2964,7 +2964,7 @@
     if (!player) return;
     const activeRole = getActiveNightRole(player);
     if (player.isJailed) {
-      container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg></div><p class="waiting-text">YOU ARE JAILED</p><p class="waiting-subtext">You cannot act tonight. Convince the Officer through Jail chat.</p></div><div id="phase-chat-panel"></div>';
+      container.innerHTML = '<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg></div><p class="waiting-text">YOU ARE JAILED</p><p class="waiting-subtext">You cannot act or use public chat while detained. Use Jail chat instead.</p></div><div id="phase-chat-panel"></div>';
       renderChatBox();
       return;
     }
