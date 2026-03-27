@@ -358,6 +358,25 @@ class GameLogic {
     return role === 'Dracula' || role === 'Vampire';
   }
 
+  convertPlayerToVampire(targetPlayer, draculaId) {
+    if (!targetPlayer || !draculaId) return false;
+    targetPlayer.role = 'Vampire';
+    targetPlayer.faction = 'Neutral';
+    targetPlayer.draculaMasterId = draculaId;
+    targetPlayer.executionerTargetId = null;
+    targetPlayer.guardianAngelTargetId = null;
+    targetPlayer.officerJailedTargetId = null;
+    targetPlayer.officerJailNightNumber = 0;
+    targetPlayer.inquisitorExiledTargetId = null;
+    targetPlayer.inquisitorExileUsed = false;
+    targetPlayer.alturistReviveTargetId = null;
+    targetPlayer.witherInfected = false;
+    targetPlayer.imitatorCopiedRole = null;
+    targetPlayer.imitatorCopiedSourceId = null;
+    targetPlayer.imitatorCycleTargetIds = [];
+    return true;
+  }
+
   getLivingVampireForDracula(room, draculaId) {
     if (!room || !draculaId) return null;
     return Array.from(room.players.values()).find((player) => (
@@ -1628,15 +1647,12 @@ class GameLogic {
     } else if (activeRole === 'Dracula') {
       const target = room.players.get(targetId);
       if (!target || !target.alive) return { error: 'Invalid target' };
-      if (action !== 'sire' && action !== 'kill') return { error: 'Invalid action for Dracula' };
+      if (action !== 'sire') return { error: 'Invalid action for Dracula' };
       if (targetId === playerId) return { error: 'Cannot target yourself' };
       if (target.role === 'Vampire' && target.draculaMasterId === playerId) {
         return { error: 'Cannot target your Vampire' };
       }
-      if (action === 'kill' && target.role === 'Vampire') {
-        return { error: 'Cannot target your bloodline' };
-      }
-      if (action === 'sire' && target.role === 'Vampire') {
+      if (target.role === 'Vampire') {
         return { error: 'Cannot sire your bloodline' };
       }
     } else if (activeRole === 'Vampire') {
@@ -1764,12 +1780,36 @@ class GameLogic {
         queuedTargetId: null,
       };
     } else if (activeRole === 'Dracula' || activeRole === 'Vampire') {
+      let immediateVampireTargetId = null;
+      if (activeRole === 'Dracula' && action === 'sire' && targetId) {
+        const target = room.players.get(targetId);
+        const livingVampire = this.getLivingVampireForDracula(room, playerId);
+        if (target?.alive && target.faction === 'Crew' && !livingVampire) {
+          if (this.convertPlayerToVampire(target, playerId)) {
+            delete room.nightActions[target.id];
+            immediateVampireTargetId = target.id;
+          }
+        }
+      }
       room.nightActions[playerId] = {
         action,
         targetId,
         submittedAt: Date.now(),
         queuedTargetId: null,
       };
+      if (immediateVampireTargetId) {
+        return {
+          success: true,
+          room,
+          player: this.getPlayerData(code, playerId),
+          immediateVampireTargetId,
+          immediatePrivateMessages: {
+            [immediateVampireTargetId]: [
+              this.createPrivateSystemMessage(code, 'Your fangs have grown', 'Dracula')
+            ],
+          },
+        };
+      }
     } else if (activeRole === 'Silencer') {
       const submittedAt = Date.now();
       room.nightActions[playerId] = {
@@ -2160,24 +2200,6 @@ class GameLogic {
       if (!actorId || veteranCounterKilledActors.has(actorId)) return;
       veteranCounterKilledActors.add(actorId);
       killed.add(actorId);
-    };
-    const convertToVampire = (targetPlayer, draculaId) => {
-      if (!targetPlayer || !draculaId) return false;
-      targetPlayer.role = 'Vampire';
-      targetPlayer.faction = 'Neutral';
-      targetPlayer.draculaMasterId = draculaId;
-      targetPlayer.executionerTargetId = null;
-      targetPlayer.guardianAngelTargetId = null;
-      targetPlayer.officerJailedTargetId = null;
-      targetPlayer.officerJailNightNumber = 0;
-      targetPlayer.inquisitorExiledTargetId = null;
-      targetPlayer.inquisitorExileUsed = false;
-      targetPlayer.alturistReviveTargetId = null;
-      targetPlayer.witherInfected = false;
-      targetPlayer.imitatorCopiedRole = null;
-      targetPlayer.imitatorCopiedSourceId = null;
-      targetPlayer.imitatorCycleTargetIds = [];
-      return true;
     };
     const pushWardenBlockedMessage = (actorId) => {
       if (!actorId || wardenBlockedActors.has(actorId)) return;
@@ -2823,7 +2845,7 @@ class GameLogic {
 
       const livingVampire = this.getLivingVampireForDracula(room, playerId);
       if (target.faction === 'Crew' && !livingVampire) {
-        if (convertToVampire(target, playerId)) {
+        if (this.convertPlayerToVampire(target, playerId)) {
           if (!privateMessages[target.id]) privateMessages[target.id] = [];
           privateMessages[target.id].push(
             this.createPrivateSystemMessage(code, 'Your fangs have grown', 'Dracula')
@@ -2856,9 +2878,10 @@ class GameLogic {
       const activeRole = this.getEffectiveNightRole(player);
       if (!player || !player.alive) continue;
       if (isSuppressedByPurge(player)) continue;
-      if (disabledAbilityTargets.has(playerId) || veteranCounterKilledActors.has(playerId)) continue;
       if (activeRole === 'Devastator' && action.action === 'demolish') continue;
 
+      // Demolish should trigger off actual visit attempts for the night, even if the
+      // visitor later gets disabled or counter-killed by another simultaneous effect.
       const interactionTargetIds = getInteractionTargetIds(action);
       if (action.action === 'longshot' && action.queuedTargetId) {
         interactionTargetIds.push(action.queuedTargetId);
@@ -3097,7 +3120,7 @@ class GameLogic {
       if (isSuppressedByPurge(player)) continue;
       if (disabledAbilityTargets.has(playerId)) continue;
 
-      if (action.action === 'kill' && (activeRole === 'Assassin' || activeRole === 'Traitor' || activeRole === 'Dracula' || activeRole === 'Vampire') && action.targetId) {
+      if (action.action === 'kill' && (activeRole === 'Assassin' || activeRole === 'Traitor' || activeRole === 'Vampire') && action.targetId) {
         if (veteranAlertIds.has(action.targetId)) {
           killed.add(playerId);
         } else if (mirroredTargets.has(action.targetId)) {
@@ -5121,7 +5144,6 @@ class GameLogic {
     if (action === 'mimic') return 'Imitator has shifted abilities.';
     if (action === 'inherit') return 'Amnesiac has claimed a forgotten role.';
     if (action === 'evil-eye') return 'Oracle has marked someone with the Evil Eye.';
-    if (action === 'infect') return 'A sickness has taken hold in the night.';
     if (action === 'douse' || action === 'ignite') return 'Arsonist is playing with fire.';
     if (action === 'protect') return 'Vitalist has protected someone.';
     if (action === 'quietus') return 'Silencer has hushed someone.';
@@ -5490,6 +5512,9 @@ class GameLogic {
       guardianAngelTargetId: activeRole === 'Guardian Angel' ? guardianTargetId : null,
       guardianAngelTargetName: activeRole === 'Guardian Angel' && guardianTargetId
         ? (room.players.get(guardianTargetId)?.name || null)
+        : null,
+      guardianAngelTargetRole: activeRole === 'Guardian Angel' && guardianTargetId
+        ? (room.players.get(guardianTargetId)?.role || null)
         : null,
       oracleMarkedTargetId: activeRole === 'Oracle' ? (player.oracleMarkedTargetId || null) : null,
       prophetGospelUsesRemaining: activeRole === 'Prophet' ? (player.prophetGospelUsesRemaining ?? 2) : null,

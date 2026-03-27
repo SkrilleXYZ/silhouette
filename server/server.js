@@ -259,6 +259,26 @@ io.on('connection', (socket) => {
         }
       }
     }
+    if (result.immediatePrivateMessages) {
+      for (const [playerId, messages] of Object.entries(result.immediatePrivateMessages)) {
+        messages.forEach((message) => {
+          io.to(getPlayerChannel(playerId)).emit('private-chat-message', { message });
+        });
+      }
+    }
+    if (result.immediateVampireTargetId) {
+      const publicData = game.getRoomPublicData(mapping.code);
+      io.to(mapping.code).emit('room-updated', publicData);
+      const bloodlineIds = new Set([mapping.playerId, result.immediateVampireTargetId]);
+      for (const bloodlineId of bloodlineIds) {
+        io.to(getPlayerChannel(bloodlineId)).emit('player-updated', {
+          player: game.getPlayerData(mapping.code, bloodlineId),
+          assassinChatMessages: game.getAssassinChatMessagesForPlayer(mapping.code, bloodlineId),
+          jailChatMessages: game.getJailChatMessagesForPlayer(mapping.code, bloodlineId),
+          abyssChatMessages: game.getAbyssChatMessagesForPlayer(mapping.code, bloodlineId),
+        });
+      }
+    }
     if (result.immediateAlturistRevive) {
       const publicData = game.getRoomPublicData(mapping.code);
       io.to(mapping.code).emit('room-updated', publicData);

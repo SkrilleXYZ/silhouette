@@ -749,7 +749,7 @@
         {
           name: 'Sire',
           type: 'Night',
-          description: 'Transform or kill players by biting them. If the bitten player is a Crew member, they become a Vampire. If they are not Crew or there is already a Vampire alive, the bitten player dies. You can only have 1 Vampire at a time unless your current one dies.',
+          description: 'Bite a player to convert them into a Vampire. If the bitten player was a Crew member they will turn into a Vampire (unless there is already a Vampire alive) Else they will kill the bitten player.',
         },
       ],
     },
@@ -1416,6 +1416,7 @@
       const previousPlayer = state.playerData;
       queueAmnesiacInheritanceTransition(previousPlayer, player);
       queueTraitorTurnTransition(previousPlayer, player);
+      queueVampireTurnTransition(previousPlayer, player);
       queueLifeTransition(previousPlayer, player);
       state.playerData = player;
       if (Array.isArray(assassinChatMessages)) {
@@ -3406,7 +3407,8 @@
       if (player.role === 'Executioner') {
         desc.innerHTML = `Get <span class="chat-player-ref"${targetStyle ? ` style="${targetStyle}"` : ''}>${escapeHtml(targetName)}</span> voted out. Make sure they don't die.`;
       } else {
-        desc.innerHTML = `Protect <span class="chat-player-ref"${targetStyle ? ` style="${targetStyle}"` : ''}>${escapeHtml(targetName)}</span> until the end to win with them.`;
+        const targetRoleSuffix = player.guardianAngelTargetRole ? ` They are <span class="roles-guide-ability-highlight">${escapeHtml(player.guardianAngelTargetRole)}</span>.` : '';
+        desc.innerHTML = `Protect <span class="chat-player-ref"${targetStyle ? ` style="${targetStyle}"` : ''}>${escapeHtml(targetName)}</span> until the end to win with them.${targetRoleSuffix}`;
       }
     } else if (player.role === 'Imitator') {
       desc.textContent = player.imitatorCopiedRole
@@ -3420,9 +3422,9 @@
       teammates.style.display = 'block';
       if (teammatesLabel) {
         teammatesLabel.textContent = player.role === 'Vampire'
-          ? 'Your Dracula:'
+          ? 'Your Teammate:'
           : player.role === 'Dracula'
-            ? 'Your Vampire:'
+            ? 'Your Teammate:'
             : 'Fellow Assassins:';
       }
       teammatesList.innerHTML = player.teammates.map(t => `<span class="teammate-tag">${t.name} ${t.alive ? '' : '(Dead)'}</span>`).join('');
@@ -3488,6 +3490,28 @@
     };
   }
 
+  function shouldAnimateVampireTurn(previousPlayer, nextPlayer) {
+    return !!(
+      previousPlayer
+      && nextPlayer
+      && previousPlayer.id === nextPlayer.id
+      && previousPlayer.alive !== false
+      && nextPlayer.alive !== false
+      && previousPlayer.role !== 'Vampire'
+      && nextPlayer.role === 'Vampire'
+      && !!nextPlayer.draculaMasterId
+    );
+  }
+
+  function queueVampireTurnTransition(previousPlayer, nextPlayer) {
+    if (!shouldAnimateVampireTurn(previousPlayer, nextPlayer)) return;
+    state.pendingRoleInheritance = {
+      role: nextPlayer.role,
+      type: 'vampire',
+      timestamp: Date.now(),
+    };
+  }
+
   function playPendingRoleInheritanceTransition() {
     if (!state.pendingRoleInheritance) return;
     const roleCard = document.getElementById('role-card');
@@ -3498,25 +3522,35 @@
 
     const transition = state.pendingRoleInheritance;
     state.pendingRoleInheritance = null;
-    const cardClass = transition.type === 'traitor' ? 'role-traitor-turn-enter' : 'role-inheritance-enter';
-    const panelClass = transition.type === 'traitor' ? 'role-traitor-turn-panel-enter' : 'role-inheritance-panel-enter';
+    const cardClass = transition.type === 'traitor'
+      ? 'role-traitor-turn-enter'
+      : transition.type === 'vampire'
+        ? 'role-vampire-turn-enter'
+        : 'role-inheritance-enter';
+    const panelClass = transition.type === 'traitor'
+      ? 'role-traitor-turn-panel-enter'
+      : transition.type === 'vampire'
+        ? 'role-vampire-turn-panel-enter'
+        : 'role-inheritance-panel-enter';
 
     if (roleCard) {
-      roleCard.classList.remove('role-inheritance-enter', 'role-traitor-turn-enter');
+      roleCard.classList.remove('role-inheritance-enter', 'role-traitor-turn-enter', 'role-vampire-turn-enter');
       void roleCard.offsetWidth;
       roleCard.classList.add(cardClass);
-      window.setTimeout(() => roleCard.classList.remove(cardClass), transition.type === 'traitor' ? 1180 : 820);
+      window.setTimeout(() => roleCard.classList.remove(cardClass), transition.type === 'traitor' ? 1180 : transition.type === 'vampire' ? 1120 : 820);
     }
 
     if (activePanel) {
-      activePanel.classList.remove('role-inheritance-panel-enter', 'role-traitor-turn-panel-enter');
+      activePanel.classList.remove('role-inheritance-panel-enter', 'role-traitor-turn-panel-enter', 'role-vampire-turn-panel-enter');
       void activePanel.offsetWidth;
       activePanel.classList.add(panelClass);
-      window.setTimeout(() => activePanel.classList.remove(panelClass), transition.type === 'traitor' ? 980 : 700);
+      window.setTimeout(() => activePanel.classList.remove(panelClass), transition.type === 'traitor' ? 980 : transition.type === 'vampire' ? 920 : 700);
     }
 
     if (transition.type === 'traitor') {
       showToast('You have become the Traitor', 'info');
+    } else if (transition.type === 'vampire') {
+      showToast('Your fangs have grown', 'info');
     }
   }
 
@@ -3592,6 +3626,22 @@
     return state.roomData.players
       .filter((p) => !p.alive && p.id !== state.playerId)
       .map((p) => ({ id: p.id, name: p.name, avatarIndex: p.avatarIndex }));
+  }
+
+  function getPinnedTargetBadgeMeta(player, activeRole, targetId) {
+    if (!player || !targetId) return null;
+    if (player.role === 'Executioner' && player.executionerTargetId === targetId) {
+      return { label: 'Target', className: 'target-status-executioner-target' };
+    }
+    if (activeRole === 'Guardian Angel' && player.guardianAngelTargetId === targetId) {
+      return { label: 'Target', className: 'target-status-guardian-target' };
+    }
+    return null;
+  }
+
+  function renderPinnedTargetBadge(player, activeRole, targetId) {
+    const badge = getPinnedTargetBadgeMeta(player, activeRole, targetId);
+    return badge ? `<span class="target-status ${badge.className}">${badge.label}</span>` : '';
   }
 
   function getVoteTargets() {
@@ -4022,10 +4072,15 @@
       const guardianAngelTargetStyle = guardianAngelTargetPlayer
         ? getPlayerChatStyle({ type: 'player', senderId: guardianAngelTargetPlayer.id, senderName: guardianAngelTargetPlayer.name, colorHex: guardianAngelTargetPlayer.colorHex })
         : '';
+      const pinnedWaitingTargets = activeRole === 'Executioner' && player.executionerTargetId
+        ? getTargetPlayers().filter((target) => target.id === player.executionerTargetId)
+        : activeRole === 'Guardian Angel' && player.guardianAngelTargetId
+          ? getTargetPlayers().filter((target) => target.id === player.guardianAngelTargetId)
+          : [];
       const waitingSubtext = activeRole === 'Executioner' && player.executionerTargetName
         ? `Your target is <span class="chat-player-ref"${executionerTargetStyle ? ` style="${executionerTargetStyle}"` : ''}>${escapeHtml(player.executionerTargetName)}</span>. Get them voted out.`
         : activeRole === 'Guardian Angel' && player.guardianAngelTargetName
-          ? `Your target is <span class="chat-player-ref"${guardianAngelTargetStyle ? ` style="${guardianAngelTargetStyle}"` : ''}>${escapeHtml(player.guardianAngelTargetName)}</span>. Your blessings are spent, so watch over them from the sidelines.`
+          ? `Your target is <span class="chat-player-ref"${guardianAngelTargetStyle ? ` style="${guardianAngelTargetStyle}"` : ''}>${escapeHtml(player.guardianAngelTargetName)}</span>${player.guardianAngelTargetRole ? `, the <span class="roles-guide-ability-highlight">${escapeHtml(player.guardianAngelTargetRole)}</span>` : ''}. Your blessings are spent, so watch over them from the sidelines.`
         : activeRole === 'Oracle'
           ? 'Your Evil Eye uses are spent. Wait for dawn and save Purify for the vote.'
         : activeRole === 'Survivalist'
@@ -4033,7 +4088,7 @@
         : activeRole === 'Amnesiac'
           ? 'No dead players can be remembered yet. Wait for dawn...'
           : 'You have no abilities. Wait for dawn...';
-      container.innerHTML = `<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">${waitingSubtext}</p></div><div id="phase-chat-panel"></div>`;
+      container.innerHTML = `<div class="waiting-panel"><div class="waiting-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><p class="waiting-text">THE NIGHT IS DARK</p><p class="waiting-subtext">${waitingSubtext}</p>${pinnedWaitingTargets.length ? `<div class="target-list chat-target-list waiting-target-list">${pinnedWaitingTargets.map((t) => `<div class="target-item target-static" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span>${renderPinnedTargetBadge(player, activeRole, t.id)}</div>`).join('')}</div>` : ''}</div><div id="phase-chat-panel"></div>`;
       renderChatBox();
       return;
       }
@@ -4278,6 +4333,7 @@
   }
 
   function getActiveChatChannel() {
+    if (state.currentChatChannel === 'public' && state.playerData?.isJailed && canUseJailChat()) return 'jail';
     if (state.currentChatChannel === 'assassin' && canUseAssassinChat()) return 'assassin';
     if (state.currentChatChannel === 'jail' && canUseJailChat()) return 'jail';
     if (state.currentChatChannel === 'abyss' && canUseAbyssChat()) return 'abyss';
@@ -4504,9 +4560,11 @@
           : canPublicChat;
     const isDaytimeInline = mode === 'lobby' || mode === 'morning';
     const isDaytimeFullscreen = isDaytimeInline && state.chatOverlayOpen;
+    const isDeadSpectator = state.playerData?.alive === false;
+    const isJailedPlayer = !!state.playerData?.isJailed;
     const isForcedExpandedNight = mode === 'night'
       && !state.chatOverlayOpen
-      && (!!state.forceExpandedNightChat || state.playerData?.alive === false);
+      && (!!state.forceExpandedNightChat || isDeadSpectator || isJailedPlayer);
     const isExpandedMode = (isDaytimeInline && !isDaytimeFullscreen) || isForcedExpandedNight;
     const isDockedMode = mode !== 'hidden' && !isExpandedMode;
     const isOverlayOpen = state.chatOverlayOpen;
@@ -4539,8 +4597,6 @@
     const messages = getRenderableChatMessages(activeChannel);
     const overlay = ensureChatOverlay();
     const isStandaloneOverlay = isOverlayOpen;
-    const isDeadSpectator = state.playerData?.alive === false;
-
     panel.className = `phase-chat-panel ${isStandaloneOverlay ? 'chat-overlay-anchor' : isOverlayOpen ? 'chat-expanded' : 'chat-compact'}${canChat ? '' : ' chat-locked'}${isDockedMode ? ' chat-docked-mode' : ''}${isDeadSpectator ? ' chat-dead' : ''}${activeChannel === 'assassin' ? ' chat-channel-assassin' : ''}${activeChannel === 'jail' ? ' chat-channel-jail' : ''}${activeChannel === 'abyss' ? ' chat-channel-abyss' : ''}${mode === 'lobby' ? ' chat-lobby room-chat-panel' : ''}${mode === 'morning' ? ' chat-morning' : ''}${mode === 'night' && isExpandedMode ? ' chat-night-expanded' : ''}`;
     if (gameContainer) {
       gameContainer.classList.toggle('chat-overlay-active', isStandaloneOverlay);
@@ -4975,7 +5031,7 @@
       state.selectedAction = 'kill';
     }
 
-    if (activeRole === 'Dracula' && !state.selectedAction) {
+    if (activeRole === 'Dracula') {
       state.selectedAction = 'sire';
     }
 
@@ -5089,7 +5145,7 @@
       state.selectedAction = 'sacrifice';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected" data-action="sacrifice">Sacrifice</button></div>';
     } else if (activeRole === 'Dracula') {
-      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'sire' ? 'selected dracula-action' : ''}" data-action="sire">Sire</button><button class="action-btn ${state.selectedAction === 'kill' ? 'selected assassin-action dracula-kill-action' : ''}" data-action="kill">Kill</button></div>`;
+      actionsHTML = '<div class="action-buttons"><button class="action-btn selected dracula-action" data-action="sire">Sire</button></div>';
     } else if (activeRole === 'Vampire') {
       state.selectedAction = 'kill';
       actionsHTML = '<div class="action-buttons"><button class="action-btn selected vampire-action" data-action="kill">Bite</button></div>';
@@ -5143,7 +5199,7 @@
     } else if (activeRole === 'Hypnotic') {
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Kill</button><button class="action-btn ${state.selectedAction === 'trance' ? 'selected' : ''}" data-action="trance" ${player.hypnoticTranceUsedThisNight ? 'disabled' : ''}>Trance</button></div>`;
     } else if (activeRole === 'Overload') {
-      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'kill' ? 'selected' : ''}" data-action="kill">Shutdown</button><button class="action-btn ${state.selectedAction === 'malware' ? 'selected' : ''}" data-action="malware" ${player.overloadMalwareUsedThisNight ? 'disabled' : ''}>Malware</button></div>`;
+      actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'kill' ? 'selected overload-kill-action' : ''}" data-action="kill">Shutdown</button><button class="action-btn ${state.selectedAction === 'malware' ? 'selected' : ''}" data-action="malware" ${player.overloadMalwareUsedThisNight ? 'disabled' : ''}>Malware</button></div>`;
     } else if (activeRole === 'Arsonist') {
       actionsHTML = `<div class="action-buttons"><button class="action-btn ${state.selectedAction === 'douse' ? 'selected' : ''}" data-action="douse">Douse</button><button class="action-btn ${state.selectedAction === 'ignite' ? 'selected' : ''}" data-action="ignite" ${arsonistCanIgniteTonight ? '' : 'disabled'}>Ignite</button></div>`;
     } else if (activeRole === 'Wither') {
@@ -5187,7 +5243,7 @@
     else if (activeRole === 'The Vessel') actionDesc = 'Choose a player to eliminate.';
     else if (activeRole === 'Amnesiac') actionDesc = 'Choose a dead player to inherit their role';
     else if (activeRole === 'Guardian Angel') actionDesc = player.guardianAngelTargetName
-      ? `Protect <span class="chat-player-ref"${guardianAngelTargetStyle ? ` style="${guardianAngelTargetStyle}"` : ''}>${escapeHtml(player.guardianAngelTargetName)}</span> from death tonight.`
+      ? `Protect <span class="chat-player-ref"${guardianAngelTargetStyle ? ` style="${guardianAngelTargetStyle}"` : ''}>${escapeHtml(player.guardianAngelTargetName)}</span>${player.guardianAngelTargetRole ? `, the <span class="roles-guide-ability-highlight">${escapeHtml(player.guardianAngelTargetRole)}</span>` : ''}, from death tonight.`
       : 'Protect your target from death tonight.';
     else if (activeRole === 'Survivalist') actionDesc = 'Protect yourself from death tonight.';
     else if (activeRole === 'Tetherhex') actionDesc = state.selectedAction === 'interlinked'
@@ -5221,9 +5277,7 @@
     else if (activeRole === 'Psychopath') actionDesc = psychopathStoredKills > 0
       ? `You have ${psychopathStoredKills} stored kill${psychopathStoredKills === 1 ? '' : 's'}. Unleash up to ${psychopathKillsAvailable} kill${psychopathKillsAvailable === 1 ? '' : 's'} tonight, or skip to keep stacking.`
       : 'Skip tonight to stack a future kill, or strike now and stay on schedule.';
-    else if (activeRole === 'Dracula') actionDesc = state.selectedAction === 'sire'
-      ? 'Bite a player tonight. Crew become your Vampire if none is alive. Everyone else dies instead.'
-      : 'Abandon the bite and eliminate a player outright tonight.';
+    else if (activeRole === 'Dracula') actionDesc = 'Bite a player tonight. Crew become your Vampire if none is alive. Everyone else dies instead.';
     else if (activeRole === 'Vampire') actionDesc = 'Bite a player tonight and feed the bloodline beside Dracula.';
     else if (activeRole === 'Wither') actionDesc = 'Infect 1 player tonight. Infected players silently spread infection through future interactions.';
     else if (activeRole === 'Pestilence') actionDesc = 'You are immortal to every kill. Choose a player to eliminate tonight.';
@@ -5290,7 +5344,7 @@
         : activeRole === 'Psychopath'
           ? 1
         : 3;
-    const shouldShowTargetList = (!isTargetlessRole && !aceOfBladesRollAnimating) || activeRole === 'Arsonist';
+    const shouldShowTargetList = ((!isTargetlessRole || activeRole === 'Guardian Angel') && !aceOfBladesRollAnimating) || activeRole === 'Arsonist';
     const targetLabel = activeRole === 'Arsonist' && state.selectedAction === 'ignite'
       ? `DOUSED PLAYERS${displayedTargets.length ? ` (${displayedTargets.length})` : ''}`
       : activeRole === 'Ace of Blades'
@@ -5325,7 +5379,7 @@
             const isSelected = isMultiTargetRole
               ? multiSelectedTargets.includes(t.id)
               : state.selectedTarget === t.id;
-            return `<div class="target-item ${isSelected ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''} ${activeRole === 'Arsonist' && arsonistDousedTargetIds.includes(t.id) ? 'target-doused' : ''} ${activeRole === 'Wither' && witherKnownInfectedIds.includes(t.id) ? 'target-infected' : ''} ${t.isJailed ? 'target-jailed' : ''} ${activeRole === 'Arsonist' && state.selectedAction === 'ignite' ? 'target-static' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span>${activeRole === 'Arsonist' && arsonistDousedTargetIds.includes(t.id) ? '<span class="target-status target-status-doused">Doused</span>' : ''}${activeRole === 'Wither' && witherKnownInfectedIds.includes(t.id) ? '<span class="target-status target-status-infected">Infected</span>' : ''}${t.isJailed ? '<span class="target-status target-status-jailed">Jailed</span>' : ''}</div>`;
+            return `<div class="target-item ${isSelected ? `selected ${targetClass}` : ''} ${isRestricted ? 'target-restricted' : ''} ${activeRole === 'Arsonist' && arsonistDousedTargetIds.includes(t.id) ? 'target-doused' : ''} ${activeRole === 'Wither' && witherKnownInfectedIds.includes(t.id) ? 'target-infected' : ''} ${t.isJailed ? 'target-jailed' : ''} ${activeRole === 'Arsonist' && state.selectedAction === 'ignite' ? 'target-static' : ''}" data-target="${t.id}" ${isRestricted ? 'data-restricted="true"' : ''}>${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span>${renderPinnedTargetBadge(player, activeRole, t.id)}${activeRole === 'Arsonist' && arsonistDousedTargetIds.includes(t.id) ? '<span class="target-status target-status-doused">Doused</span>' : ''}${activeRole === 'Wither' && witherKnownInfectedIds.includes(t.id) ? '<span class="target-status target-status-infected">Infected</span>' : ''}${t.isJailed ? '<span class="target-status target-status-jailed">Jailed</span>' : ''}</div>`;
           }).join('')}
         </div>` : ''}
         <div class="chat-local-actions">
@@ -5417,11 +5471,12 @@
             ? multiSelectedTargets
             : ((activeRole === 'Ace of Blades' || activeRole === 'Psychopath') && state.selectedAction === 'kill' && state.selectedTarget ? [state.selectedTarget] : null),
         }, (response) => {
-          if (response.success) {
-            if (response.player) {
-              const previousPlayer = state.playerData;
-              queueAmnesiacInheritanceTransition(previousPlayer, response.player);
-              state.playerData = response.player;
+            if (response.success) {
+              if (response.player) {
+                const previousPlayer = state.playerData;
+                queueAmnesiacInheritanceTransition(previousPlayer, response.player);
+                queueVampireTurnTransition(previousPlayer, response.player);
+                state.playerData = response.player;
               state.hasActed = !!response.player.hasSubmittedAction;
               const responseActiveRole = getActiveNightRole(response.player);
               if (responseActiveRole === 'Traplord' || responseActiveRole === 'Teleporter' || responseActiveRole === 'Ace of Blades' || responseActiveRole === 'Psychopath') {
