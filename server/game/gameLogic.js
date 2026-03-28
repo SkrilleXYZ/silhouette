@@ -129,7 +129,7 @@ class GameLogic {
       sheriffKillsNeutralEvil: false,
       officerKillsNeutralEvil: false,
       votingAssassinationsUsed: 0,
-      votingAssassinationMax: 2,
+      votingAssassinationMax: 3,
       jailedPlayerId: null,
       jailedOfficerId: null,
       imitatorJailedPlayerId: null,
@@ -4549,7 +4549,7 @@ class GameLogic {
     if (action === 'assassinate') {
       if (room.enableAssassinations === false) return { error: 'Assassinations are disabled in this room' };
       if (player.faction !== 'Assassin') return { error: 'You cannot use Assassinate' };
-      if ((room.votingAssassinationsUsed ?? 0) >= (room.votingAssassinationMax ?? 2)) {
+      if ((room.votingAssassinationsUsed ?? 0) >= (room.votingAssassinationMax ?? 3)) {
         return { error: 'No assassination uses remain this voting round' };
       }
 
@@ -5485,8 +5485,8 @@ class GameLogic {
       jailedPlayerId: room.jailedPlayerId || null,
       jailedOfficerId: room.jailedOfficerId || null,
       votingAssassinationsUsed: Math.max(0, Number(room.votingAssassinationsUsed) || 0),
-      votingAssassinationMax: Math.max(0, Number(room.votingAssassinationMax) || 2),
-      votingAssassinationsRemaining: Math.max(0, (Number(room.votingAssassinationMax) || 2) - (Number(room.votingAssassinationsUsed) || 0)),
+        votingAssassinationMax: Math.max(0, Number(room.votingAssassinationMax) || 3),
+        votingAssassinationsRemaining: Math.max(0, (Number(room.votingAssassinationMax) || 3) - (Number(room.votingAssassinationsUsed) || 0)),
       votingEligibleCount: players.filter((p) => p.alive && !room.blackmailedPlayers?.[p.id] && !this.isPlayerJailed(room, p.id)).length,
     };
   }
@@ -5865,7 +5865,7 @@ class GameLogic {
       hasVoted: !!(room.votes[playerId] && typeof room.votes[playerId] === 'object' ? room.votes[playerId].finalized : room.votes[playerId]),
       canUseVotingAssassination: player.faction === 'Assassin' && room.enableAssassinations !== false,
       votingAssassinationsRemaining: player.faction === 'Assassin'
-        ? Math.max(0, (Number(room.votingAssassinationMax) || 2) - (Number(room.votingAssassinationsUsed) || 0))
+        ? Math.max(0, (Number(room.votingAssassinationMax) || 3) - (Number(room.votingAssassinationsUsed) || 0))
         : null,
       mayorStoredVotes: player.role === 'Mayor' ? Math.max(0, player.mayorStoredVotes ?? 0) : 0,
       mayorVotesAvailable: player.role === 'Mayor' ? 1 + Math.max(0, player.mayorStoredVotes ?? 0) : 1,
