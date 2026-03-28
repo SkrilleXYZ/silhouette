@@ -120,6 +120,7 @@ class GameLogic {
       anonymousEjects: false,
       anonymousKills: false,
       hiddenRoleList: false,
+      enableAssassinations: true,
       disableVillagerRole: false,
       enableTraitor: false,
       traitorActivated: false,
@@ -127,6 +128,8 @@ class GameLogic {
       sheriffKillsCrewTarget: false,
       sheriffKillsNeutralEvil: false,
       officerKillsNeutralEvil: false,
+      votingAssassinationsUsed: 0,
+      votingAssassinationMax: 2,
       jailedPlayerId: null,
       jailedOfficerId: null,
       imitatorJailedPlayerId: null,
@@ -389,6 +392,30 @@ class GameLogic {
 
   isBloodlustRole(role) {
     return role === 'Dracula' || role === 'Vampire';
+  }
+
+  isAssassinationGuessableRole(role) {
+    if (!role) return false;
+    if (this.isBloodlustRole(role) || role === 'Pestilence') return true;
+    if ((this.roleCatalog?.Crew?.Info || []).includes(role)) return true;
+    if ((this.roleCatalog?.Crew?.Protection || []).includes(role)) return true;
+    if ((this.roleCatalog?.Crew?.Killing || []).includes(role)) return true;
+    if ((this.roleCatalog?.Crew?.Chaos || []).includes(role)) return true;
+    if ((this.roleCatalog?.Crew?.Unbound || []).includes(role)) return true;
+    if ((this.roleCatalog?.Neutral?.Evil || []).includes(role)) return true;
+    if ((this.roleCatalog?.Neutral?.Killing || []).includes(role)) return true;
+    return false;
+  }
+
+  eliminatePlayerDuringVoting(room, playerId) {
+    const player = room?.players?.get(playerId);
+    if (!room || !player || !player.alive) return false;
+    player.alive = false;
+    delete room.votes[playerId];
+    if (room.oraclePurifiedTargetId === playerId) room.oraclePurifiedTargetId = null;
+    if (room.lawyerProtectedTargetId === playerId) room.lawyerProtectedTargetId = null;
+    if (room.eliminatedToday === playerId) room.eliminatedToday = null;
+    return true;
   }
 
   convertPlayerToVampire(targetPlayer, draculaId) {
@@ -4511,12 +4538,58 @@ class GameLogic {
     return { success: true, room };
   }
 
-  submitVotingAbility(code, playerId, action, targetId, targetIds = null) {
+  submitVotingAbility(code, playerId, action, targetId, targetIds = null, roleGuess = null) {
     const room = this.rooms.get(code);
     if (!room || room.state !== 'voting') return { error: 'Not in voting phase' };
 
     const player = room.players.get(playerId);
     if (!player || !player.alive) return { error: 'Invalid player' };
+    if (this.isPlayerJailed(room, playerId)) return { error: 'You are jailed and cannot use voting abilities today' };
+
+    if (action === 'assassinate') {
+      if (room.enableAssassinations === false) return { error: 'Assassinations are disabled in this room' };
+      if (player.faction !== 'Assassin') return { error: 'You cannot use Assassinate' };
+      if ((room.votingAssassinationsUsed ?? 0) >= (room.votingAssassinationMax ?? 2)) {
+        return { error: 'No assassination uses remain this voting round' };
+      }
+
+      const target = room.players.get(targetId);
+      if (!target || !target.alive) return { error: 'Invalid target' };
+      if (targetId === playerId) return { error: 'Cannot target yourself' };
+      if (target.faction === 'Assassin') return { error: 'You cannot assassinate a fellow assassin' };
+      if (!this.isAssassinationGuessableRole(target.role)) return { error: 'That target cannot be assassinated' };
+
+      const guessedRole = String(roleGuess || '').trim();
+      if (!guessedRole || !this.isAssassinationGuessableRole(guessedRole)) {
+        return { error: 'Choose a valid role guess' };
+      }
+
+      room.votingAssassinationsUsed = Math.max(0, Number(room.votingAssassinationsUsed) || 0) + 1;
+
+      const killedPlayerIds = [];
+      const targetDies = guessedRole === target.role;
+      if (targetDies) {
+        if (this.eliminatePlayerDuringVoting(room, targetId)) {
+          killedPlayerIds.push(targetId);
+        }
+      } else if (this.eliminatePlayerDuringVoting(room, playerId)) {
+        killedPlayerIds.push(playerId);
+      }
+
+      const winCheck = this.checkWinCondition(code);
+      if (winCheck) {
+        room.state = 'ended';
+        room.winner = winCheck;
+      }
+
+      return {
+        success: true,
+        room,
+        immediateAssassination: true,
+        killedPlayerIds,
+        winner: room.winner || null,
+      };
+    }
 
     if (player.role === 'Oracle') {
       const target = room.players.get(targetId);
@@ -4632,6 +4705,9 @@ class GameLogic {
     }
     if (typeof settings.hiddenRoleList === 'boolean') {
       room.hiddenRoleList = settings.hiddenRoleList;
+    }
+    if (typeof settings.enableAssassinations === 'boolean') {
+      room.enableAssassinations = settings.enableAssassinations;
     }
     if (typeof settings.disableVillagerRole === 'boolean') {
       room.disableVillagerRole = settings.disableVillagerRole;
@@ -5185,6 +5261,7 @@ class GameLogic {
     if (!room) return null;
     room.state = 'voting';
     room.votes = {};
+    room.votingAssassinationsUsed = 0;
     for (const [, player] of room.players) {
       player.manipulatorSurpriseUsed = false;
       player.lawyerProtectedTargetId = null;
@@ -5398,6 +5475,7 @@ class GameLogic {
       anonymousEjects: room.anonymousEjects,
       anonymousKills: room.anonymousKills,
       hiddenRoleList: room.hiddenRoleList,
+      enableAssassinations: room.enableAssassinations !== false,
       disableVillagerRole: room.disableVillagerRole,
       enableTraitor: room.enableTraitor,
       useClassicFivePlayerSetup: room.useClassicFivePlayerSetup,
@@ -5406,6 +5484,9 @@ class GameLogic {
       officerKillsNeutralEvil: room.officerKillsNeutralEvil,
       jailedPlayerId: room.jailedPlayerId || null,
       jailedOfficerId: room.jailedOfficerId || null,
+      votingAssassinationsUsed: Math.max(0, Number(room.votingAssassinationsUsed) || 0),
+      votingAssassinationMax: Math.max(0, Number(room.votingAssassinationMax) || 2),
+      votingAssassinationsRemaining: Math.max(0, (Number(room.votingAssassinationMax) || 2) - (Number(room.votingAssassinationsUsed) || 0)),
       votingEligibleCount: players.filter((p) => p.alive && !room.blackmailedPlayers?.[p.id] && !this.isPlayerJailed(room, p.id)).length,
     };
   }
@@ -5782,6 +5863,10 @@ class GameLogic {
           ? !!(room.nightActions[playerId] && (room.nightActions[playerId].action === 'kill' || room.nightActions[playerId].action === 'skip' || room.nightActions[playerId].skippedAfterFlash === true))
           : !!room.nightActions[playerId],
       hasVoted: !!(room.votes[playerId] && typeof room.votes[playerId] === 'object' ? room.votes[playerId].finalized : room.votes[playerId]),
+      canUseVotingAssassination: player.faction === 'Assassin' && room.enableAssassinations !== false,
+      votingAssassinationsRemaining: player.faction === 'Assassin'
+        ? Math.max(0, (Number(room.votingAssassinationMax) || 2) - (Number(room.votingAssassinationsUsed) || 0))
+        : null,
       mayorStoredVotes: player.role === 'Mayor' ? Math.max(0, player.mayorStoredVotes ?? 0) : 0,
       mayorVotesAvailable: player.role === 'Mayor' ? 1 + Math.max(0, player.mayorStoredVotes ?? 0) : 1,
       mayorVotesCastThisPhase: player.role === 'Mayor' && room.votes[playerId] && typeof room.votes[playerId] === 'object'

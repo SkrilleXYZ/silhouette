@@ -61,6 +61,9 @@
     oracleVotingTab: 'ability',
     selectedVotingAbilityTargets: [],
     selectedVotingAbilityAction: null,
+    selectedVotingAbilityRoleGuess: null,
+    votingRoleOverlayOpen: false,
+    selectedVotingAssassinationTargetId: null,
   };
 
   const MAX_ROOM_PLAYERS = 15;
@@ -1100,6 +1103,9 @@
     state.selectedTarget = null;
     state.aceOfBladesRollAnimation = null;
     state.selectedTargets = [];
+    state.selectedVotingAbilityRoleGuess = null;
+    state.votingRoleOverlayOpen = false;
+    state.selectedVotingAssassinationTargetId = null;
     state.totalAlive = response.room?.aliveCount || 0;
     setRoomUrl(state.roomCode);
     applyRoomCodeToInput(state.roomCode);
@@ -1389,6 +1395,9 @@
       state.selectedTarget = null;
       state.aceOfBladesRollAnimation = null;
       state.selectedTargets = [];
+      state.selectedVotingAbilityRoleGuess = null;
+      state.votingRoleOverlayOpen = false;
+      state.selectedVotingAssassinationTargetId = null;
       state.allPlayersWithRoles = [];
       showScreen('game');
       hideNav();
@@ -1412,6 +1421,9 @@
       state.aceOfBladesRollAnimation = null;
       state.selectedTargets = [];
       state.selectedVotingAbilityTargets = [];
+      state.selectedVotingAbilityRoleGuess = null;
+      state.votingRoleOverlayOpen = false;
+      state.selectedVotingAssassinationTargetId = null;
       state.oracleVotingTab = phase === 'voting' ? 'ability' : 'vote';
       if (state.currentChatChannel === 'abyss' && !canUseAbyssChat()) {
         state.currentChatChannel = 'public';
@@ -1882,11 +1894,27 @@
   }
 
   function getRoleDefinition(role) {
-    return ROLE_DEFINITIONS[role] || {
+    const roleInfo = ROLE_DEFINITIONS[role] || {
       faction: 'Crew',
       description: '',
       revealText: '',
       abilities: [],
+    };
+    const shouldAddAssassinate = roleInfo.faction === 'Assassin' || role === 'Traitor';
+    if (!shouldAddAssassinate) return roleInfo;
+    const alreadyHasAssassinate = Array.isArray(roleInfo.abilities)
+      && roleInfo.abilities.some((ability) => ability?.name === 'Assassinate');
+    if (alreadyHasAssassinate) return roleInfo;
+    return {
+      ...roleInfo,
+      abilities: [
+        ...(Array.isArray(roleInfo.abilities) ? roleInfo.abilities : []),
+        {
+          name: 'Assassinate',
+          type: 'Voting',
+          description: 'Guess the exact role of a Neutral Killer, Neutral Evil or a Crew member to silently kill them during the voting. Wrong guess kills you instead.',
+        },
+      ],
     };
   }
 
@@ -1915,7 +1943,7 @@
   function getRolesForFaction(faction) {
     return Object.entries(ROLE_GUIDE_DEFINITIONS)
       .filter(([, roleInfo]) => roleInfo.faction === faction && !roleInfo.hiddenFromGuide)
-      .map(([role, roleInfo]) => ({ role, ...roleInfo }));
+      .map(([role, roleInfo]) => ({ role, ...roleInfo, abilities: getRoleDefinition(role).abilities || roleInfo.abilities || [] }));
   }
 
   function formatRoleGuideAbilityDescription(description) {
@@ -2355,6 +2383,11 @@
     if (hiddenRoleListToggle) {
       hiddenRoleListToggle.checked = !!data.hiddenRoleList;
       hiddenRoleListToggle.disabled = !(state.isHost || state.playerId === data.hostId);
+    }
+    const enableAssassinationsToggle = document.getElementById('toggle-enable-assassinations');
+    if (enableAssassinationsToggle) {
+      enableAssassinationsToggle.checked = data.enableAssassinations !== false;
+      enableAssassinationsToggle.disabled = !(state.isHost || state.playerId === data.hostId);
     }
     const disableVillagerRoleToggle = document.getElementById('toggle-disable-villager-role');
     if (disableVillagerRoleToggle) {
@@ -3705,7 +3738,25 @@
     if (!state.roomData) return [];
     return state.roomData.players
       .filter(p => p.alive && p.id !== state.playerId)
-      .map(p => ({ id: p.id, name: p.name, avatarIndex: p.avatarIndex, isJailed: !!p.isJailed }));
+      .map(p => ({ id: p.id, name: p.name, avatarIndex: p.avatarIndex, isJailed: !!p.isJailed, role: p.role, faction: p.faction, colorHex: p.colorHex || null }));
+  }
+
+  function getVotingAssassinationRoleOptions() {
+    return Object.entries(ROLE_GUIDE_DEFINITIONS)
+      .filter(([roleName, roleInfo]) => {
+        if (!roleInfo || roleInfo.hiddenFromGuide) return false;
+        if (roleInfo.faction === 'Crew') return true;
+        if (roleInfo.faction !== 'Neutral') return false;
+        if (roleInfo.subfaction === 'Evil' || roleInfo.subfaction === 'Killing') return true;
+        return roleName === 'Vampire' || roleName === 'Pestilence';
+      })
+      .map(([roleName, roleInfo]) => ({
+        role: roleName,
+        faction: roleInfo.faction,
+        subfaction: roleInfo.subfaction,
+        themeClass: getRoleBadgeClass(roleName, roleInfo.faction),
+        themeName: getRoleThemeClass(roleName, roleInfo.faction),
+      }));
   }
 
   function showGameOver(winner, players) {
@@ -3934,6 +3985,15 @@
         if (!response.success) {
           showToast(response.error || 'Could not update room settings', 'error');
           event.target.checked = !!state.roomData?.hiddenRoleList;
+        }
+      });
+    });
+
+    document.getElementById('toggle-enable-assassinations').addEventListener('change', (event) => {
+      state.socket.emit('update-room-settings', { enableAssassinations: event.target.checked }, (response) => {
+        if (!response.success) {
+          showToast(response.error || 'Could not update room settings', 'error');
+          event.target.checked = state.roomData?.enableAssassinations !== false;
         }
       });
     });
@@ -5683,22 +5743,39 @@
     const mayorStoredVotes = player?.role === 'Mayor' ? Math.max(0, Number(player.mayorStoredVotes) || 0) : 0;
     const lawyerStoredVotes = player?.role === 'Lawyer' ? Math.max(0, Number(player.lawyerStoredVotes) || 0) : 0;
     const lawyerCanUseAbility = canObjection || canHearsay;
-    if (hasVotingAbility) {
+    const canUseVotingAssassination = !!player?.canUseVotingAssassination;
+    const votingAssassinationsRemaining = Math.max(0, Number(player?.votingAssassinationsRemaining ?? state.roomData?.votingAssassinationsRemaining ?? 0) || 0);
+    const assassinVotingRoleAction = canVeto ? 'veto' : (canSurprise ? 'surprise' : null);
+    const hasDualAssassinVotingAbility = !!assassinVotingRoleAction && canUseVotingAssassination;
+    const hasAnyVotingAbilityPanel = hasVotingAbility || canUseVotingAssassination;
+    if (hasAnyVotingAbilityPanel) {
       if (state.oracleVotingTab !== 'ability' && state.oracleVotingTab !== 'vote') {
         state.oracleVotingTab = 'ability';
       }
     } else {
       state.oracleVotingTab = 'vote';
     }
-    if (state.hasVoted) {
+    if (state.hasVoted && !hasVotingAbility && !canUseVotingAssassination) {
       container.innerHTML = '<div class="action-confirmed"><div class="confirmed-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><p class="confirmed-text">VOTE SUBMITTED</p><p class="confirmed-detail">Waiting for others...</p></div><div id="phase-chat-panel"></div>';
       renderChatBox();
       return;
     }
 
     const targets = getVoteTargets();
+    const assassinationTargets = canUseVotingAssassination
+      ? targets.filter((target) => target.faction !== 'Assassin')
+      : [];
+    const assassinationRoleOptions = getVotingAssassinationRoleOptions();
+    const selectedAssassinationTargetId = state.selectedVotingAssassinationTargetId || null;
+    const selectedAssassinationTarget = assassinationTargets.find((target) => target.id === selectedAssassinationTargetId) || null;
+    if (selectedAssassinationTargetId && !selectedAssassinationTarget) {
+      state.selectedVotingAssassinationTargetId = null;
+      state.selectedVotingAbilityRoleGuess = null;
+      state.votingRoleOverlayOpen = false;
+    }
+    const assassinationOverlayOpen = !!selectedAssassinationTarget && !!state.votingRoleOverlayOpen;
     const aliveCount = state.totalAlive || state.roomData?.aliveCount || '?';
-    const showAbilityTab = hasVotingAbility && state.oracleVotingTab === 'ability';
+    const showAbilityTab = hasAnyVotingAbilityPanel && state.oracleVotingTab === 'ability';
     const selectedVotingAbilityTargets = Array.isArray(state.selectedVotingAbilityTargets) ? state.selectedVotingAbilityTargets : [];
     const isScientistAbility = player?.role === 'Scientist';
     const isSwapperAbility = player?.role === 'Swapper';
@@ -5714,16 +5791,27 @@
       } else if (state.selectedVotingAbilityAction === 'hearsay' && !canHearsay) {
         state.selectedVotingAbilityAction = canObjection ? 'objection' : null;
       }
+    } else if (hasDualAssassinVotingAbility) {
+      const availableAssassinVotingActions = [
+        assassinVotingRoleAction,
+        ...(votingAssassinationsRemaining > 0 ? ['assassinate'] : []),
+      ].filter(Boolean);
+      if (!availableAssassinVotingActions.includes(state.selectedVotingAbilityAction)) {
+        state.selectedVotingAbilityAction = availableAssassinVotingActions[0] || null;
+      }
     } else {
       state.selectedVotingAbilityAction = null;
     }
     const lawyerUsingHearsay = isLawyerAbility && state.selectedVotingAbilityAction === 'hearsay';
+    const usingAssassinateInAbilityPanel = hasDualAssassinVotingAbility && state.selectedVotingAbilityAction === 'assassinate';
     const votingAbilityTitle = player.role === 'Inquisitor'
       ? 'INQUISITOR ABILITY'
       : player.role === 'Scientist'
         ? 'SCIENTIST ABILITY'
         : player.role === 'Swapper'
           ? 'SWAP'
+          : usingAssassinateInAbilityPanel
+            ? 'ASSASSINATE'
           : player.role === 'Disruptor'
             ? 'VETO'
             : player.role === 'Manipulator'
@@ -5737,6 +5825,8 @@
         ? 'Choose 2 players. Their roles will be switched after this voting session ends.'
         : player.role === 'Swapper'
           ? 'Choose 2 players to swap places before this voting phase resolves.'
+          : usingAssassinateInAbilityPanel
+            ? `Guess the exact role of a Neutral Killer, Neutral Evil or Crew target. Wrong guess kills you. ${votingAssassinationsRemaining} shared use${votingAssassinationsRemaining === 1 ? '' : 's'} left this voting round.`
           : player.role === 'Disruptor'
             ? 'Revoke this vote instantly.'
             : player.role === 'Manipulator'
@@ -5752,26 +5842,76 @@
         ? `SELECT 2 PLAYERS TO SWITCH${selectedVotingAbilityTargets.length ? ` (${selectedVotingAbilityTargets.length} SELECTED)` : ''}`
         : player.role === 'Swapper'
           ? `SELECT 2 PLAYERS TO SWAP${selectedVotingAbilityTargets.length ? ` (${selectedVotingAbilityTargets.length} SELECTED)` : ''}`
+          : usingAssassinateInAbilityPanel
+            ? 'SELECT PLAYER TO ASSASSINATE'
           : player.role === 'Lawyer'
             ? (lawyerUsingHearsay ? 'SELECT PLAYER TO REDUCE' : 'SELECT PLAYER TO PROTECT')
             : 'SELECT PLAYER TO PURIFY';
-    const votingAbilityPanel = hasVotingAbility ? `
-      <div class="action-panel oracle-vote-panel${showAbilityTab ? '' : ' hidden'}">
-        <div class="action-title">${votingAbilityTitle}</div>
-        <div class="action-subtitle">${votingAbilitySubtitle}</div>
+    const abilityTargets = usingAssassinateInAbilityPanel
+      ? assassinationTargets
+      : targets.filter((target) => target.id !== state.playerId);
+    const selectedAbilityTargetId = usingAssassinateInAbilityPanel
+      ? selectedAssassinationTargetId
+      : state.selectedOracleTarget;
+    const votingAbilityPanel = hasAnyVotingAbilityPanel ? `
+        <div class="action-panel oracle-vote-panel${showAbilityTab ? '' : ' hidden'}">
+          <div class="action-title">${votingAbilityTitle}</div>
+          <div class="action-subtitle">${votingAbilitySubtitle}</div>
         ${isLawyerAbility ? `<div class="action-buttons"><button class="action-btn ${state.selectedVotingAbilityAction === 'objection' ? 'selected' : ''}" data-voting-ability-action="objection" ${canObjection ? '' : 'disabled'}>Objection</button><button class="action-btn ${state.selectedVotingAbilityAction === 'hearsay' ? 'selected' : ''}" data-voting-ability-action="hearsay" ${canHearsay ? '' : 'disabled'}>Hearsay</button></div>` : ''}
-        ${isTargetlessVotingAbility ? '' : `<div class="target-label">${votingAbilityTargetLabel}</div>
+        ${hasDualAssassinVotingAbility ? `<div class="action-buttons"><button class="action-btn ${state.selectedVotingAbilityAction === assassinVotingRoleAction ? 'selected' : ''}" data-voting-ability-action="${escapeHtml(assassinVotingRoleAction)}">${escapeHtml(assassinVotingRoleAction === 'veto' ? 'Veto' : 'Surprise')}</button><button class="action-btn ${state.selectedVotingAbilityAction === 'assassinate' ? 'selected' : ''}" data-voting-ability-action="assassinate" ${votingAssassinationsRemaining > 0 ? '' : 'disabled'}>Assassinate</button></div>` : ''}
+          ${(isTargetlessVotingAbility && !usingAssassinateInAbilityPanel) ? '' : `<div class="target-label">${votingAbilityTargetLabel}</div>
         <div class="target-list chat-target-list" id="voting-ability-target-list">
-          ${targets.filter((target) => target.id !== state.playerId).map((t) => `<div class="target-item ${((isScientistAbility || isSwapperAbility) ? selectedVotingAbilityTargets.includes(t.id) : state.selectedOracleTarget === t.id) ? 'selected' : ''} ${t.isJailed ? 'target-jailed' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span>${t.isJailed ? '<span class="target-status target-status-jailed">Jailed</span>' : ''}</div>`).join('')}
-        </div>`}
-        <div class="chat-local-actions">
-          <button class="btn ${player?.faction === 'Assassin' ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-voting-ability" ${isTargetlessVotingAbility ? '' : (isScientistAbility || isSwapperAbility) ? selectedVotingAbilityTargets.length !== 2 ? 'disabled' : '' : !state.selectedOracleTarget ? 'disabled' : ''}>${player.role === 'Inquisitor' ? 'Confirm Exile' : (player.role === 'Scientist' || player.role === 'Swapper') ? `Confirm ${selectedVotingAbilityTargets.length}/2` : player.role === 'Disruptor' ? `Confirm ${player.disruptorVetoUsesRemaining ?? 1}/1` : player.role === 'Manipulator' ? `Confirm ${player.manipulatorSurpriseUsesRemaining ?? 2}/2` : player.role === 'Lawyer' ? (lawyerUsingHearsay ? `Use 1 • ${lawyerStoredVotes} left` : `Confirm ${player.lawyerObjectionUsesRemaining ?? 2}/2`) : `Confirm ${player.oraclePurifyUsesRemaining ?? 2}/2`}</button>
-          <button class="btn btn-ghost chat-local-skip" id="btn-skip-voting-ability">Skip</button>
+            ${abilityTargets.map((t) => `<div class="target-item ${((isScientistAbility || isSwapperAbility) ? selectedVotingAbilityTargets.includes(t.id) : selectedAbilityTargetId === t.id) ? 'selected' : ''} ${t.isJailed ? 'target-jailed' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span>${t.isJailed ? '<span class="target-status target-status-jailed">Jailed</span>' : ''}</div>`).join('')}
+          </div>`}
+          <div class="chat-local-actions">
+            <button class="btn ${player?.faction === 'Assassin' ? 'btn-assassin' : 'btn-crew'} confirm-action" id="btn-confirm-voting-ability" ${(isTargetlessVotingAbility && !usingAssassinateInAbilityPanel) ? '' : (isScientistAbility || isSwapperAbility) ? selectedVotingAbilityTargets.length !== 2 ? 'disabled' : '' : !selectedAbilityTargetId ? 'disabled' : ''}>${usingAssassinateInAbilityPanel ? (state.selectedVotingAbilityRoleGuess ? `Assassinate ${2 - votingAssassinationsRemaining + 1}/2` : 'Guess Role') : player.role === 'Inquisitor' ? 'Confirm Exile' : (player.role === 'Scientist' || player.role === 'Swapper') ? `Confirm ${selectedVotingAbilityTargets.length}/2` : player.role === 'Disruptor' ? `Confirm ${player.disruptorVetoUsesRemaining ?? 1}/1` : player.role === 'Manipulator' ? `Confirm ${player.manipulatorSurpriseUsesRemaining ?? 2}/2` : player.role === 'Lawyer' ? (lawyerUsingHearsay ? `Use 1 • ${lawyerStoredVotes} left` : `Confirm ${player.lawyerObjectionUsesRemaining ?? 2}/2`) : `Confirm ${player.oraclePurifyUsesRemaining ?? 2}/2`}</button>
+            <button class="btn btn-ghost chat-local-skip" id="btn-skip-voting-ability">Skip</button>
+          </div>
+        </div>` : '';
+    const assassinationPanel = canUseVotingAssassination && !hasDualAssassinVotingAbility ? `
+        <div class="action-panel assassination-vote-panel">
+        <div class="action-title">ASSASSINATE</div>
+        <div class="action-subtitle">Guess the exact role of a Neutral Killer, Neutral Evil or Crew target. Wrong guess kills you. ${votingAssassinationsRemaining} shared use${votingAssassinationsRemaining === 1 ? '' : 's'} left this voting round.</div>
+        <div class="target-label">SELECT PLAYER</div>
+        <div class="target-list chat-target-list" id="assassination-target-list">
+          ${assassinationTargets.map((t) => `<div class="target-item ${selectedAssassinationTargetId === t.id ? 'selected assassin-target' : ''} ${t.isJailed ? 'target-jailed' : ''}" data-target="${t.id}">${renderAvatarMarkup(t.id || t.name, 'target-avatar', t.avatarIndex)}<span class="target-name">${t.name}</span>${t.isJailed ? '<span class="target-status target-status-jailed">Jailed</span>' : ''}</div>`).join('')}
         </div>
-      </div>` : '';
+        <div class="chat-local-actions">
+          <button class="btn btn-assassin confirm-action" id="btn-open-assassination-overlay" ${(selectedAssassinationTarget && votingAssassinationsRemaining > 0) ? '' : 'disabled'}>${votingAssassinationsRemaining > 0 ? (selectedAssassinationTarget ? 'Guess Role' : 'Pick Target') : 'No Uses Left'}</button>
+          <button class="btn btn-ghost chat-local-skip" id="btn-clear-assassination-target">${selectedAssassinationTarget ? 'Clear' : 'Skip'}</button>
+        </div>
+      </div>
+      ${assassinationOverlayOpen ? `
+      <div class="voting-role-overlay">
+        <div class="voting-role-overlay-backdrop" id="btn-close-assassination-overlay"></div>
+        <div class="voting-role-overlay-card">
+          <div class="voting-role-overlay-header">
+            <div>
+              <div class="action-title">GUESS THE ROLE</div>
+              <div class="action-subtitle">Choose the exact role for <span class="chat-player-ref">${escapeHtml(selectedAssassinationTarget?.name || '')}</span>.</div>
+            </div>
+            <button class="chat-close-btn" id="btn-close-assassination-overlay-top">Close</button>
+          </div>
+          <div class="voting-role-grid" id="assassination-role-grid">
+            ${assassinationRoleOptions.map((option) => `<button class="voting-role-chip ${state.selectedVotingAbilityRoleGuess === option.role ? 'selected' : ''} ${option.themeClass}" type="button" data-role-guess="${escapeHtml(option.role)}" style="--role-accent:var(--${escapeHtml(option.themeName || 'neutral')});"><span class="voting-role-chip-name">${escapeHtml(option.role)}</span><span class="voting-role-chip-meta">${escapeHtml(option.faction)}${option.subfaction ? ` • ${escapeHtml(option.subfaction)}` : ''}</span></button>`).join('')}
+          </div>
+          <div class="chat-local-actions voting-role-overlay-actions">
+            <button class="btn btn-assassin confirm-action" id="btn-confirm-assassination" ${state.selectedVotingAbilityRoleGuess ? '' : 'disabled'}>Assassinate ${2 - votingAssassinationsRemaining + 1}/2</button>
+            <button class="btn btn-ghost chat-local-skip" id="btn-cancel-assassination">Cancel</button>
+          </div>
+        </div>
+      </div>` : ''}
+    ` : '';
 
     container.innerHTML = `
+      ${assassinationPanel}
       ${votingAbilityPanel}
+      ${state.hasVoted ? `
+      <div class="action-confirmed${showAbilityTab ? ' hidden' : ''}">
+        <div class="confirmed-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <p class="confirmed-text">VOTE SUBMITTED</p>
+        <p class="confirmed-detail">Your vote is locked in. You can still use any remaining voting abilities.</p>
+      </div>` : `
       <div class="voting-panel${showAbilityTab ? ' hidden' : ''}">
         <div class="action-title">CAST YOUR VOTE</div>
         <div class="action-subtitle">${player?.role === 'Mayor' ? `${state.votesCast} / ${aliveCount} votes cast • ${mayorVotesRemaining} vote${mayorVotesRemaining === 1 ? '' : 's'} left • ${mayorStoredVotes} stored` : player?.role === 'Lawyer' ? `${state.votesCast} / ${aliveCount} votes cast • ${lawyerStoredVotes} stored reduction${lawyerStoredVotes === 1 ? '' : 's'} left` : `${state.votesCast} / ${aliveCount} votes cast`}</div>
@@ -5783,20 +5923,107 @@
           <button class="skip-vote-btn ${state.selectedTarget === 'skip' ? 'selected' : ''}" id="btn-vote-skip">Skip Vote</button>
           <button class="btn btn-primary confirm-action" id="btn-confirm-vote" ${!state.selectedTarget ? 'disabled' : ''}>Confirm Vote</button>
         </div>
-      </div>
+      </div>`}
       <div id="phase-chat-panel"></div>`;
+
+    container.querySelectorAll('#assassination-target-list .target-item').forEach((item) => {
+      item.addEventListener('click', () => {
+        if (votingAssassinationsRemaining <= 0) return;
+        state.selectedVotingAssassinationTargetId = item.dataset.target;
+        state.selectedVotingAbilityRoleGuess = null;
+        state.votingRoleOverlayOpen = true;
+        renderVotingPhase(container);
+      });
+    });
+
+    const openAssassinationOverlayBtn = document.getElementById('btn-open-assassination-overlay');
+    if (openAssassinationOverlayBtn) {
+      openAssassinationOverlayBtn.addEventListener('click', () => {
+        if (!state.selectedVotingAssassinationTargetId) return;
+        state.votingRoleOverlayOpen = true;
+        renderVotingPhase(container);
+      });
+    }
+
+    const clearAssassinationTargetBtn = document.getElementById('btn-clear-assassination-target');
+    if (clearAssassinationTargetBtn) {
+      clearAssassinationTargetBtn.addEventListener('click', () => {
+        state.selectedVotingAssassinationTargetId = null;
+        state.selectedVotingAbilityRoleGuess = null;
+        state.votingRoleOverlayOpen = false;
+        renderVotingPhase(container);
+      });
+    }
+
+    container.querySelectorAll('[data-role-guess]').forEach((button) => {
+      button.addEventListener('click', () => {
+        state.selectedVotingAbilityRoleGuess = button.dataset.roleGuess || null;
+        renderVotingPhase(container);
+      });
+    });
+
+    ['btn-close-assassination-overlay', 'btn-close-assassination-overlay-top', 'btn-cancel-assassination'].forEach((id) => {
+      const button = document.getElementById(id);
+      if (!button) return;
+      button.addEventListener('click', () => {
+        state.votingRoleOverlayOpen = false;
+        state.selectedVotingAbilityRoleGuess = null;
+        renderVotingPhase(container);
+      });
+    });
+
+    const confirmAssassinationBtn = document.getElementById('btn-confirm-assassination');
+    if (confirmAssassinationBtn) {
+      confirmAssassinationBtn.addEventListener('click', () => {
+        if (!state.selectedVotingAssassinationTargetId || !state.selectedVotingAbilityRoleGuess) return;
+        state.socket.emit('voting-action', {
+          action: 'assassinate',
+          targetId: state.selectedVotingAssassinationTargetId,
+          roleGuess: state.selectedVotingAbilityRoleGuess,
+        }, (response) => {
+          if (response.success) {
+            if (response.player) state.playerData = response.player;
+            if (response.room) state.roomData = response.room;
+            state.selectedVotingAssassinationTargetId = null;
+            state.selectedVotingAbilityRoleGuess = null;
+            state.votingRoleOverlayOpen = false;
+            if (response.player && response.player.alive === false) {
+              renderGameContent(state.gamePhase);
+              return;
+            }
+            renderVotingPhase(container);
+          } else {
+            showToast(response.error || 'Assassination failed', 'error');
+          }
+        });
+      });
+    }
 
     container.querySelectorAll('[data-voting-ability-action]').forEach((button) => {
       button.addEventListener('click', () => {
         if (button.disabled) return;
         state.selectedVotingAbilityAction = button.dataset.votingAbilityAction;
         state.selectedOracleTarget = null;
+        state.selectedVotingAbilityTargets = [];
+        state.selectedVotingAbilityRoleGuess = null;
+        state.votingRoleOverlayOpen = false;
+        if (state.selectedVotingAbilityAction !== 'assassinate') {
+          state.selectedVotingAssassinationTargetId = null;
+        }
         renderVotingPhase(container);
       });
     });
 
     container.querySelectorAll('#voting-ability-target-list .target-item').forEach((item) => {
       item.addEventListener('click', () => {
+        if (usingAssassinateInAbilityPanel) {
+          if (votingAssassinationsRemaining <= 0) return;
+          state.selectedVotingAssassinationTargetId = item.dataset.target;
+          state.selectedVotingAbilityRoleGuess = null;
+          state.votingRoleOverlayOpen = true;
+          renderVotingPhase(container);
+          return;
+        }
         if (isScientistAbility || isSwapperAbility) {
           const targetId = item.dataset.target;
           if (selectedVotingAbilityTargets.includes(targetId)) {
@@ -5814,6 +6041,12 @@
     const confirmVotingAbilityBtn = document.getElementById('btn-confirm-voting-ability');
     if (confirmVotingAbilityBtn) {
       confirmVotingAbilityBtn.addEventListener('click', () => {
+        if (usingAssassinateInAbilityPanel) {
+          if (!state.selectedVotingAssassinationTargetId) return;
+          state.votingRoleOverlayOpen = true;
+          renderVotingPhase(container);
+          return;
+        }
         if (!isTargetlessVotingAbility && !isScientistAbility && !isSwapperAbility && !state.selectedOracleTarget) return;
         if ((isScientistAbility || isSwapperAbility) && selectedVotingAbilityTargets.length !== 2) return;
         const action = player.role === 'Inquisitor' ? 'exile' : player.role === 'Scientist' ? 'experiment' : player.role === 'Swapper' ? 'swap' : player.role === 'Disruptor' ? 'veto' : player.role === 'Manipulator' ? 'surprise' : player.role === 'Lawyer' ? (state.selectedVotingAbilityAction || 'objection') : 'purify';
@@ -5840,7 +6073,12 @@
       skipVotingAbilityBtn.addEventListener('click', () => {
         state.selectedOracleTarget = null;
         state.selectedVotingAbilityTargets = [];
-        state.selectedVotingAbilityAction = null;
+        state.selectedVotingAbilityRoleGuess = null;
+        state.selectedVotingAssassinationTargetId = null;
+        state.votingRoleOverlayOpen = false;
+        if (!isLawyerAbility && !hasDualAssassinVotingAbility) {
+          state.selectedVotingAbilityAction = null;
+        }
         state.oracleVotingTab = 'vote';
         renderVotingPhase(container);
       });

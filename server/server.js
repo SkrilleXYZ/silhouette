@@ -191,14 +191,14 @@ io.on('connection', (socket) => {
     if (callback) callback({ success: true, room: publicData, newHostId: result.newHostId || publicData.hostId });
   });
 
-  socket.on('update-room-settings', ({ anonymousVotes, anonymousEjects, anonymousKills, hiddenRoleList, disableVillagerRole, enableTraitor, useClassicFivePlayerSetup, sheriffKillsCrewTarget, sheriffKillsNeutralEvil, officerKillsNeutralEvil }, callback) => {
+  socket.on('update-room-settings', ({ anonymousVotes, anonymousEjects, anonymousKills, hiddenRoleList, enableAssassinations, disableVillagerRole, enableTraitor, useClassicFivePlayerSetup, sheriffKillsCrewTarget, sheriffKillsNeutralEvil, officerKillsNeutralEvil }, callback) => {
     const mapping = socketMap.get(socket.id);
     if (!mapping) {
       if (callback) callback({ success: false, error: 'Not in a room' });
       return;
     }
 
-    const result = game.updateRoomSettings(mapping.code, mapping.playerId, { anonymousVotes, anonymousEjects, anonymousKills, hiddenRoleList, disableVillagerRole, enableTraitor, useClassicFivePlayerSetup, sheriffKillsCrewTarget, sheriffKillsNeutralEvil, officerKillsNeutralEvil });
+    const result = game.updateRoomSettings(mapping.code, mapping.playerId, { anonymousVotes, anonymousEjects, anonymousKills, hiddenRoleList, enableAssassinations, disableVillagerRole, enableTraitor, useClassicFivePlayerSetup, sheriffKillsCrewTarget, sheriffKillsNeutralEvil, officerKillsNeutralEvil });
     if (result.error) {
       if (callback) callback({ success: false, error: result.error });
       return;
@@ -389,14 +389,14 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('voting-action', ({ action, targetId, targetIds }, callback) => {
+  socket.on('voting-action', ({ action, targetId, targetIds, roleGuess }, callback) => {
     const mapping = socketMap.get(socket.id);
     if (!mapping) {
       if (callback) callback({ success: false, error: 'Not in a room' });
       return;
     }
 
-    const result = game.submitVotingAbility(mapping.code, mapping.playerId, action, targetId, targetIds);
+    const result = game.submitVotingAbility(mapping.code, mapping.playerId, action, targetId, targetIds, roleGuess);
     if (result.error) {
       if (callback) callback({ success: false, error: result.error });
       return;
@@ -411,6 +411,29 @@ io.on('connection', (socket) => {
       abyssChatMessages: game.getAbyssChatMessagesForPlayer(mapping.code, mapping.playerId),
     });
     io.to(mapping.code).emit('room-updated', publicData);
+    if (result.immediateAssassination) {
+      emitRoomPlayerStates(mapping.code);
+      io.to(mapping.code).emit('vote-update', {
+        voterId: mapping.playerId,
+        voterName: game.getRoom(mapping.code)?.players.get(mapping.playerId)?.name || '',
+        votesCast: game.getSubmittedVoteCount(mapping.code),
+        totalAlive: game.getEligibleVoterCount(mapping.code)
+      });
+      if (callback) callback({ success: true, player: game.getPlayerData(mapping.code, mapping.playerId), room: publicData, winner: result.winner || null, immediateAssassination: true });
+      if (result.winner) {
+        clearAllTimers(mapping.code);
+        const allPlayers = game.getAllPlayersWithRoles(mapping.code);
+        io.to(mapping.code).emit('game-over', {
+          winner: result.winner,
+          players: allPlayers
+        });
+        return;
+      }
+      if (game.checkAllVotesSubmitted(mapping.code)) {
+        resolveVotingPhase(mapping.code);
+      }
+      return;
+    }
     if (callback) callback({ success: true, player: playerData, room: publicData });
     if (result.resolveNow) {
       resolveVotingPhase(mapping.code);
