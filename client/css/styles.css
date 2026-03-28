@@ -11908,7 +11908,7 @@ body {
 #screen-roles .roles-guide-card.role-theme-medium { border-color: rgba(232, 118, 255, 0.72); color: var(--medium); --roles-guide-tint-a: rgba(196, 128, 255, 0.12); --roles-guide-tint-b: rgba(212, 78, 194, 0.11); }
 
 #screen-roles .roles-guide-card[class*="role-theme-"] .roles-guide-ability-highlight {
-  color: currentColor;
+  color: inherit;
 }
 
 .chat-message.system.system-result-prophet,
