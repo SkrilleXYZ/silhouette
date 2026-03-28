@@ -1950,101 +1950,102 @@
       .map(([role, roleInfo]) => ({ role, ...roleInfo, abilities: getRoleDefinition(role).abilities || roleInfo.abilities || [] }));
   }
 
-  function formatRoleGuideAbilityDescription(description) {
+  function formatRoleGuideAbilityDescription(description, role, faction = 'Crew') {
+    const highlightStyle = ` style="color:var(--${escapeHtml(getRoleThemeClass(role, faction))})"`;
     const safeDescription = escapeHtml(description || '');
     return safeDescription
-      .replace(
-        'Cannot target the same player 3 times in a row.',
-        '<span class="roles-guide-ability-highlight">Cannot target the same player 3 times in a row.</span>'
-      )
-      .replace(
-        'Cannot target the same player in a row.',
-        '<span class="roles-guide-ability-highlight">Cannot target the same player in a row.</span>'
-      )
-      .replace(
-        'Cannot target the same player twice in a row.',
-        '<span class="roles-guide-ability-highlight">Cannot target the same player twice in a row.</span>'
-      )
-      .replace(
-        'Cannot target the same player again until there is no one left.',
-        '<span class="roles-guide-ability-highlight">Cannot target the same player again until there is no one left.</span>'
-      )
-      .replace(
-        'Can target yourself.',
-        '<span class="roles-guide-ability-highlight">Can target yourself.</span>'
-      )
-      .replace(
-        'Cannot protect the same player twice in a row.',
-        '<span class="roles-guide-ability-highlight">Cannot protect the same player twice in a row.</span>'
-      )
-      .replace(
-        'Can be used 4 times.',
-        '<span class="roles-guide-ability-highlight">Can be used 4 times.</span>'
-      )
-      .replace(
-        'Can be used 3 times.',
-        '<span class="roles-guide-ability-highlight">Can be used 3 times.</span>'
-      )
-      .replace(
-        'Can be used 2 times.',
-        '<span class="roles-guide-ability-highlight">Can be used 2 times.</span>'
-      )
-      .replace(
-        'cannot be targeted again.',
-        '<span class="roles-guide-ability-highlight">cannot be targeted again.</span>'
-      )
-      .replace(
-        'Requires at least 1 player to be doused.',
-        '<span class="roles-guide-ability-highlight">Requires at least 1 player to be doused.</span>'
-      )
-      .replace(
-        'cannot be infected again.',
-        '<span class="roles-guide-ability-highlight">cannot be infected again.</span>'
-      )
-      .replace(
-        'you become the Pestilence.',
-        '<span class="roles-guide-ability-highlight">you become the Pestilence.</span>'
-      )
-      .replace(
-        'If your target dies, you become an Amnesiac.',
-        '<span class="roles-guide-ability-highlight">If your target dies, you become an Amnesiac.</span>'
-      )
-      .replace(
-        'Can be used once.',
-        '<span class="roles-guide-ability-highlight">Can be used once.</span>'
-      )
-      .replace(
-        'Cannot be used twice in a row.',
-        '<span class="roles-guide-ability-highlight">Cannot be used twice in a row.</span>'
-      )
-      .replace(
-        'but you die instead.',
-        '<span class="roles-guide-ability-highlight">but you die instead.</span>'
-      )
-      .replace(
-        'Can only be used once. Cannot target yourself.',
-        '<span class="roles-guide-ability-highlight">Can only be used once. Cannot target yourself.</span>'
-      )
-      .replace(
-        'If your target dies, you become an Amnesiac. Can be used 4 times.',
-        '<span class="roles-guide-ability-highlight">If your target dies, you become an Amnesiac. Can be used 4 times.</span>'
-      )
-      .replace(
-        'you become an Amnesiac.',
-        '<span class="roles-guide-ability-highlight">you become an Amnesiac.</span>'
-      )
-      .replace(
-        'at least 6 players',
-        '<span class="roles-guide-ability-highlight">at least 6 players</span>'
-      )
-      .replace(
-        'Maximum 3 kills at once.',
-        '<span class="roles-guide-ability-highlight">Maximum 3 kills at once.</span>'
-      )
-      .replace(
-        'get voted out.',
-        '<span class="roles-guide-ability-highlight">get voted out.</span>'
-      );
+        .replace(
+          'Cannot target the same player 3 times in a row.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>Cannot target the same player 3 times in a row.</span>`
+        )
+        .replace(
+          'Cannot target the same player in a row.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>Cannot target the same player in a row.</span>`
+        )
+        .replace(
+          'Cannot target the same player twice in a row.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>Cannot target the same player twice in a row.</span>`
+        )
+        .replace(
+          'Cannot target the same player again until there is no one left.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>Cannot target the same player again until there is no one left.</span>`
+        )
+        .replace(
+          'Can target yourself.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>Can target yourself.</span>`
+        )
+        .replace(
+          'Cannot protect the same player twice in a row.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>Cannot protect the same player twice in a row.</span>`
+        )
+        .replace(
+          'Can be used 4 times.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>Can be used 4 times.</span>`
+        )
+        .replace(
+          'Can be used 3 times.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>Can be used 3 times.</span>`
+        )
+        .replace(
+          'Can be used 2 times.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>Can be used 2 times.</span>`
+        )
+        .replace(
+          'cannot be targeted again.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>cannot be targeted again.</span>`
+        )
+        .replace(
+          'Requires at least 1 player to be doused.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>Requires at least 1 player to be doused.</span>`
+        )
+        .replace(
+          'cannot be infected again.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>cannot be infected again.</span>`
+        )
+        .replace(
+          'you become the Pestilence.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>you become the Pestilence.</span>`
+        )
+        .replace(
+          'If your target dies, you become an Amnesiac.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>If your target dies, you become an Amnesiac.</span>`
+        )
+        .replace(
+          'Can be used once.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>Can be used once.</span>`
+        )
+        .replace(
+          'Cannot be used twice in a row.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>Cannot be used twice in a row.</span>`
+        )
+        .replace(
+          'but you die instead.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>but you die instead.</span>`
+        )
+        .replace(
+          'Can only be used once. Cannot target yourself.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>Can only be used once. Cannot target yourself.</span>`
+        )
+        .replace(
+          'If your target dies, you become an Amnesiac. Can be used 4 times.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>If your target dies, you become an Amnesiac. Can be used 4 times.</span>`
+        )
+        .replace(
+          'you become an Amnesiac.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>you become an Amnesiac.</span>`
+        )
+        .replace(
+          'at least 6 players',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>at least 6 players</span>`
+        )
+        .replace(
+          'Maximum 3 kills at once.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>Maximum 3 kills at once.</span>`
+        )
+        .replace(
+          'get voted out.',
+          `<span class="roles-guide-ability-highlight"${highlightStyle}>get voted out.</span>`
+        );
   }
 
   function renderRolesGuide() {
@@ -2134,7 +2135,7 @@
                         <span class="roles-guide-ability-name">${escapeHtml(ability.name)}</span>
                         <span class="roles-guide-ability-type">${escapeHtml(ability.type)}</span>
                       </div>
-                      <p class="roles-guide-ability-copy">${formatRoleGuideAbilityDescription(ability.description)}</p>
+                        <p class="roles-guide-ability-copy">${formatRoleGuideAbilityDescription(ability.description, roleInfo.role, roleInfo.faction)}</p>
                     </div>
                   `).join('')}
                 </div>
